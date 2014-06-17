@@ -13,11 +13,11 @@ if (NOT C99_SUPPORTED)
 endif()
 
 add_definitions(-D_GNU_SOURCE)
-set(CMAKE_C_FLAGS "-fPIC -std=c99 -Wall -Wextra -Wno-unused-parameter ${CMAKE_C_FLAGS}")
-set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_SHARED_LINKER_FLAGS}")
+set(CMAKE_C_FLAGS "-fPIC -std=c99 -Wall -Wextra -Wno-unused-parameter -fvisibility=hidden ${CMAKE_C_FLAGS}")
+set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed -Wl,--no-undefined ${CMAKE_SHARED_LINKER_FLAGS}")
 set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_MODULE_LINKER_FLAGS}")
 
-find_package(XCB REQUIRED)
+find_package(XCB REQUIRED COMPONENTS XCB UTIL)
 
 enable_testing()
 

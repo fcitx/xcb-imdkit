@@ -841,8 +841,6 @@ void _xcb_im_handle_message(xcb_im_t* im,
                             uint8_t* data,
                             bool *del)
 {
-    unsigned char *p1 = data;
-
     switch (hdr->major_opcode) {
     case XIM_CONNECT:
         DebugLog("-- XIM_CONNECT\n");
