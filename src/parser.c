@@ -25,23 +25,31 @@
                        ((n) >> 56 & 0xFF)                 \
                       ) : n)
 
-uint8_t* parse_binary_with_format(uint8_t* data, bool swap, const xcb_im_frame_type_t* format, ...)
+uint8_t* parse_binary_with_format(uint8_t* data, bool swap, const xcb_im_frame_t* format, ...)
 {
     va_list var;
     va_start(var, &format);
 
-    for (int i = 0; format[i] != EOL; i++) {
-        void* attr = va_arg(var, void*);
+    for (int i = 0; format[i].type != EOL; i++) {
 #define BIT_CASE(N) \
     case BIT##N: \
     { \
+        void* attr = va_arg(var, void*); \
+        if (!attr) { \
+            return data; \
+        } \
         uint##N##_t* result = attr; \
         *result = Swap##N(*(uint##N##_t*) data); \
         data += (N / 8); \
         break; \
+    } \
+    case UNUSED_BIT##N: \
+    { \
+        data += (N / 8); \
+        break; \
     }
 
-        switch(format[i]) {
+        switch(format[i].type) {
             BIT_CASE(8)
             BIT_CASE(16)
             BIT_CASE(32)
@@ -49,6 +57,76 @@ uint8_t* parse_binary_with_format(uint8_t* data, bool swap, const xcb_im_frame_t
             default:
                 return NULL;
         }
+    }
+
+#undef BIT_CASE
+
+    va_end(var);
+    return data;
+}
+
+size_t format_size(const xcb_im_frame_t* format)
+{
+    size_t result = 0;
+    for (int i = 0; format[i].type != EOL; i++) {
+#define BIT_CASE(N) \
+    case BIT##N: \
+    { \
+        result += (N / 8); \
+        break; \
+    } \
+    case UNUSED_BIT##N: \
+    { \
+        result += (N / 8); \
+        break; \
+    }
+        switch(format[i].type) {
+            BIT_CASE(8)
+            BIT_CASE(16)
+            BIT_CASE(32)
+            BIT_CASE(64)
+            default:
+                return 0;
+        }
+#undef BIT_CASE
+    }
+
+    return result;
+}
+
+uint8_t* write_binary_with_format(uint8_t* data, bool swap, const xcb_im_frame_t* format, ...)
+{
+    va_list var;
+    va_start(var, &format);
+
+    for (int i = 0; format[i].type != EOL; i++) {
+        void* attr = va_arg(var, void*);
+        if (!attr) {
+            break;
+        }
+#define BIT_CASE(N) \
+    case BIT##N: \
+    { \
+        uint##N##_t* result = attr; \
+        *(uint##N##_t*) data = Swap##N(*result); \
+        data += (N / 8); \
+        break; \
+    } \
+    case UNUSED_BIT##N: \
+    { \
+        data += (N / 8); \
+        break; \
+    }
+
+        switch(format[i].type) {
+            BIT_CASE(8)
+            BIT_CASE(16)
+            BIT_CASE(32)
+            BIT_CASE(64)
+            default:
+                return NULL;
+        }
+#undef BIT_CASE
     }
 
     va_end(var);

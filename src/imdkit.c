@@ -1,6 +1,7 @@
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 #include <xcb/xcb_aux.h>
+#include <xcb/xcb_atom.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -173,13 +174,6 @@
 #define XimLookupKeySym       0x0004
 #define XimLookupBoth         0x0006
 
-/*
- * request packet header size
- */
-#define XIM_HEADER_SIZE                     \
-    sizeof(CARD8)     /* sizeof mejor-opcode */   \
-    + sizeof(CARD8)     /* sizeof minor-opcode */   \
-    + sizeof(INT16)     /* sizeof length */
 
 /*
  * Client Message data size
@@ -369,6 +363,7 @@ struct _xcb_im_t
     xcb_im_client_t* clients_by_win;
     int connect_id;
     xcb_screen_t* screen;
+    uint32_t sequence;
     bool init;
 };
 
@@ -765,10 +760,10 @@ bool _xcb_im_filter_selection_request(xcb_im_t* im, xcb_generic_event_t* event)
     return false;
 }
 
-static uint8_t* ReadXIMMessage(xcb_im_t* im,
-                               xcb_client_message_event_t *ev,
-                               xcb_im_client_t* client,
-                               xcb_im_proto_header_t* hdr)
+static uint8_t* _xcb_im_read_message(xcb_im_t* im,
+                                     xcb_client_message_event_t *ev,
+                                     xcb_im_client_t* client,
+                                     xcb_im_proto_header_t* hdr)
 {
     uint8_t *p = NULL;
 
@@ -778,7 +773,7 @@ static uint8_t* ReadXIMMessage(xcb_im_t* im,
             if (ev->data.data8[0] != XIM_CONNECT) {
                 return (unsigned char *) NULL;  /* can do nothing */
             }
-            client->byte_order = ev->data.data8[4];
+            client->byte_order = ev->data.data8[XCB_IM_HEADER_SIZE];
         }
         /* ClientMessage only */
         uint8_t* rec = parse_binary_with_format(ev->data.data8, client->byte_order != im->byte_order,
@@ -835,6 +830,148 @@ static uint8_t* ReadXIMMessage(xcb_im_t* im,
     }
     return (unsigned char *) p;
 }
+
+void _xcb_im_write_message_header(xcb_im_t* im,
+                                  xcb_im_client_t* client,
+                                  uint8_t* message,
+                                  uint8_t major_opcode,
+                                  uint8_t minor_opcode,
+                                  size_t length)
+{
+    uint16_t p_len = length / 4;
+    write_binary_with_format(message, im->byte_order != client->byte_order, packet_header_fr,
+                             &major_opcode, &minor_opcode, &p_len);
+}
+
+uint8_t* _xcb_im_new_message(xcb_im_t* im,
+                             xcb_im_client_t* client,
+                             uint8_t major_opcode,
+                             uint8_t minor_opcode,
+                             size_t length)
+{
+    uint8_t* message = malloc(length + XCB_IM_HEADER_SIZE);
+    if (message) {
+        _xcb_im_write_message_header(im, client, message, major_opcode, minor_opcode, length);
+    }
+
+    return message;
+}
+
+bool _xcb_im_send_message(xcb_im_t* im,
+                          xcb_im_client_t* client,
+                          uint8_t* data, size_t length)
+{
+    if (!data) {
+        return false;
+    }
+
+    length += XCB_IM_HEADER_SIZE;
+
+    xcb_client_message_event_t event;
+
+    event.response_type = XCB_CLIENT_MESSAGE;
+    event.sequence = 0;
+    event.window = client->client_win;
+    event.type = im->atoms[XIM_ATOM_XIM_PROTOCOL];
+
+    if (length > XCM_DATA_LIMIT) {
+        xcb_atom_t atom;
+        char atomName[64];
+
+        int len = sprintf(atomName, "_server%u_%u", client->connect_id, im->sequence++);
+
+        xcb_intern_atom_cookie_t atom_cookie = xcb_intern_atom(im->conn, false, len, atomName);
+        xcb_intern_atom_reply_t* atom_reply = xcb_intern_atom_reply(im->conn, atom_cookie, NULL);
+        if (!atom_reply) {
+            return false;
+        }
+        free(atom_reply);
+        atom = atom_reply->atom;
+        xcb_get_property_cookie_t get_property_cookie = xcb_get_property(im->conn,
+                                                                         false,
+                                                                         client->client_win,
+                                                                         atom,
+                                                                         XCB_ATOM_STRING,
+                                                                         0L,
+                                                                         10000L);
+
+        xcb_get_property_reply_t* get_property_reply = xcb_get_property_reply(im->conn, get_property_cookie, NULL);
+        if (!get_property_reply) {
+            return false;
+        }
+        free(get_property_reply);
+        xcb_change_property(im->conn,
+                            XCB_PROP_MODE_APPEND,
+                            client->client_win,
+                            atom,
+                            XCB_ATOM_STRING,
+                            8,
+                            length,
+                            data);
+        event.format = 32;
+        event.data.data32[0] = length;
+        event.data.data32[1] = atom;
+    } else {
+        event.format = 8;
+
+        memcpy(event.data.data8, data, length);
+        /* Clear unused field with NULL */
+        for (int i = length; i < XCM_DATA_LIMIT; i++)
+            event.data.data8[i] = 0;
+    }
+    xcb_send_event(im->conn, 0, client->client_win, XCB_EVENT_MASK_NO_EVENT, (const char*) &event);
+    xcb_flush(im->conn);
+    return true;
+}
+
+void _xcb_im_send_error_message(xcb_im_t* im,
+                                xcb_im_client_t* client)
+{
+    // use stack to avoid alloc fails
+    uint8_t message[XCB_IM_HEADER_SIZE];
+    _xcb_im_write_message_header(im, client, message, XIM_ERROR, 0, 0);
+    _xcb_im_send_message(im, client, message, XCB_IM_HEADER_SIZE);
+}
+
+void _xcb_im_handle_connect(xcb_im_t* im,
+                            xcb_im_client_t* client,
+                            const xcb_im_proto_header_t* hdr,
+                            uint8_t* data,
+                            bool *del)
+{
+    uint8_t byte_order;
+    uint16_t major_version;
+    uint16_t minor_version;
+    parse_binary_with_format(data, client->byte_order != im->byte_order,
+                             connect_fr, &byte_order, &major_version, &minor_version);
+    uint16_t server_major_version, server_minor_version;
+
+    server_major_version = major_version;
+    server_minor_version = minor_version;
+
+    bool fail = true;
+    size_t length = format_size(connect_reply_fr);
+    uint8_t* reply = _xcb_im_new_message(im, client, XIM_CONNECT_REPLY, 0, length);
+    do {
+        if (!reply) {
+            break;
+        }
+        write_binary_with_format(reply + XCB_IM_HEADER_SIZE, client->byte_order != im->byte_order, connect_reply_fr,
+                                 &server_major_version, &server_minor_version);
+        if (!_xcb_im_send_message(im, client, reply, length)) {
+            break;
+        }
+
+        fail = false;
+    } while(0);
+    free(reply);
+
+    if (fail) {
+        _xcb_im_send_error_message(im, client);
+    }
+    return;
+}
+
 void _xcb_im_handle_message(xcb_im_t* im,
                             xcb_im_client_t* client,
                             const xcb_im_proto_header_t* hdr,
@@ -844,6 +981,7 @@ void _xcb_im_handle_message(xcb_im_t* im,
     switch (hdr->major_opcode) {
     case XIM_CONNECT:
         DebugLog("-- XIM_CONNECT\n");
+        _xcb_im_handle_connect(im, client, hdr, data, del);
         break;
 
     case XIM_DISCONNECT:
@@ -954,7 +1092,7 @@ bool _xcb_im_filter_client(xcb_im_t* im, xcb_generic_event_t* event)
 
         bool del = true;
         xcb_im_proto_header_t hdr;
-        uint8_t* message = ReadXIMMessage(im, clientmessage, client, &hdr);
+        uint8_t* message = _xcb_im_read_message(im, clientmessage, client, &hdr);
         if (message) {
             _xcb_im_handle_message(im, client, &hdr, message, &del);
             if (del) {
