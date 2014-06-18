@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
 #include "parser.h"
 /* For byte swapping */
 #define Swap8(n) (n)
@@ -25,110 +26,100 @@
                        ((n) >> 56 & 0xFF)                 \
                       ) : n)
 
-uint8_t* parse_binary_with_format(uint8_t* data, bool swap, const xcb_im_frame_t* format, ...)
+void uint8_t_read(uint8_t* p, uint8_t** data, size_t* len, bool swap)
 {
-    va_list var;
-    va_start(var, &format);
-
-    for (int i = 0; format[i].type != EOL; i++) {
-#define BIT_CASE(N) \
-    case BIT##N: \
-    { \
-        void* attr = va_arg(var, void*); \
-        if (!attr) { \
-            return data; \
-        } \
-        uint##N##_t* result = attr; \
-        *result = Swap##N(*(uint##N##_t*) data); \
-        data += (N / 8); \
-        break; \
-    } \
-    case UNUSED_BIT##N: \
-    { \
-        data += (N / 8); \
-        break; \
+    if (*len < 1) {
+        *data = NULL;
+        return;
     }
 
-        switch(format[i].type) {
-            BIT_CASE(8)
-            BIT_CASE(16)
-            BIT_CASE(32)
-            BIT_CASE(64)
-            default:
-                return NULL;
-        }
-    }
+    *p = **data;
 
-#undef BIT_CASE
+    *data += 1;
+    *len -= 1;
+}
 
-    va_end(var);
+uint8_t* uint8_t_write(uint8_t* p, uint8_t* data, bool swap)
+{
+    *data = *p;
+    data += 1;
     return data;
 }
 
-size_t format_size(const xcb_im_frame_t* format)
+void uint16_t_read(uint16_t* p, uint8_t** data, size_t* len, bool swap)
 {
-    size_t result = 0;
-    for (int i = 0; format[i].type != EOL; i++) {
-#define BIT_CASE(N) \
-    case BIT##N: \
-    { \
-        result += (N / 8); \
-        break; \
-    } \
-    case UNUSED_BIT##N: \
-    { \
-        result += (N / 8); \
-        break; \
-    }
-        switch(format[i].type) {
-            BIT_CASE(8)
-            BIT_CASE(16)
-            BIT_CASE(32)
-            BIT_CASE(64)
-            default:
-                return 0;
-        }
-#undef BIT_CASE
+    if (*len < 2) {
+        *data = NULL;
+        return;
     }
 
-    return result;
+    *p = Swap16(*((uint16_t*)*data));
+    *data += 2;
+    *len -= 2;
 }
 
-uint8_t* write_binary_with_format(uint8_t* data, bool swap, const xcb_im_frame_t* format, ...)
+uint8_t* uint16_t_write(uint16_t* p, uint8_t* data, bool swap)
 {
-    va_list var;
-    va_start(var, &format);
-
-    for (int i = 0; format[i].type != EOL; i++) {
-        void* attr = va_arg(var, void*);
-        if (!attr) {
-            break;
-        }
-#define BIT_CASE(N) \
-    case BIT##N: \
-    { \
-        uint##N##_t* result = attr; \
-        *(uint##N##_t*) data = Swap##N(*result); \
-        data += (N / 8); \
-        break; \
-    } \
-    case UNUSED_BIT##N: \
-    { \
-        data += (N / 8); \
-        break; \
-    }
-
-        switch(format[i].type) {
-            BIT_CASE(8)
-            BIT_CASE(16)
-            BIT_CASE(32)
-            BIT_CASE(64)
-            default:
-                return NULL;
-        }
-#undef BIT_CASE
-    }
-
-    va_end(var);
+    *((uint16_t*)data) = Swap16(*p);
+    data += 2;
     return data;
 }
+
+void uint32_t_read(uint32_t* p, uint8_t** data, size_t* len, bool swap)
+{
+    if (*len < 4) {
+        *data = NULL;
+        return;
+    }
+
+    *p = Swap32(*((uint32_t*)*data));
+    *data += 4;
+    *len -= 4;
+}
+
+uint8_t* uint32_t_write(uint32_t* p, uint8_t* data, bool swap)
+{
+    *((uint32_t*)data) = Swap32(*p);
+    data += 4;
+    return data;
+}
+
+void bytearray_read(bytearray* p, uint32_t arraylen, uint8_t** data, size_t* len, bool swap)
+{
+    if (*len < arraylen) {
+        *data = NULL;
+        return;
+    }
+
+    memcpy(*p, *data, arraylen);
+    *data += arraylen;
+    *len -= arraylen;
+}
+
+uint8_t* bytearray_write(bytearray* p, uint32_t arraylen, uint8_t* data, bool swap)
+{
+    memcpy(data, *p, arraylen);
+    return data + arraylen;
+}
+
+uintptr_t align_to_4(uintptr_t ptr, uintptr_t len, size_t* remain)
+{
+    uintptr_t diff = 4 - (len % 4);
+    if (!remain && *remain < diff) {
+        return 0;
+    }
+    return ptr + diff;
+}
+
+uintptr_t align_to_2(uintptr_t ptr, uintptr_t len, size_t* remain)
+{
+    uintptr_t diff = 2 - (len % 2);
+    if (!remain && *remain < diff) {
+        return 0;
+    }
+    if (remain) {
+        *remain -= diff;
+    }
+    return ptr + diff;
+}
+

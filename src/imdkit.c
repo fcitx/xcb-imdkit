@@ -11,6 +11,8 @@
 #include "parser.h"
 #include "ximproto.h"
 
+#define XIM_MESSAGE_BYTES(hdr) ((hdr)->length * 4)
+
 #define XIM_DEBUG
 #ifdef XIM_DEBUG
 #define DebugLog(S...) fprintf(stderr, S)
@@ -776,19 +778,22 @@ static uint8_t* _xcb_im_read_message(xcb_im_t* im,
             client->byte_order = ev->data.data8[XCB_IM_HEADER_SIZE];
         }
         /* ClientMessage only */
-        uint8_t* rec = parse_binary_with_format(ev->data.data8, client->byte_order != im->byte_order,
-                                                packet_header_fr,
-                                                &hdr->major_opcode,
-                                                &hdr->minor_opcode,
-                                                &hdr->length);
+        uint8_t* rec = ev->data.data8;
+        size_t len  = sizeof(ev->data.data8);
+        uint8_t_read(&hdr->major_opcode, &rec, &len, client->byte_order != im->byte_order);
+        uint8_t_read(&hdr->minor_opcode, &rec, &len, client->byte_order != im->byte_order);
+        uint16_t_read(&hdr->length, &rec, &len, client->byte_order != im->byte_order);
 
-        p = malloc(hdr->length * 4);
+        // check message is well formed
+        if (len >= hdr->length * 4) {
+            p = malloc(hdr->length * 4);
+        }
         if (p) {
             memcpy(p, rec, hdr->length * 4);
         }
     } else if (ev->format == 32) {
         /* ClientMessage and WindowProperty */
-        uint32_t length = ev->data.data32[0];
+        size_t length = ev->data.data32[0];
         xcb_atom_t atom = ev->data.data32[1];
 
         xcb_get_property_cookie_t cookie = xcb_get_property(im->conn,
@@ -800,31 +805,38 @@ static uint8_t* _xcb_im_read_message(xcb_im_t* im,
                                                            length);
 
         xcb_get_property_reply_t* reply = xcb_get_property_reply(im->conn, cookie, NULL);
+        uint8_t* rec;
 
         do {
             if (!reply || reply->format == 0 || reply->length == 0) {
                 free(reply);
                 return (unsigned char *) NULL;
             }
+
+            rec = xcb_get_property_value(reply);
+
             if (length != reply->length)
                 length = reply->length;
+
+            // make length into byte
             if (reply->format == 16)
                 length *= 2;
             else if (reply->format == 32)
                 length *= 4;
 
-            /* if hit, it might be an error */
-            p = malloc(length);
+            uint8_t_read(&hdr->major_opcode, &rec, &length, client->byte_order != im->byte_order);
+            uint8_t_read(&hdr->minor_opcode, &rec, &length, client->byte_order != im->byte_order);
+            uint16_t_read(&hdr->length, &rec, &length, client->byte_order != im->byte_order);
+
+            // check message is well formed
+            if (hdr->length * 4 <= length) {
+                /* if hit, it might be an error */
+                p = malloc(hdr->length * 4);
+            }
         } while(0);
 
         if (p) {
-            uint8_t* rec = xcb_get_property_value(reply);
-            rec = parse_binary_with_format(rec, client->byte_order != im->byte_order,
-                                           packet_header_fr,
-                                           &hdr->major_opcode,
-                                           &hdr->minor_opcode,
-                                           &hdr->length);
-            memcpy(p, rec, length);
+            memcpy(p, rec, hdr->length * 4);
         }
         free(reply);
     }
@@ -839,8 +851,9 @@ void _xcb_im_write_message_header(xcb_im_t* im,
                                   size_t length)
 {
     uint16_t p_len = length / 4;
-    write_binary_with_format(message, im->byte_order != client->byte_order, packet_header_fr,
-                             &major_opcode, &minor_opcode, &p_len);
+    message = uint8_t_write(&major_opcode, message, client->byte_order != im->byte_order);
+    message = uint8_t_write(&minor_opcode, message, client->byte_order != im->byte_order);
+    message = uint16_t_write(&p_len, message, client->byte_order != im->byte_order);
 }
 
 uint8_t* _xcb_im_new_message(xcb_im_t* im,
@@ -857,6 +870,7 @@ uint8_t* _xcb_im_new_message(xcb_im_t* im,
     return message;
 }
 
+// length is the body without header size in byte
 bool _xcb_im_send_message(xcb_im_t* im,
                           xcb_im_client_t* client,
                           uint8_t* data, size_t length)
@@ -865,6 +879,7 @@ bool _xcb_im_send_message(xcb_im_t* im,
         return false;
     }
 
+    // add header size
     length += XCB_IM_HEADER_SIZE;
 
     xcb_client_message_event_t event;
@@ -930,34 +945,74 @@ void _xcb_im_send_error_message(xcb_im_t* im,
     // use stack to avoid alloc fails
     uint8_t message[XCB_IM_HEADER_SIZE];
     _xcb_im_write_message_header(im, client, message, XIM_ERROR, 0, 0);
-    _xcb_im_send_message(im, client, message, XCB_IM_HEADER_SIZE);
+    _xcb_im_send_message(im, client, message, 0);
 }
 
 void _xcb_im_handle_connect(xcb_im_t* im,
                             xcb_im_client_t* client,
                             const xcb_im_proto_header_t* hdr,
-                            uint8_t* data,
-                            bool *del)
+                            uint8_t* data)
 {
-    uint8_t byte_order;
-    uint16_t major_version;
-    uint16_t minor_version;
-    parse_binary_with_format(data, client->byte_order != im->byte_order,
-                             connect_fr, &byte_order, &major_version, &minor_version);
-    uint16_t server_major_version, server_minor_version;
 
-    server_major_version = major_version;
-    server_minor_version = minor_version;
+    size_t len = XIM_MESSAGE_BYTES(hdr);
+    connect_fr frame;
+    connect_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
+
+    connect_reply_fr reply_frame;
+    reply_frame.server_major_protocol_version = frame.client_major_protocol_version;
+    reply_frame.server_minor_protocol_version = frame.client_minor_protocol_version;
 
     bool fail = true;
-    size_t length = format_size(connect_reply_fr);
+    size_t length = connect_reply_fr_size(&reply_frame);
     uint8_t* reply = _xcb_im_new_message(im, client, XIM_CONNECT_REPLY, 0, length);
     do {
         if (!reply) {
             break;
         }
-        write_binary_with_format(reply + XCB_IM_HEADER_SIZE, client->byte_order != im->byte_order, connect_reply_fr,
-                                 &server_major_version, &server_minor_version);
+        connect_reply_fr_write(&reply_frame, reply + XCB_IM_HEADER_SIZE, client->byte_order != im->byte_order);
+        if (!_xcb_im_send_message(im, client, reply, length)) {
+            break;
+        }
+
+        fail = false;
+    } while(0);
+    free(reply);
+
+    if (fail) {
+        _xcb_im_send_error_message(im, client);
+    }
+    return;
+}
+
+void _xcb_im_handle_open(xcb_im_t* im,
+                         xcb_im_client_t* client,
+                         const xcb_im_proto_header_t* hdr,
+                         uint8_t* data,
+                         bool *del)
+{
+
+}
+
+void _xcb_im_handle_close(xcb_im_t* im,
+                          xcb_im_client_t* client,
+                          const xcb_im_proto_header_t* hdr,
+                          uint8_t* data,
+                          bool *del)
+{
+    size_t len = XIM_MESSAGE_BYTES(hdr);
+    close_fr frame;
+    close_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
+
+    close_reply_fr reply_frame;
+    reply_frame.input_method_ID = frame.input_method_ID;
+    bool fail = true;
+    size_t length = close_reply_fr_size(&reply_frame);
+    uint8_t* reply = _xcb_im_new_message(im, client, XIM_CLOSE_REPLY, 0, length);
+    do {
+        if (!reply) {
+            break;
+        }
+        close_reply_fr_write(&reply_frame, reply + XCB_IM_HEADER_SIZE, client->byte_order != im->byte_order);
         if (!_xcb_im_send_message(im, client, reply, length)) {
             break;
         }
@@ -981,7 +1036,7 @@ void _xcb_im_handle_message(xcb_im_t* im,
     switch (hdr->major_opcode) {
     case XIM_CONNECT:
         DebugLog("-- XIM_CONNECT\n");
-        _xcb_im_handle_connect(im, client, hdr, data, del);
+        _xcb_im_handle_connect(im, client, hdr, data);
         break;
 
     case XIM_DISCONNECT:
@@ -990,10 +1045,12 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_OPEN:
         DebugLog("-- XIM_OPEN\n");
+        _xcb_im_handle_open(im, client, hdr, data, del);
         break;
 
     case XIM_CLOSE:
         DebugLog("-- XIM_CLOSE\n");
+        _xcb_im_handle_close(im, client, hdr, data, del);
         break;
 
     case XIM_QUERY_EXTENSION:
