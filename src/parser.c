@@ -91,7 +91,10 @@ void bytearray_read(bytearray* p, uint32_t arraylen, uint8_t** data, size_t* len
         return;
     }
 
+    // we force null termination for easier life
+    *p = malloc((arraylen + 1) * sizeof(uint8_t));
     memcpy(*p, *data, arraylen);
+    (*p)[arraylen] = 0;
     *data += arraylen;
     *len -= arraylen;
 }
@@ -104,21 +107,26 @@ uint8_t* bytearray_write(bytearray* p, uint32_t arraylen, uint8_t* data, bool sw
 
 uintptr_t align_to_4(uintptr_t ptr, uintptr_t len, size_t* remain)
 {
-    uintptr_t diff = 4 - (len % 4);
-    if (!remain && *remain < diff) {
-        return 0;
+    uintptr_t diff = (len % 4) ?  4 - (len % 4) : 0;
+    if (remain) {
+        if (*remain < diff) {
+            return 0;
+        } else {
+            *remain -= diff;
+        }
     }
     return ptr + diff;
 }
 
 uintptr_t align_to_2(uintptr_t ptr, uintptr_t len, size_t* remain)
 {
-    uintptr_t diff = 2 - (len % 2);
-    if (!remain && *remain < diff) {
-        return 0;
-    }
+    uintptr_t diff = (len % 2) ?  2 - (len % 2) : 0;
     if (remain) {
-        *remain -= diff;
+        if (*remain < diff) {
+            return 0;
+        } else {
+            *remain -= diff;
+        }
     }
     return ptr + diff;
 }

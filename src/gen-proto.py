@@ -113,31 +113,6 @@ if len(sys.argv) > 2:
         print("void {0}_free({0} *frame);".format(funcname))
         print("")
 else:
-    for funcname, attrs in funcs.items():
-        print("typedef struct _{0}".format(funcname))
-        print("{")
-        skip = False
-        for i, (attr, name) in enumerate(attrs):
-            if skip:
-                skip = False
-                continue
-            if "_FRAME(B" in attr or "_PTR" in attr:
-                print("    {1} {0};".format(name, gettypename(attr)))
-            elif "_PAD" in attr:
-                pass
-            elif "_BYTE_COUNTER" in attr:
-                pass
-            elif attr == "_FRAME(ITER)":
-                (iterattr, itername) = attrs[i + 1]
-                print("    struct {")
-                print("        uint32_t size;")
-                print("        {0}* items;".format(gettypename(iterattr)))
-                print("    }} {0};".format(name))
-                skip = True
-            
-        print("}} {0};".format(funcname))
-        print("")
-
     print("#include \"ximproto.h\"")
     print("")
 
@@ -156,7 +131,9 @@ else:
                 print("    uint8_t counter8 = 0;")
             if usecounter16:
                 print("    uint16_t counter16 = 0;")
-            print("    uint32_t counter = 0;")
+            if usecounter32:
+                print("    uint32_t counter32 = 0;")
+            print("    size_t counter = 0;")
         skip = False
         for i, (attr, name) in enumerate(attrs):
             if skip:
@@ -178,17 +155,20 @@ else:
                 elif "BIT16" in attr:
                     countername = "counter16"
                 elif "BIT32" in attr:
-                    countername = "counter"
+                    countername = "counter32"
                 print("    {1}_read(&{0}, data, len, swap);".format(countername, gettypename(attr)))
                 print("    if (!data) { return; }")
                 if countername != "counter":
                     print("    counter = {0};".format(countername))
             elif attr == "_FRAME(ITER)":
                 (iterattr, itername) = attrs[i + 1]
-                print("    frame->{0}.items = counter ? calloc(counter, sizeof({1})) : NULL;".format(name, gettypename(iterattr)))
-                print("    frame->{0}.size = counter;".format(name))
-                print("    for (uint32_t i = 0; i < counter; i++) {")
-                print("        {1}_read(&frame->{0}.items[i], data, len, swap);".format(name, gettypename(iterattr)))
+                print("    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } ")
+                print("    frame->{0}.items = NULL;".format(name, gettypename(iterattr)))
+                print("    frame->{0}.size = 0;".format(name))
+                print("    while (counter != 0) {")
+                print("        frame->{0}.items = realloc(frame->{0}.items, (frame->{0}.size + 1) * sizeof({1}));".format(name, gettypename(iterattr)))
+                print("        {1}_read(&frame->{0}.items[frame->{0}.size], data, &counter, swap);".format(name, gettypename(iterattr)))
+                print("        frame->{0}.size++;".format(name))
                 print("        if (!data) { return; }")
                 print("    }")
                 skip = True
@@ -219,8 +199,11 @@ else:
             elif "_PAD" in attr:
                 print("    data = (uint8_t*) align_to_{0}((uintptr_t) data, data - start, NULL);".format(attr[4]))
             elif "_BYTE_COUNTER" in attr:
-                for iterattr, itername in attrs[i+1:]:
-                    if iterattr == "_FRAME(ITER)":
+                for j, (targetattr, targetname) in enumerate(attrs):
+                    if j < i + 1:
+                        continue
+                    if targetattr == "_FRAME(ITER)":
+                        (iterattr, itername) = attrs[j + 1]
                         break
                 if "BIT8" in attr:
                     countername = "counter8"
@@ -228,7 +211,13 @@ else:
                     countername = "counter16"
                 elif "BIT32" in attr:
                     countername = "counter"
-                print("    {0} = frame->{1}.size;".format(countername, itername));
+                if "_PTR" in iterattr:
+                    print("    {0} = 0;".format(countername));
+                    print("    for (uint32_t i = 0; i < frame->{0}.size; i++) {{".format(targetname))
+                    print("        {2} += {1}_size(&frame->{0}.items[i]);".format(targetname, gettypename(iterattr), countername))
+                    print("    }")
+                else:
+                    print("    {0} = frame->{1}.size * {2};".format(countername, targetname, getsize(iterattr, itername)))
                 print("    data = {1}_write(&{0}, data, swap);".format(countername, gettypename(attr)))
             elif attr == "_FRAME(ITER)":
                 (iterattr, itername) = attrs[i + 1]
@@ -260,7 +249,7 @@ else:
                 (iterattr, itername) = attrs[i + 1]
                 if "_PTR" in iterattr:
                     print("    for (uint32_t i = 0; i < frame->{0}.size; i++) {{".format(name))
-                    print("        {1}_size(&frame->{0}.items[i]);".format(name, gettypename(iterattr)))
+                    print("        size += {1}_size(&frame->{0}.items[i]);".format(name, gettypename(iterattr)))
                     print("    }")
 
                 else:

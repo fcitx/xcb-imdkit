@@ -525,16 +525,19 @@ void input_styles_fr_read(input_styles_fr *frame, uint8_t **data, size_t *len, b
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&counter16, data, len, swap);
     if (!data) { return; }
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!data) { return; }
-    frame->XIMStyle_list.items = counter ? calloc(counter, sizeof(inputstyle_fr)) : NULL;
-    frame->XIMStyle_list.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        inputstyle_fr_read(&frame->XIMStyle_list.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->XIMStyle_list.items = NULL;
+    frame->XIMStyle_list.size = 0;
+    while (counter != 0) {
+        frame->XIMStyle_list.items = realloc(frame->XIMStyle_list.items, (frame->XIMStyle_list.size + 1) * sizeof(inputstyle_fr));
+        inputstyle_fr_read(&frame->XIMStyle_list.items[frame->XIMStyle_list.size], data, &counter, swap);
+        frame->XIMStyle_list.size++;
         if (!data) { return; }
     }
 }
@@ -543,7 +546,10 @@ uint8_t* input_styles_fr_write(input_styles_fr *frame, uint8_t *data, bool swap)
 {
     uint8_t* start = data;
     uint16_t counter16 = 0;
-    counter16 = frame->XIMStyle_list.size;
+    counter16 = 0;
+    for (uint32_t i = 0; i < frame->XIMStyle_list.size; i++) {
+        counter16 += inputstyle_fr_size(&frame->XIMStyle_list.items[i]);
+    }
     data = uint16_t_write(&counter16, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     for (uint32_t i = 0; i < frame->XIMStyle_list.size; i++) {
@@ -558,7 +564,7 @@ size_t input_styles_fr_size(input_styles_fr *frame)
     size += 2;
     size = align_to_4(size, size, NULL);
     for (uint32_t i = 0; i < frame->XIMStyle_list.size; i++) {
-        inputstyle_fr_size(&frame->XIMStyle_list.items[i]);
+        size += inputstyle_fr_size(&frame->XIMStyle_list.items[i]);
     }
     return size;
 }
@@ -662,7 +668,7 @@ void connect_fr_read(connect_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint8_t_read(&frame->byte_order, data, len, swap);
     if (!data) { return; }
     *data = (uint8_t*) align_to_2((uintptr_t) *data, *data - start, len);
@@ -674,10 +680,13 @@ void connect_fr_read(connect_fr *frame, uint8_t **data, size_t *len, bool swap)
     uint16_t_read(&counter16, data, len, swap);
     if (!data) { return; }
     counter = counter16;
-    frame->client_auth_protocol_names.items = counter ? calloc(counter, sizeof(xpcs_fr)) : NULL;
-    frame->client_auth_protocol_names.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        xpcs_fr_read(&frame->client_auth_protocol_names.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->client_auth_protocol_names.items = NULL;
+    frame->client_auth_protocol_names.size = 0;
+    while (counter != 0) {
+        frame->client_auth_protocol_names.items = realloc(frame->client_auth_protocol_names.items, (frame->client_auth_protocol_names.size + 1) * sizeof(xpcs_fr));
+        xpcs_fr_read(&frame->client_auth_protocol_names.items[frame->client_auth_protocol_names.size], data, &counter, swap);
+        frame->client_auth_protocol_names.size++;
         if (!data) { return; }
     }
 }
@@ -690,7 +699,10 @@ uint8_t* connect_fr_write(connect_fr *frame, uint8_t *data, bool swap)
     data = (uint8_t*) align_to_2((uintptr_t) data, data - start, NULL);
     data = uint16_t_write(&frame->client_major_protocol_version, data, swap);
     data = uint16_t_write(&frame->client_minor_protocol_version, data, swap);
-    counter16 = frame->client_auth_protocol_names.size;
+    counter16 = 0;
+    for (uint32_t i = 0; i < frame->client_auth_protocol_names.size; i++) {
+        counter16 += xpcs_fr_size(&frame->client_auth_protocol_names.items[i]);
+    }
     data = uint16_t_write(&counter16, data, swap);
     for (uint32_t i = 0; i < frame->client_auth_protocol_names.size; i++) {
         data = xpcs_fr_write(&frame->client_auth_protocol_names.items[i], data, swap);
@@ -707,7 +719,7 @@ size_t connect_fr_size(connect_fr *frame)
     size += 2;
     size += 2;
     for (uint32_t i = 0; i < frame->client_auth_protocol_names.size; i++) {
-        xpcs_fr_size(&frame->client_auth_protocol_names.items[i]);
+        size += xpcs_fr_size(&frame->client_auth_protocol_names.items[i]);
     }
     return size;
 }
@@ -859,16 +871,19 @@ void auth_setup_fr_read(auth_setup_fr *frame, uint8_t **data, size_t *len, bool 
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&counter16, data, len, swap);
     if (!data) { return; }
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!data) { return; }
-    frame->server_auth_protocol_names.items = counter ? calloc(counter, sizeof(xpcs_fr)) : NULL;
-    frame->server_auth_protocol_names.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        xpcs_fr_read(&frame->server_auth_protocol_names.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->server_auth_protocol_names.items = NULL;
+    frame->server_auth_protocol_names.size = 0;
+    while (counter != 0) {
+        frame->server_auth_protocol_names.items = realloc(frame->server_auth_protocol_names.items, (frame->server_auth_protocol_names.size + 1) * sizeof(xpcs_fr));
+        xpcs_fr_read(&frame->server_auth_protocol_names.items[frame->server_auth_protocol_names.size], data, &counter, swap);
+        frame->server_auth_protocol_names.size++;
         if (!data) { return; }
     }
 }
@@ -877,7 +892,10 @@ uint8_t* auth_setup_fr_write(auth_setup_fr *frame, uint8_t *data, bool swap)
 {
     uint8_t* start = data;
     uint16_t counter16 = 0;
-    counter16 = frame->server_auth_protocol_names.size;
+    counter16 = 0;
+    for (uint32_t i = 0; i < frame->server_auth_protocol_names.size; i++) {
+        counter16 += xpcs_fr_size(&frame->server_auth_protocol_names.items[i]);
+    }
     data = uint16_t_write(&counter16, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     for (uint32_t i = 0; i < frame->server_auth_protocol_names.size; i++) {
@@ -892,7 +910,7 @@ size_t auth_setup_fr_size(auth_setup_fr *frame)
     size += 2;
     size = align_to_4(size, size, NULL);
     for (uint32_t i = 0; i < frame->server_auth_protocol_names.size; i++) {
-        xpcs_fr_size(&frame->server_auth_protocol_names.items[i]);
+        size += xpcs_fr_size(&frame->server_auth_protocol_names.items[i]);
     }
     return size;
 }
@@ -997,16 +1015,19 @@ void open_reply_fr_read(open_reply_fr *frame, uint8_t **data, size_t *len, bool 
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&counter16, data, len, swap);
     if (!data) { return; }
     counter = counter16;
-    frame->IM_attribute_supported.items = counter ? calloc(counter, sizeof(ximattr_fr)) : NULL;
-    frame->IM_attribute_supported.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        ximattr_fr_read(&frame->IM_attribute_supported.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->IM_attribute_supported.items = NULL;
+    frame->IM_attribute_supported.size = 0;
+    while (counter != 0) {
+        frame->IM_attribute_supported.items = realloc(frame->IM_attribute_supported.items, (frame->IM_attribute_supported.size + 1) * sizeof(ximattr_fr));
+        ximattr_fr_read(&frame->IM_attribute_supported.items[frame->IM_attribute_supported.size], data, &counter, swap);
+        frame->IM_attribute_supported.size++;
         if (!data) { return; }
     }
     uint16_t_read(&counter16, data, len, swap);
@@ -1014,10 +1035,13 @@ void open_reply_fr_read(open_reply_fr *frame, uint8_t **data, size_t *len, bool 
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!data) { return; }
-    frame->IC_attribute_supported.items = counter ? calloc(counter, sizeof(xicattr_fr)) : NULL;
-    frame->IC_attribute_supported.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        xicattr_fr_read(&frame->IC_attribute_supported.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->IC_attribute_supported.items = NULL;
+    frame->IC_attribute_supported.size = 0;
+    while (counter != 0) {
+        frame->IC_attribute_supported.items = realloc(frame->IC_attribute_supported.items, (frame->IC_attribute_supported.size + 1) * sizeof(xicattr_fr));
+        xicattr_fr_read(&frame->IC_attribute_supported.items[frame->IC_attribute_supported.size], data, &counter, swap);
+        frame->IC_attribute_supported.size++;
         if (!data) { return; }
     }
 }
@@ -1027,12 +1051,18 @@ uint8_t* open_reply_fr_write(open_reply_fr *frame, uint8_t *data, bool swap)
     uint8_t* start = data;
     uint16_t counter16 = 0;
     data = uint16_t_write(&frame->input_method_ID, data, swap);
-    counter16 = frame->IM_attribute_supported.size;
+    counter16 = 0;
+    for (uint32_t i = 0; i < frame->IM_attribute_supported.size; i++) {
+        counter16 += ximattr_fr_size(&frame->IM_attribute_supported.items[i]);
+    }
     data = uint16_t_write(&counter16, data, swap);
     for (uint32_t i = 0; i < frame->IM_attribute_supported.size; i++) {
         data = ximattr_fr_write(&frame->IM_attribute_supported.items[i], data, swap);
     }
-    counter16 = frame->IC_attribute_supported.size;
+    counter16 = 0;
+    for (uint32_t i = 0; i < frame->IC_attribute_supported.size; i++) {
+        counter16 += xicattr_fr_size(&frame->IC_attribute_supported.items[i]);
+    }
     data = uint16_t_write(&counter16, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     for (uint32_t i = 0; i < frame->IC_attribute_supported.size; i++) {
@@ -1047,12 +1077,12 @@ size_t open_reply_fr_size(open_reply_fr *frame)
     size += 2;
     size += 2;
     for (uint32_t i = 0; i < frame->IM_attribute_supported.size; i++) {
-        ximattr_fr_size(&frame->IM_attribute_supported.items[i]);
+        size += ximattr_fr_size(&frame->IM_attribute_supported.items[i]);
     }
     size += 2;
     size = align_to_4(size, size, NULL);
     for (uint32_t i = 0; i < frame->IC_attribute_supported.size; i++) {
-        xicattr_fr_size(&frame->IC_attribute_supported.items[i]);
+        size += xicattr_fr_size(&frame->IC_attribute_supported.items[i]);
     }
     return size;
 }
@@ -1134,25 +1164,34 @@ void close_reply_fr_free(close_reply_fr *frame)
 void register_triggerkeys_fr_read(register_triggerkeys_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
     uint8_t* start = *data;
-    uint32_t counter = 0;
+    uint32_t counter32 = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!data) { return; }
-    uint32_t_read(&counter, data, len, swap);
+    uint32_t_read(&counter32, data, len, swap);
     if (!data) { return; }
-    frame->on_keys_list.items = counter ? calloc(counter, sizeof(ximtriggerkey_fr)) : NULL;
-    frame->on_keys_list.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        ximtriggerkey_fr_read(&frame->on_keys_list.items[i], data, len, swap);
+    counter = counter32;
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->on_keys_list.items = NULL;
+    frame->on_keys_list.size = 0;
+    while (counter != 0) {
+        frame->on_keys_list.items = realloc(frame->on_keys_list.items, (frame->on_keys_list.size + 1) * sizeof(ximtriggerkey_fr));
+        ximtriggerkey_fr_read(&frame->on_keys_list.items[frame->on_keys_list.size], data, &counter, swap);
+        frame->on_keys_list.size++;
         if (!data) { return; }
     }
-    uint32_t_read(&counter, data, len, swap);
+    uint32_t_read(&counter32, data, len, swap);
     if (!data) { return; }
-    frame->off_keys_list.items = counter ? calloc(counter, sizeof(ximtriggerkey_fr)) : NULL;
-    frame->off_keys_list.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        ximtriggerkey_fr_read(&frame->off_keys_list.items[i], data, len, swap);
+    counter = counter32;
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->off_keys_list.items = NULL;
+    frame->off_keys_list.size = 0;
+    while (counter != 0) {
+        frame->off_keys_list.items = realloc(frame->off_keys_list.items, (frame->off_keys_list.size + 1) * sizeof(ximtriggerkey_fr));
+        ximtriggerkey_fr_read(&frame->off_keys_list.items[frame->off_keys_list.size], data, &counter, swap);
+        frame->off_keys_list.size++;
         if (!data) { return; }
     }
 }
@@ -1163,12 +1202,18 @@ uint8_t* register_triggerkeys_fr_write(register_triggerkeys_fr *frame, uint8_t *
     uint32_t counter = 0;
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
-    counter = frame->on_keys_list.size;
+    counter = 0;
+    for (uint32_t i = 0; i < frame->on_keys_list.size; i++) {
+        counter += ximtriggerkey_fr_size(&frame->on_keys_list.items[i]);
+    }
     data = uint32_t_write(&counter, data, swap);
     for (uint32_t i = 0; i < frame->on_keys_list.size; i++) {
         data = ximtriggerkey_fr_write(&frame->on_keys_list.items[i], data, swap);
     }
-    counter = frame->off_keys_list.size;
+    counter = 0;
+    for (uint32_t i = 0; i < frame->off_keys_list.size; i++) {
+        counter += ximtriggerkey_fr_size(&frame->off_keys_list.items[i]);
+    }
     data = uint32_t_write(&counter, data, swap);
     for (uint32_t i = 0; i < frame->off_keys_list.size; i++) {
         data = ximtriggerkey_fr_write(&frame->off_keys_list.items[i], data, swap);
@@ -1183,11 +1228,11 @@ size_t register_triggerkeys_fr_size(register_triggerkeys_fr *frame)
     size = align_to_4(size, size, NULL);
     size += 4;
     for (uint32_t i = 0; i < frame->on_keys_list.size; i++) {
-        ximtriggerkey_fr_size(&frame->on_keys_list.items[i]);
+        size += ximtriggerkey_fr_size(&frame->on_keys_list.items[i]);
     }
     size += 4;
     for (uint32_t i = 0; i < frame->off_keys_list.size; i++) {
-        ximtriggerkey_fr_size(&frame->off_keys_list.items[i]);
+        size += ximtriggerkey_fr_size(&frame->off_keys_list.items[i]);
     }
     return size;
 }
@@ -1313,16 +1358,19 @@ void encoding_negotiation_fr_read(encoding_negotiation_fr *frame, uint8_t **data
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&counter16, data, len, swap);
     if (!data) { return; }
     counter = counter16;
-    frame->supported_list_of_encoding_in_IM_library.items = counter ? calloc(counter, sizeof(str_fr)) : NULL;
-    frame->supported_list_of_encoding_in_IM_library.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        str_fr_read(&frame->supported_list_of_encoding_in_IM_library.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->supported_list_of_encoding_in_IM_library.items = NULL;
+    frame->supported_list_of_encoding_in_IM_library.size = 0;
+    while (counter != 0) {
+        frame->supported_list_of_encoding_in_IM_library.items = realloc(frame->supported_list_of_encoding_in_IM_library.items, (frame->supported_list_of_encoding_in_IM_library.size + 1) * sizeof(str_fr));
+        str_fr_read(&frame->supported_list_of_encoding_in_IM_library.items[frame->supported_list_of_encoding_in_IM_library.size], data, &counter, swap);
+        frame->supported_list_of_encoding_in_IM_library.size++;
         if (!data) { return; }
     }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
@@ -1332,10 +1380,13 @@ void encoding_negotiation_fr_read(encoding_negotiation_fr *frame, uint8_t **data
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!data) { return; }
-    frame->list_of_encodings_supported_in_th.items = counter ? calloc(counter, sizeof(encodinginfo_fr)) : NULL;
-    frame->list_of_encodings_supported_in_th.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        encodinginfo_fr_read(&frame->list_of_encodings_supported_in_th.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->list_of_encodings_supported_in_th.items = NULL;
+    frame->list_of_encodings_supported_in_th.size = 0;
+    while (counter != 0) {
+        frame->list_of_encodings_supported_in_th.items = realloc(frame->list_of_encodings_supported_in_th.items, (frame->list_of_encodings_supported_in_th.size + 1) * sizeof(encodinginfo_fr));
+        encodinginfo_fr_read(&frame->list_of_encodings_supported_in_th.items[frame->list_of_encodings_supported_in_th.size], data, &counter, swap);
+        frame->list_of_encodings_supported_in_th.size++;
         if (!data) { return; }
     }
 }
@@ -1345,13 +1396,19 @@ uint8_t* encoding_negotiation_fr_write(encoding_negotiation_fr *frame, uint8_t *
     uint8_t* start = data;
     uint16_t counter16 = 0;
     data = uint16_t_write(&frame->input_method_ID, data, swap);
-    counter16 = frame->supported_list_of_encoding_in_IM_library.size;
+    counter16 = 0;
+    for (uint32_t i = 0; i < frame->supported_list_of_encoding_in_IM_library.size; i++) {
+        counter16 += str_fr_size(&frame->supported_list_of_encoding_in_IM_library.items[i]);
+    }
     data = uint16_t_write(&counter16, data, swap);
     for (uint32_t i = 0; i < frame->supported_list_of_encoding_in_IM_library.size; i++) {
         data = str_fr_write(&frame->supported_list_of_encoding_in_IM_library.items[i], data, swap);
     }
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
-    counter16 = frame->list_of_encodings_supported_in_th.size;
+    counter16 = 0;
+    for (uint32_t i = 0; i < frame->list_of_encodings_supported_in_th.size; i++) {
+        counter16 += encodinginfo_fr_size(&frame->list_of_encodings_supported_in_th.items[i]);
+    }
     data = uint16_t_write(&counter16, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     for (uint32_t i = 0; i < frame->list_of_encodings_supported_in_th.size; i++) {
@@ -1366,13 +1423,13 @@ size_t encoding_negotiation_fr_size(encoding_negotiation_fr *frame)
     size += 2;
     size += 2;
     for (uint32_t i = 0; i < frame->supported_list_of_encoding_in_IM_library.size; i++) {
-        str_fr_size(&frame->supported_list_of_encoding_in_IM_library.items[i]);
+        size += str_fr_size(&frame->supported_list_of_encoding_in_IM_library.items[i]);
     }
     size = align_to_4(size, size, NULL);
     size += 2;
     size = align_to_4(size, size, NULL);
     for (uint32_t i = 0; i < frame->list_of_encodings_supported_in_th.size; i++) {
-        encodinginfo_fr_size(&frame->list_of_encodings_supported_in_th.items[i]);
+        size += encodinginfo_fr_size(&frame->list_of_encodings_supported_in_th.items[i]);
     }
     return size;
 }
@@ -1434,16 +1491,19 @@ void query_extension_fr_read(query_extension_fr *frame, uint8_t **data, size_t *
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&counter16, data, len, swap);
     if (!data) { return; }
     counter = counter16;
-    frame->extensions_supported_by_the_IM_library.items = counter ? calloc(counter, sizeof(str_fr)) : NULL;
-    frame->extensions_supported_by_the_IM_library.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        str_fr_read(&frame->extensions_supported_by_the_IM_library.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->extensions_supported_by_the_IM_library.items = NULL;
+    frame->extensions_supported_by_the_IM_library.size = 0;
+    while (counter != 0) {
+        frame->extensions_supported_by_the_IM_library.items = realloc(frame->extensions_supported_by_the_IM_library.items, (frame->extensions_supported_by_the_IM_library.size + 1) * sizeof(str_fr));
+        str_fr_read(&frame->extensions_supported_by_the_IM_library.items[frame->extensions_supported_by_the_IM_library.size], data, &counter, swap);
+        frame->extensions_supported_by_the_IM_library.size++;
         if (!data) { return; }
     }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
@@ -1455,7 +1515,10 @@ uint8_t* query_extension_fr_write(query_extension_fr *frame, uint8_t *data, bool
     uint8_t* start = data;
     uint16_t counter16 = 0;
     data = uint16_t_write(&frame->input_method_ID, data, swap);
-    counter16 = frame->extensions_supported_by_the_IM_library.size;
+    counter16 = 0;
+    for (uint32_t i = 0; i < frame->extensions_supported_by_the_IM_library.size; i++) {
+        counter16 += str_fr_size(&frame->extensions_supported_by_the_IM_library.items[i]);
+    }
     data = uint16_t_write(&counter16, data, swap);
     for (uint32_t i = 0; i < frame->extensions_supported_by_the_IM_library.size; i++) {
         data = str_fr_write(&frame->extensions_supported_by_the_IM_library.items[i], data, swap);
@@ -1470,7 +1533,7 @@ size_t query_extension_fr_size(query_extension_fr *frame)
     size += 2;
     size += 2;
     for (uint32_t i = 0; i < frame->extensions_supported_by_the_IM_library.size; i++) {
-        str_fr_size(&frame->extensions_supported_by_the_IM_library.items[i]);
+        size += str_fr_size(&frame->extensions_supported_by_the_IM_library.items[i]);
     }
     size = align_to_4(size, size, NULL);
     return size;
@@ -1489,16 +1552,19 @@ void query_extension_fr_free(query_extension_fr *frame)
 void query_extension_reply_fr_read(query_extension_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&counter16, data, len, swap);
     if (!data) { return; }
     counter = counter16;
-    frame->list_of_extensions_supported_by_th.items = counter ? calloc(counter, sizeof(ext_fr)) : NULL;
-    frame->list_of_extensions_supported_by_th.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        ext_fr_read(&frame->list_of_extensions_supported_by_th.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->list_of_extensions_supported_by_th.items = NULL;
+    frame->list_of_extensions_supported_by_th.size = 0;
+    while (counter != 0) {
+        frame->list_of_extensions_supported_by_th.items = realloc(frame->list_of_extensions_supported_by_th.items, (frame->list_of_extensions_supported_by_th.size + 1) * sizeof(ext_fr));
+        ext_fr_read(&frame->list_of_extensions_supported_by_th.items[frame->list_of_extensions_supported_by_th.size], data, &counter, swap);
+        frame->list_of_extensions_supported_by_th.size++;
         if (!data) { return; }
     }
 }
@@ -1507,7 +1573,10 @@ uint8_t* query_extension_reply_fr_write(query_extension_reply_fr *frame, uint8_t
 {
     uint16_t counter16 = 0;
     data = uint16_t_write(&frame->input_method_ID, data, swap);
-    counter16 = frame->list_of_extensions_supported_by_th.size;
+    counter16 = 0;
+    for (uint32_t i = 0; i < frame->list_of_extensions_supported_by_th.size; i++) {
+        counter16 += ext_fr_size(&frame->list_of_extensions_supported_by_th.items[i]);
+    }
     data = uint16_t_write(&counter16, data, swap);
     for (uint32_t i = 0; i < frame->list_of_extensions_supported_by_th.size; i++) {
         data = ext_fr_write(&frame->list_of_extensions_supported_by_th.items[i], data, swap);
@@ -1521,7 +1590,7 @@ size_t query_extension_reply_fr_size(query_extension_reply_fr *frame)
     size += 2;
     size += 2;
     for (uint32_t i = 0; i < frame->list_of_extensions_supported_by_th.size; i++) {
-        ext_fr_size(&frame->list_of_extensions_supported_by_th.items[i]);
+        size += ext_fr_size(&frame->list_of_extensions_supported_by_th.items[i]);
     }
     return size;
 }
@@ -1540,16 +1609,19 @@ void get_im_values_fr_read(get_im_values_fr *frame, uint8_t **data, size_t *len,
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&counter16, data, len, swap);
     if (!data) { return; }
     counter = counter16;
-    frame->im_attribute_id.items = counter ? calloc(counter, sizeof(uint16_t)) : NULL;
-    frame->im_attribute_id.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        uint16_t_read(&frame->im_attribute_id.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->im_attribute_id.items = NULL;
+    frame->im_attribute_id.size = 0;
+    while (counter != 0) {
+        frame->im_attribute_id.items = realloc(frame->im_attribute_id.items, (frame->im_attribute_id.size + 1) * sizeof(uint16_t));
+        uint16_t_read(&frame->im_attribute_id.items[frame->im_attribute_id.size], data, &counter, swap);
+        frame->im_attribute_id.size++;
         if (!data) { return; }
     }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
@@ -1561,7 +1633,7 @@ uint8_t* get_im_values_fr_write(get_im_values_fr *frame, uint8_t *data, bool swa
     uint8_t* start = data;
     uint16_t counter16 = 0;
     data = uint16_t_write(&frame->input_method_ID, data, swap);
-    counter16 = frame->im_attribute_id.size;
+    counter16 = frame->im_attribute_id.size * 2;
     data = uint16_t_write(&counter16, data, swap);
     for (uint32_t i = 0; i < frame->im_attribute_id.size; i++) {
         data = uint16_t_write(&frame->im_attribute_id.items[i], data, swap);
@@ -1587,16 +1659,19 @@ void get_im_values_fr_free(get_im_values_fr *frame)
 void get_im_values_reply_fr_read(get_im_values_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&counter16, data, len, swap);
     if (!data) { return; }
     counter = counter16;
-    frame->im_attribute_returned.items = counter ? calloc(counter, sizeof(ximattribute_fr)) : NULL;
-    frame->im_attribute_returned.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        ximattribute_fr_read(&frame->im_attribute_returned.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->im_attribute_returned.items = NULL;
+    frame->im_attribute_returned.size = 0;
+    while (counter != 0) {
+        frame->im_attribute_returned.items = realloc(frame->im_attribute_returned.items, (frame->im_attribute_returned.size + 1) * sizeof(ximattribute_fr));
+        ximattribute_fr_read(&frame->im_attribute_returned.items[frame->im_attribute_returned.size], data, &counter, swap);
+        frame->im_attribute_returned.size++;
         if (!data) { return; }
     }
 }
@@ -1605,7 +1680,10 @@ uint8_t* get_im_values_reply_fr_write(get_im_values_reply_fr *frame, uint8_t *da
 {
     uint16_t counter16 = 0;
     data = uint16_t_write(&frame->input_method_ID, data, swap);
-    counter16 = frame->im_attribute_returned.size;
+    counter16 = 0;
+    for (uint32_t i = 0; i < frame->im_attribute_returned.size; i++) {
+        counter16 += ximattribute_fr_size(&frame->im_attribute_returned.items[i]);
+    }
     data = uint16_t_write(&counter16, data, swap);
     for (uint32_t i = 0; i < frame->im_attribute_returned.size; i++) {
         data = ximattribute_fr_write(&frame->im_attribute_returned.items[i], data, swap);
@@ -1619,7 +1697,7 @@ size_t get_im_values_reply_fr_size(get_im_values_reply_fr *frame)
     size += 2;
     size += 2;
     for (uint32_t i = 0; i < frame->im_attribute_returned.size; i++) {
-        ximattribute_fr_size(&frame->im_attribute_returned.items[i]);
+        size += ximattribute_fr_size(&frame->im_attribute_returned.items[i]);
     }
     return size;
 }
@@ -1637,16 +1715,19 @@ void get_im_values_reply_fr_free(get_im_values_reply_fr *frame)
 void create_ic_fr_read(create_ic_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&counter16, data, len, swap);
     if (!data) { return; }
     counter = counter16;
-    frame->ic_attributes.items = counter ? calloc(counter, sizeof(xicattribute_fr)) : NULL;
-    frame->ic_attributes.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        xicattribute_fr_read(&frame->ic_attributes.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->ic_attributes.items = NULL;
+    frame->ic_attributes.size = 0;
+    while (counter != 0) {
+        frame->ic_attributes.items = realloc(frame->ic_attributes.items, (frame->ic_attributes.size + 1) * sizeof(xicattribute_fr));
+        xicattribute_fr_read(&frame->ic_attributes.items[frame->ic_attributes.size], data, &counter, swap);
+        frame->ic_attributes.size++;
         if (!data) { return; }
     }
 }
@@ -1655,7 +1736,10 @@ uint8_t* create_ic_fr_write(create_ic_fr *frame, uint8_t *data, bool swap)
 {
     uint16_t counter16 = 0;
     data = uint16_t_write(&frame->input_method_ID, data, swap);
-    counter16 = frame->ic_attributes.size;
+    counter16 = 0;
+    for (uint32_t i = 0; i < frame->ic_attributes.size; i++) {
+        counter16 += xicattribute_fr_size(&frame->ic_attributes.items[i]);
+    }
     data = uint16_t_write(&counter16, data, swap);
     for (uint32_t i = 0; i < frame->ic_attributes.size; i++) {
         data = xicattribute_fr_write(&frame->ic_attributes.items[i], data, swap);
@@ -1669,7 +1753,7 @@ size_t create_ic_fr_size(create_ic_fr *frame)
     size += 2;
     size += 2;
     for (uint32_t i = 0; i < frame->ic_attributes.size; i++) {
-        xicattribute_fr_size(&frame->ic_attributes.items[i]);
+        size += xicattribute_fr_size(&frame->ic_attributes.items[i]);
     }
     return size;
 }
@@ -1769,7 +1853,7 @@ void set_ic_values_fr_read(set_ic_values_fr *frame, uint8_t **data, size_t *len,
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
@@ -1779,10 +1863,13 @@ void set_ic_values_fr_read(set_ic_values_fr *frame, uint8_t **data, size_t *len,
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!data) { return; }
-    frame->ic_attribute.items = counter ? calloc(counter, sizeof(xicattribute_fr)) : NULL;
-    frame->ic_attribute.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        xicattribute_fr_read(&frame->ic_attribute.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->ic_attribute.items = NULL;
+    frame->ic_attribute.size = 0;
+    while (counter != 0) {
+        frame->ic_attribute.items = realloc(frame->ic_attribute.items, (frame->ic_attribute.size + 1) * sizeof(xicattribute_fr));
+        xicattribute_fr_read(&frame->ic_attribute.items[frame->ic_attribute.size], data, &counter, swap);
+        frame->ic_attribute.size++;
         if (!data) { return; }
     }
 }
@@ -1793,7 +1880,10 @@ uint8_t* set_ic_values_fr_write(set_ic_values_fr *frame, uint8_t *data, bool swa
     uint16_t counter16 = 0;
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->input_context_ID, data, swap);
-    counter16 = frame->ic_attribute.size;
+    counter16 = 0;
+    for (uint32_t i = 0; i < frame->ic_attribute.size; i++) {
+        counter16 += xicattribute_fr_size(&frame->ic_attribute.items[i]);
+    }
     data = uint16_t_write(&counter16, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     for (uint32_t i = 0; i < frame->ic_attribute.size; i++) {
@@ -1810,7 +1900,7 @@ size_t set_ic_values_fr_size(set_ic_values_fr *frame)
     size += 2;
     size = align_to_4(size, size, NULL);
     for (uint32_t i = 0; i < frame->ic_attribute.size; i++) {
-        xicattribute_fr_size(&frame->ic_attribute.items[i]);
+        size += xicattribute_fr_size(&frame->ic_attribute.items[i]);
     }
     return size;
 }
@@ -1856,7 +1946,7 @@ void get_ic_values_fr_read(get_ic_values_fr *frame, uint8_t **data, size_t *len,
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
@@ -1864,10 +1954,13 @@ void get_ic_values_fr_read(get_ic_values_fr *frame, uint8_t **data, size_t *len,
     uint16_t_read(&counter16, data, len, swap);
     if (!data) { return; }
     counter = counter16;
-    frame->ic_attribute.items = counter ? calloc(counter, sizeof(uint16_t)) : NULL;
-    frame->ic_attribute.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        uint16_t_read(&frame->ic_attribute.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->ic_attribute.items = NULL;
+    frame->ic_attribute.size = 0;
+    while (counter != 0) {
+        frame->ic_attribute.items = realloc(frame->ic_attribute.items, (frame->ic_attribute.size + 1) * sizeof(uint16_t));
+        uint16_t_read(&frame->ic_attribute.items[frame->ic_attribute.size], data, &counter, swap);
+        frame->ic_attribute.size++;
         if (!data) { return; }
     }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
@@ -1880,7 +1973,7 @@ uint8_t* get_ic_values_fr_write(get_ic_values_fr *frame, uint8_t *data, bool swa
     uint16_t counter16 = 0;
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->input_context_ID, data, swap);
-    counter16 = frame->ic_attribute.size;
+    counter16 = frame->ic_attribute.size * 2;
     data = uint16_t_write(&counter16, data, swap);
     for (uint32_t i = 0; i < frame->ic_attribute.size; i++) {
         data = uint16_t_write(&frame->ic_attribute.items[i], data, swap);
@@ -1908,7 +2001,7 @@ void get_ic_values_reply_fr_read(get_ic_values_reply_fr *frame, uint8_t **data, 
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
@@ -1918,10 +2011,13 @@ void get_ic_values_reply_fr_read(get_ic_values_reply_fr *frame, uint8_t **data, 
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!data) { return; }
-    frame->ic_attribute.items = counter ? calloc(counter, sizeof(xicattribute_fr)) : NULL;
-    frame->ic_attribute.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        xicattribute_fr_read(&frame->ic_attribute.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->ic_attribute.items = NULL;
+    frame->ic_attribute.size = 0;
+    while (counter != 0) {
+        frame->ic_attribute.items = realloc(frame->ic_attribute.items, (frame->ic_attribute.size + 1) * sizeof(xicattribute_fr));
+        xicattribute_fr_read(&frame->ic_attribute.items[frame->ic_attribute.size], data, &counter, swap);
+        frame->ic_attribute.size++;
         if (!data) { return; }
     }
 }
@@ -1932,7 +2028,10 @@ uint8_t* get_ic_values_reply_fr_write(get_ic_values_reply_fr *frame, uint8_t *da
     uint16_t counter16 = 0;
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->input_context_ID, data, swap);
-    counter16 = frame->ic_attribute.size;
+    counter16 = 0;
+    for (uint32_t i = 0; i < frame->ic_attribute.size; i++) {
+        counter16 += xicattribute_fr_size(&frame->ic_attribute.items[i]);
+    }
     data = uint16_t_write(&counter16, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     for (uint32_t i = 0; i < frame->ic_attribute.size; i++) {
@@ -1949,7 +2048,7 @@ size_t get_ic_values_reply_fr_size(get_ic_values_reply_fr *frame)
     size += 2;
     size = align_to_4(size, size, NULL);
     for (uint32_t i = 0; i < frame->ic_attribute.size; i++) {
-        xicattribute_fr_size(&frame->ic_attribute.items[i]);
+        size += xicattribute_fr_size(&frame->ic_attribute.items[i]);
     }
     return size;
 }
@@ -2111,7 +2210,7 @@ void commit_fr_read(commit_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
@@ -2127,10 +2226,13 @@ void commit_fr_read(commit_fr *frame, uint8_t **data, size_t *len, bool swap)
     uint16_t_read(&counter16, data, len, swap);
     if (!data) { return; }
     counter = counter16;
-    frame->keysym.items = counter ? calloc(counter, sizeof(uint32_t)) : NULL;
-    frame->keysym.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        uint32_t_read(&frame->keysym.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->keysym.items = NULL;
+    frame->keysym.size = 0;
+    while (counter != 0) {
+        frame->keysym.items = realloc(frame->keysym.items, (frame->keysym.size + 1) * sizeof(uint32_t));
+        uint32_t_read(&frame->keysym.items[frame->keysym.size], data, &counter, swap);
+        frame->keysym.size++;
         if (!data) { return; }
     }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
@@ -2147,7 +2249,7 @@ uint8_t* commit_fr_write(commit_fr *frame, uint8_t *data, bool swap)
     data = uint16_t_write(&frame->byte_length_of_committed_string, data, swap);
     data = bytearray_write(&frame->committed_string, frame->byte_length_of_committed_string, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
-    counter16 = frame->keysym.size;
+    counter16 = frame->keysym.size * 4;
     data = uint16_t_write(&counter16, data, swap);
     for (uint32_t i = 0; i < frame->keysym.size; i++) {
         data = uint32_t_write(&frame->keysym.items[i], data, swap);
@@ -2434,7 +2536,7 @@ void str_conversion_reply_fr_read(str_conversion_reply_fr *frame, uint8_t **data
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
@@ -2452,10 +2554,13 @@ void str_conversion_reply_fr_read(str_conversion_reply_fr *frame, uint8_t **data
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!data) { return; }
-    frame->feedback_array.items = counter ? calloc(counter, sizeof(uint32_t)) : NULL;
-    frame->feedback_array.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        uint32_t_read(&frame->feedback_array.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->feedback_array.items = NULL;
+    frame->feedback_array.size = 0;
+    while (counter != 0) {
+        frame->feedback_array.items = realloc(frame->feedback_array.items, (frame->feedback_array.size + 1) * sizeof(uint32_t));
+        uint32_t_read(&frame->feedback_array.items[frame->feedback_array.size], data, &counter, swap);
+        frame->feedback_array.size++;
         if (!data) { return; }
     }
 }
@@ -2470,7 +2575,7 @@ uint8_t* str_conversion_reply_fr_write(str_conversion_reply_fr *frame, uint8_t *
     data = uint16_t_write(&frame->length_of_the_retrieved_string, data, swap);
     data = bytearray_write(&frame->retrieved_string, frame->length_of_the_retrieved_string, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
-    counter16 = frame->feedback_array.size;
+    counter16 = frame->feedback_array.size * 4;
     data = uint16_t_write(&counter16, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     for (uint32_t i = 0; i < frame->feedback_array.size; i++) {
@@ -2561,7 +2666,7 @@ void preedit_draw_fr_read(preedit_draw_fr *frame, uint8_t **data, size_t *len, b
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
@@ -2585,10 +2690,13 @@ void preedit_draw_fr_read(preedit_draw_fr *frame, uint8_t **data, size_t *len, b
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!data) { return; }
-    frame->feedback_array.items = counter ? calloc(counter, sizeof(uint32_t)) : NULL;
-    frame->feedback_array.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        uint32_t_read(&frame->feedback_array.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->feedback_array.items = NULL;
+    frame->feedback_array.size = 0;
+    while (counter != 0) {
+        frame->feedback_array.items = realloc(frame->feedback_array.items, (frame->feedback_array.size + 1) * sizeof(uint32_t));
+        uint32_t_read(&frame->feedback_array.items[frame->feedback_array.size], data, &counter, swap);
+        frame->feedback_array.size++;
         if (!data) { return; }
     }
 }
@@ -2606,7 +2714,7 @@ uint8_t* preedit_draw_fr_write(preedit_draw_fr *frame, uint8_t *data, bool swap)
     data = uint16_t_write(&frame->length_of_preedit_string, data, swap);
     data = bytearray_write(&frame->preedit_string, frame->length_of_preedit_string, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
-    counter16 = frame->feedback_array.size;
+    counter16 = frame->feedback_array.size * 4;
     data = uint16_t_write(&counter16, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     for (uint32_t i = 0; i < frame->feedback_array.size; i++) {
@@ -2766,7 +2874,7 @@ void status_draw_text_fr_read(status_draw_text_fr *frame, uint8_t **data, size_t
 {
     uint8_t* start = *data;
     uint16_t counter16 = 0;
-    uint32_t counter = 0;
+    size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
@@ -2786,10 +2894,13 @@ void status_draw_text_fr_read(status_draw_text_fr *frame, uint8_t **data, size_t
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!data) { return; }
-    frame->feedback_array.items = counter ? calloc(counter, sizeof(uint32_t)) : NULL;
-    frame->feedback_array.size = counter;
-    for (uint32_t i = 0; i < counter; i++) {
-        uint32_t_read(&frame->feedback_array.items[i], data, len, swap);
+    if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
+    frame->feedback_array.items = NULL;
+    frame->feedback_array.size = 0;
+    while (counter != 0) {
+        frame->feedback_array.items = realloc(frame->feedback_array.items, (frame->feedback_array.size + 1) * sizeof(uint32_t));
+        uint32_t_read(&frame->feedback_array.items[frame->feedback_array.size], data, &counter, swap);
+        frame->feedback_array.size++;
         if (!data) { return; }
     }
 }
@@ -2805,7 +2916,7 @@ uint8_t* status_draw_text_fr_write(status_draw_text_fr *frame, uint8_t *data, bo
     data = uint16_t_write(&frame->length_of_status_string, data, swap);
     data = bytearray_write(&frame->status_string, frame->length_of_status_string, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
-    counter16 = frame->feedback_array.size;
+    counter16 = frame->feedback_array.size * 4;
     data = uint16_t_write(&counter16, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     for (uint32_t i = 0; i < frame->feedback_array.size; i++) {

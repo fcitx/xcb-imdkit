@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ximproto.h"
 
 #define XCB_IMDKIT_EXPORT __attribute__ ((visibility("default")))
 
@@ -41,11 +42,7 @@ typedef struct _xcb_im_styles_t
     uint32_t* styles;
 } xcb_im_styles_t;
 
-typedef struct _xcb_im_trigger_key_t{
-    uint32_t  keysym;
-    uint32_t  modifier;
-    uint32_t  modifier_mask;
-} xcb_im_trigger_key_t;
+typedef ximtriggerkey_fr xcb_im_trigger_key_t;
 
 typedef struct _xcb_im_trigger_keys_t{
     uint16_t nKeys;

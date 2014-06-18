@@ -247,6 +247,27 @@
 
 #define ARRAY_SIZE(X) (sizeof(X) / sizeof(X[0]))
 
+#define xim_send_frame(FRAME, frame_type, message_type) \
+    do { \
+        bool fail; \
+        size_t length = frame_type##_size(&FRAME); \
+        uint8_t* reply = _xcb_im_new_message(im, client, message_type, 0, length); \
+        do { \
+            if (!reply) { \
+                break; \
+            } \
+            frame_type##_write(&FRAME, reply + XCB_IM_HEADER_SIZE, client->byte_order != im->byte_order); \
+            if (!_xcb_im_send_message(im, client, reply, length)) { \
+                break; \
+            } \
+            fail = false; \
+        } while(0); \
+        free(reply); \
+        if (fail) { \
+            _xcb_im_send_error_message(im, client); \
+        } \
+    } while(0)
+
 typedef struct
 {
     xcb_window_t accept_win;
@@ -314,13 +335,6 @@ IMExtList Default_Extension[] = {
     {"XIM_EXT_FORWARD_KEYEVENT", XIM_EXTENSION, XIM_EXT_FORWARD_KEYEVENT},
 };
 
-typedef struct _xcb_im_attr_t {
-    uint16_t  attribute_id;
-    uint16_t  type;
-    uint16_t  length;
-    const char    *name;
-} xcb_im_attr_t;
-
 typedef struct _xcb_im_ext_t {
     uint16_t  major_opcode;
     uint16_t  minor_opcode;
@@ -342,13 +356,13 @@ struct _xcb_im_t
 {
     xcb_connection_t* conn;
     char byte_order;
-    xcb_im_attr_t imattr[ARRAY_SIZE(Default_IMattr)];
-    xcb_im_attr_t icattr[ARRAY_SIZE(Default_ICattr)];
-    xcb_im_ext_t  extension[ARRAY_SIZE(Default_Extension)];
+    ximattr_fr imattr[ARRAY_SIZE(Default_IMattr)];
+    xicattr_fr icattr[ARRAY_SIZE(Default_ICattr)];
+    ext_fr  extension[ARRAY_SIZE(Default_Extension)];
     uint16_t preeditAttr_id;
     uint16_t statusAttr_id;
     uint16_t separatorAttr_id;
-    xcb_im_attr_t* id2attr[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
+    ximattr_fr* id2attr[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
     uint32_t event_mask;
     xcb_im_trigger_keys_t onKeys;
     xcb_im_trigger_keys_t offKeys;
@@ -459,33 +473,33 @@ xcb_im_t* xcb_im_create(xcb_connection_t* conn,
 
     int id = 0;
     for (size_t i = 0; i < ARRAY_SIZE(Default_IMattr); i++) {
-        im->imattr[i].name = Default_IMattr[i].name;
-        im->imattr[i].length = strlen(Default_IMattr[i].name);
-        im->imattr[i].type = Default_IMattr[i].type;
-        im->imattr[i].attribute_id = id++;
+        im->imattr[i].im_attribute = (uint8_t*) Default_IMattr[i].name;
+        im->imattr[i].length_of_im_attribute = strlen(Default_IMattr[i].name);
+        im->imattr[i].type_of_the_value = Default_IMattr[i].type;
+        im->imattr[i].attribute_ID = id++;
         im->id2attr[id] = &im->imattr[i];
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(Default_ICattr); i++) {
-        im->icattr[i].name = Default_ICattr[i].name;
-        im->icattr[i].length = strlen(Default_ICattr[i].name);
-        im->icattr[i].type = Default_ICattr[i].type;
-        im->icattr[i].attribute_id = id++;
-        if (strcmp(im->imattr[i].name, XNPreeditAttributes) == 0) {
-            im->preeditAttr_id = im->icattr[i].attribute_id;
-        } else if (strcmp(im->imattr[i].name, XNStatusAttributes) == 0) {
-            im->statusAttr_id = im->icattr[i].attribute_id;
-        } else if (strcmp(im->imattr[i].name, XNSeparatorofNestedList) == 0) {
-            im->separatorAttr_id = im->icattr[i].attribute_id;
+        im->icattr[i].ic_attribute = (uint8_t*) Default_ICattr[i].name;
+        im->icattr[i].length_of_ic_attribute = strlen(Default_ICattr[i].name);
+        im->icattr[i].type_of_the_value = Default_ICattr[i].type;
+        im->icattr[i].attribute_ID = id++;
+        if (strcmp(Default_ICattr[i].name, XNPreeditAttributes) == 0) {
+            im->preeditAttr_id = im->icattr[i].attribute_ID;
+        } else if (strcmp(Default_ICattr[i].name, XNStatusAttributes) == 0) {
+            im->statusAttr_id = im->icattr[i].attribute_ID;
+        } else if (strcmp(Default_ICattr[i].name, XNSeparatorofNestedList) == 0) {
+            im->separatorAttr_id = im->icattr[i].attribute_ID;
         }
-        im->id2attr[id] = &im->icattr[i];
+        im->id2attr[id] = (ximattr_fr*) &im->icattr[i];
     }
 
     for (size_t i = 0;  i < ARRAY_SIZE(Default_Extension);  i++) {
-        im->extension[i].major_opcode = Default_Extension[i].major_opcode;
-        im->extension[i].minor_opcode = Default_Extension[i].minor_opcode;
-        im->extension[i].name = Default_Extension[i].name;
-        im->extension[i].length = strlen(Default_Extension[i].name);
+        im->extension[i].extension_major_opcode = Default_Extension[i].major_opcode;
+        im->extension[i].extension_minor_opcode = Default_Extension[i].minor_opcode;
+        im->extension[i].extension_name = (uint8_t*) Default_Extension[i].name;
+        im->extension[i].length_of_extension_name = strlen(Default_Extension[i].name);
     }
 
     return im;
@@ -554,12 +568,12 @@ bool _xcb_im_set_selection_owner(xcb_im_t* im)
         if (reply->type != XCB_ATOM_NONE && (reply->type != XCB_ATOM_ATOM || reply->format != 32)) {
             break;
         }
-        long* data = xcb_get_property_value(reply);
+        uint32_t* data = xcb_get_property_value(reply);
         if (!data) {
             break;
         }
-        int length = xcb_get_property_value_length(reply);
-        for (int i = 0; i < length; i++) {
+        uint32_t length = xcb_get_property_value_length(reply) / sizeof(uint32_t);
+        for (uint32_t i = 0; i < length ; i++) {
             if (data[i] == atoms[XIM_ATOM_SERVER_NAME]) {
                 found = true;
                 xcb_get_selection_owner_reply_t* owner_reply = xcb_get_selection_owner_reply(im->conn,
@@ -645,7 +659,7 @@ xcb_im_client_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_window)
         new_connect_id = client->connect_id;
     } else {
         client = calloc(1, sizeof(xcb_im_client_t));
-        new_connect_id = im->connect_id++;
+        new_connect_id = ++im->connect_id;
         client->connect_id = new_connect_id;
         HASH_ADD(hh1, im->clients_by_id, connect_id, sizeof(int), client);
     }
@@ -815,8 +829,8 @@ static uint8_t* _xcb_im_read_message(xcb_im_t* im,
 
             rec = xcb_get_property_value(reply);
 
-            if (length != reply->length)
-                length = reply->length;
+            if (length != reply->value_len)
+                length = reply->value_len;
 
             // make length into byte
             if (reply->format == 16)
@@ -862,7 +876,7 @@ uint8_t* _xcb_im_new_message(xcb_im_t* im,
                              uint8_t minor_opcode,
                              size_t length)
 {
-    uint8_t* message = malloc(length + XCB_IM_HEADER_SIZE);
+    uint8_t* message = calloc(length + XCB_IM_HEADER_SIZE, 1);
     if (message) {
         _xcb_im_write_message_header(im, client, message, major_opcode, minor_opcode, length);
     }
@@ -900,8 +914,8 @@ bool _xcb_im_send_message(xcb_im_t* im,
         if (!atom_reply) {
             return false;
         }
-        free(atom_reply);
         atom = atom_reply->atom;
+        free(atom_reply);
         xcb_get_property_cookie_t get_property_cookie = xcb_get_property(im->conn,
                                                                          false,
                                                                          client->client_win,
@@ -915,26 +929,33 @@ bool _xcb_im_send_message(xcb_im_t* im,
             return false;
         }
         free(get_property_reply);
-        xcb_change_property(im->conn,
-                            XCB_PROP_MODE_APPEND,
-                            client->client_win,
-                            atom,
-                            XCB_ATOM_STRING,
-                            8,
-                            length,
-                            data);
+        xcb_void_cookie_t cookie = xcb_change_property_checked(im->conn,
+                                            XCB_PROP_MODE_APPEND,
+                                            client->client_win,
+                                            atom,
+                                            XCB_ATOM_STRING,
+                                            8,
+                                            length,
+                                            data);
+        xcb_generic_error_t* error = NULL;
+        if ((error = xcb_request_check(im->conn, cookie)) != NULL) {
+            DebugLog("Error code: %d", error->error_code);
+            free(error);
+        }
         event.format = 32;
         event.data.data32[0] = length;
         event.data.data32[1] = atom;
+        for (size_t i = 2; i < ARRAY_SIZE(event.data.data32); i++)
+            event.data.data32[i] = 0;
     } else {
         event.format = 8;
 
         memcpy(event.data.data8, data, length);
         /* Clear unused field with NULL */
-        for (int i = length; i < XCM_DATA_LIMIT; i++)
+        for (size_t i = length; i < XCM_DATA_LIMIT; i++)
             event.data.data8[i] = 0;
     }
-    xcb_send_event(im->conn, 0, client->client_win, XCB_EVENT_MASK_NO_EVENT, (const char*) &event);
+    xcb_send_event(im->conn, false, client->client_win, XCB_EVENT_MASK_NO_EVENT, (const char*) &event);
     xcb_flush(im->conn);
     return true;
 }
@@ -953,35 +974,35 @@ void _xcb_im_handle_connect(xcb_im_t* im,
                             const xcb_im_proto_header_t* hdr,
                             uint8_t* data)
 {
-
     size_t len = XIM_MESSAGE_BYTES(hdr);
     connect_fr frame;
     connect_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
+    if (!data) {
+        return;
+    }
 
     connect_reply_fr reply_frame;
     reply_frame.server_major_protocol_version = frame.client_major_protocol_version;
     reply_frame.server_minor_protocol_version = frame.client_minor_protocol_version;
 
-    bool fail = true;
-    size_t length = connect_reply_fr_size(&reply_frame);
-    uint8_t* reply = _xcb_im_new_message(im, client, XIM_CONNECT_REPLY, 0, length);
-    do {
-        if (!reply) {
-            break;
-        }
-        connect_reply_fr_write(&reply_frame, reply + XCB_IM_HEADER_SIZE, client->byte_order != im->byte_order);
-        if (!_xcb_im_send_message(im, client, reply, length)) {
-            break;
-        }
-
-        fail = false;
-    } while(0);
-    free(reply);
-
-    if (fail) {
-        _xcb_im_send_error_message(im, client);
-    }
+    xim_send_frame(reply_frame, connect_reply_fr, XIM_CONNECT_REPLY);
     return;
+}
+
+void _xcb_im_send_trigger_key(xcb_im_t* im, xcb_im_client_t* client)
+{
+    register_triggerkeys_fr frame;
+    /* Right now XIM_OPEN_REPLY hasn't been sent to this new client, so
+       the input-method-id is still invalid, and should be set to zero...
+       Reter to $(XC)/lib/X11/imDefLkup.c:_XimRegisterTriggerKeysCallback
+     */
+    frame.input_method_ID = 0;
+    frame.on_keys_list.size = im->onKeys.nKeys;
+    frame.on_keys_list.items = im->onKeys.keys;
+    frame.off_keys_list.size = im->offKeys.nKeys;
+    frame.off_keys_list.items = im->offKeys.keys;
+
+    xim_send_frame(frame, register_triggerkeys_fr, XIM_REGISTER_TRIGGERKEYS);
 }
 
 void _xcb_im_handle_open(xcb_im_t* im,
@@ -990,7 +1011,29 @@ void _xcb_im_handle_open(xcb_im_t* im,
                          uint8_t* data,
                          bool *del)
 {
+    size_t len = XIM_MESSAGE_BYTES(hdr);
+    open_fr frame;
+    memset(&frame, 0, sizeof(open_fr));
+    open_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
+    if (!data) {
+        open_fr_free(&frame);
+        return;
+    }
 
+    open_fr_free(&frame);
+    /*endif*/
+    if (im->onKeys.nKeys || im->offKeys.nKeys) {
+        _xcb_im_send_trigger_key(im, client);
+    }
+
+    open_reply_fr reply_frame;
+    reply_frame.input_method_ID = client->connect_id;
+    reply_frame.IM_attribute_supported.size = ARRAY_SIZE(im->imattr);
+    reply_frame.IC_attribute_supported.size = ARRAY_SIZE(im->icattr);
+    reply_frame.IM_attribute_supported.items = im->imattr;
+    reply_frame.IC_attribute_supported.items = im->icattr;
+
+    xim_send_frame(reply_frame, open_reply_fr, XIM_OPEN_REPLY);
 }
 
 void _xcb_im_handle_close(xcb_im_t* im,
@@ -1002,6 +1045,9 @@ void _xcb_im_handle_close(xcb_im_t* im,
     size_t len = XIM_MESSAGE_BYTES(hdr);
     close_fr frame;
     close_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
+    if (!data) {
+        return;
+    }
 
     close_reply_fr reply_frame;
     reply_frame.input_method_ID = frame.input_method_ID;
@@ -1025,6 +1071,84 @@ void _xcb_im_handle_close(xcb_im_t* im,
         _xcb_im_send_error_message(im, client);
     }
     return;
+}
+
+void _xcb_im_handle_query_extension(xcb_im_t* im,
+                                    xcb_im_client_t* client,
+                                    const xcb_im_proto_header_t* hdr,
+                                    uint8_t* data,
+                                    bool *del)
+{
+    size_t len = XIM_MESSAGE_BYTES(hdr);
+    query_extension_fr frame;
+    query_extension_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
+    if (!data) {
+        return;
+    }
+
+    int nExts = 0;
+    ext_fr ext_list[ARRAY_SIZE(Default_Extension)];
+    for (size_t i = 0; i < frame.extensions_supported_by_the_IM_library.size; i++) {
+        for (size_t j = 0; j < ARRAY_SIZE(Default_Extension); j ++) {
+            if (frame.extensions_supported_by_the_IM_library.items[i].length_of_string
+                == im->extension[j].length_of_extension_name &&
+                strcmp((char*) frame.extensions_supported_by_the_IM_library.items[i].string,
+                       (char*) im->extension[j].extension_name) == 0) {
+                ext_list[nExts] = im->extension[j];
+                nExts ++;
+                break;
+            }
+        }
+    }
+
+    query_extension_fr_free(&frame);
+    query_extension_reply_fr reply_frame;
+    reply_frame.input_method_ID = client->connect_id;
+    reply_frame.list_of_extensions_supported_by_th.items = ext_list;
+    reply_frame.list_of_extensions_supported_by_th.size = nExts;
+
+    xim_send_frame(reply_frame, query_extension_reply_fr, XIM_QUERY_EXTENSION_REPLY);
+}
+
+void _xcb_im_handle_encoding_negotiation(xcb_im_t* im,
+                                         xcb_im_client_t* client,
+                                         const xcb_im_proto_header_t* hdr,
+                                         uint8_t* data,
+                                         bool *del)
+{
+    size_t len = XIM_MESSAGE_BYTES(hdr);
+    encoding_negotiation_fr frame;
+    memset(&frame, 0, sizeof(frame));
+    encoding_negotiation_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
+    if (!data) {
+        return;
+    }
+
+    size_t i, j;
+    for (i = 0; i < frame.supported_list_of_encoding_in_IM_library.size; i++) {
+        for (j = 0; j < im->encodings.nEncodings; j ++) {
+            if (strcmp((char*) frame.supported_list_of_encoding_in_IM_library.items[i].string,
+                       im->encodings.encodings[j]) == 0) {
+                break;
+            }
+        }
+        if (j != im->encodings.nEncodings) {
+            break;
+        }
+    }
+
+    // no match then we use 0.
+    if (i == frame.supported_list_of_encoding_in_IM_library.size) {
+        i = 0;
+    }
+
+    encoding_negotiation_fr_free(&frame);
+    encoding_negotiation_reply_fr reply_frame;
+    reply_frame.input_method_ID = client->connect_id;
+    reply_frame.index_of_the_encoding_dterminated = i;
+    reply_frame.category_of_the_encoding_determined = 0;
+
+    xim_send_frame(reply_frame, encoding_negotiation_reply_fr, XIM_ENCODING_NEGOTIATION_REPLY);
 }
 
 void _xcb_im_handle_message(xcb_im_t* im,
@@ -1055,6 +1179,7 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_QUERY_EXTENSION:
         DebugLog("-- XIM_QUERY_EXTENSION\n");
+        _xcb_im_handle_query_extension(im, client, hdr, data, del);
         break;
 
     case XIM_GET_IM_VALUES:
@@ -1111,6 +1236,7 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_ENCODING_NEGOTIATION:
         DebugLog("-- XIM_ENCODING_NEGOTIATION\n");
+        _xcb_im_handle_encoding_negotiation(im, client, hdr, data, del);
         break;
 
     case XIM_PREEDIT_START_REPLY:
@@ -1195,8 +1321,8 @@ void xcb_im_close_im(xcb_im_t* im)
         if (!data) {
             break;
         }
-        int length = xcb_get_property_value_length(reply);
-        int i;
+        uint32_t length = xcb_get_property_value_length(reply) / sizeof(uint32_t);
+        uint32_t i;
         for (i = 0; i < length; i++) {
             if (data[i] == atoms[XIM_ATOM_SERVER_NAME]) {
                 found = true;
