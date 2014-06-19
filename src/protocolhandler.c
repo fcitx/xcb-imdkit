@@ -256,6 +256,8 @@ void _xcb_im_handle_disconnect(xcb_im_t* im,
                                uint8_t* data,
                                bool *del)
 {
+    // disconnect doesn't come with message, so we skip parse.
+
     if (im->callback) {
         im->callback(im, &client->c, hdr, NULL, im->user_data);
     }

@@ -72,17 +72,17 @@ typedef bool (*xcb_im_callback)(xcb_im_t* im, xcb_im_client_t* client,
                                 void* frame, void* user_data);
 
 XCB_IMDKIT_EXPORT xcb_im_t* xcb_im_create(xcb_connection_t* conn,
-                        int screen,
-                        xcb_window_t serverWindow,
-                        const char* serverName,
-                        const char* locale,
-                        const xcb_im_styles_t* inputStyles,
-                        const xcb_im_trigger_keys_t* onKeysList,
-                        const xcb_im_trigger_keys_t* offKeysList,
-                        const xcb_im_encodings_t* encodingList,
-                        uint32_t event_mask,
-                        xcb_im_callback callback,
-                        void* user_data);
+                                          int screen,
+                                          xcb_window_t serverWindow,
+                                          const char* serverName,
+                                          const char* locale,
+                                          const xcb_im_styles_t* inputStyles,
+                                          const xcb_im_trigger_keys_t* onKeysList,
+                                          const xcb_im_trigger_keys_t* offKeysList,
+                                          const xcb_im_encodings_t* encodingList,
+                                          uint32_t event_mask,
+                                          xcb_im_callback callback,
+                                          void* user_data);
 XCB_IMDKIT_EXPORT bool xcb_im_open_im(xcb_im_t* im);
 XCB_IMDKIT_EXPORT bool xcb_im_filter_event(xcb_im_t* im, xcb_generic_event_t* event);
 XCB_IMDKIT_EXPORT void xcb_im_close_im(xcb_im_t* im);

@@ -533,8 +533,8 @@ void _xcb_im_handle_message(xcb_im_t* im,
         break;
 
     case XIM_GET_IM_VALUES:
-        _xcb_im_handle_get_im_values(im, client, hdr, data, del);
         DebugLog("-- XIM_GET_IM_VALUES\n");
+        _xcb_im_handle_get_im_values(im, client, hdr, data, del);
         break;
 
     case XIM_CREATE_IC:
