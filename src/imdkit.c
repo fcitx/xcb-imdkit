@@ -599,6 +599,7 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_PREEDIT_CARET_REPLY:
         DebugLog("-- XIM_PREEDIT_CARET_REPLY\n");
+        _xcb_im_handle_preedit_caret_reply(im, client, hdr, data, del);
         break;
 
     case XIM_STR_CONVERSION_REPLY:

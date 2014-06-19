@@ -338,3 +338,23 @@ _xcb_im_handle_unset_ic_focus(xcb_im_t* im, xcb_im_client_table_t* client,
     }
     unset_ic_focus_fr_free(&frame);
 }
+
+void
+_xcb_im_handle_preedit_caret_reply(xcb_im_t* im, xcb_im_client_table_t* client,
+                                   const xcb_im_proto_header_t* hdr,
+                                   uint8_t* data, bool *del)
+{
+    size_t len = XIM_MESSAGE_BYTES(hdr);
+    preedit_caret_reply_fr frame;
+    preedit_caret_reply_fr_read(&frame, &data, &len,
+                           client->c.byte_order != im->byte_order);
+    if (!data) {
+        preedit_caret_reply_fr_free(&frame);
+        return;
+    }
+
+    if (im->callback) {
+        im->callback(im, &client->c, hdr, &frame, im->user_data);
+    }
+    preedit_caret_reply_fr_free(&frame);
+}

@@ -63,4 +63,10 @@ void _xcb_im_handle_unset_ic_focus(xcb_im_t* im,
                                    uint8_t* data,
                                    bool *del);
 
+void _xcb_im_handle_preedit_caret_reply(xcb_im_t* im,
+                                        xcb_im_client_table_t* client,
+                                        const xcb_im_proto_header_t* hdr,
+                                        uint8_t* data,
+                                        bool *del);
+
 #endif // PROTOCOLHANDLER_H
