@@ -10,12 +10,14 @@ void _xcb_im_handle_connect(xcb_im_t* im,
     connect_fr frame;
     connect_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
     if (!data) {
+        connect_fr_free(&frame);
         return;
     }
 
     if (im->callback) {
         im->callback(im, &client->c, hdr, &frame, im->user_data);
     }
+    connect_fr_free(&frame);
 
     connect_reply_fr reply_frame;
     reply_frame.server_major_protocol_version = frame.client_major_protocol_version;
@@ -85,6 +87,7 @@ void _xcb_im_handle_close(xcb_im_t* im,
     close_fr frame;
     close_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
     if (!data) {
+        close_fr_free(&frame);
         return;
     }
 
@@ -92,6 +95,7 @@ void _xcb_im_handle_close(xcb_im_t* im,
         im->callback(im, &client->c, hdr, &frame, im->user_data);
     }
 
+    close_fr_free(&frame);
     close_reply_fr reply_frame;
     reply_frame.input_method_ID = frame.input_method_ID;
     bool fail = true;
@@ -126,6 +130,7 @@ void _xcb_im_handle_query_extension(xcb_im_t* im,
     query_extension_fr frame;
     query_extension_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
     if (!data) {
+        query_extension_fr_free(&frame);
         return;
     }
 
@@ -163,6 +168,7 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t* im,
     encoding_negotiation_fr frame;
     encoding_negotiation_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
     if (!data) {
+        encoding_negotiation_fr_free(&frame);
         return;
     }
 
@@ -203,6 +209,7 @@ void _xcb_im_handle_get_im_values(xcb_im_t* im,
     get_im_values_fr frame;
     get_im_values_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
     if (!data) {
+        get_im_values_fr_free(&frame);
         return;
     }
 
@@ -280,6 +287,7 @@ void _xcb_im_handle_create_ic(xcb_im_t* im,
     }
 
     // TODO
+    create_ic_fr_free(&frame);
 /*
 
     create_ic_reply_fr reply_frame;
