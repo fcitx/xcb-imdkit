@@ -552,10 +552,12 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_SET_IC_FOCUS:
         DebugLog("-- XIM_SET_IC_FOCUS\n");
+        _xcb_im_handle_set_ic_focus(im, client, hdr, data, del);
         break;
 
     case XIM_UNSET_IC_FOCUS:
         DebugLog("-- XIM_UNSET_IC_FOCUS\n");
+        _xcb_im_handle_unset_ic_focus(im, client, hdr, data, del);
         break;
 
     case XIM_DESTROY_IC:

@@ -298,3 +298,43 @@ void _xcb_im_handle_create_ic(xcb_im_t* im,
         _xcb_im_set_event_mask(im, client, icid, im->event_mask, ~im->event_mask);
     }*/
 }
+
+void
+_xcb_im_handle_set_ic_focus(xcb_im_t* im, xcb_im_client_table_t* client,
+                            const xcb_im_proto_header_t* hdr,
+                            uint8_t* data, bool *del)
+{
+    size_t len = XIM_MESSAGE_BYTES(hdr);
+    set_ic_focus_fr frame;
+    set_ic_focus_fr_read(&frame, &data, &len,
+                         client->c.byte_order != im->byte_order);
+    if (!data) {
+        set_ic_focus_fr_free(&frame);
+        return;
+    }
+
+    if (im->callback) {
+        im->callback(im, &client->c, hdr, &frame, im->user_data);
+    }
+    set_ic_focus_fr_free(&frame);
+}
+
+void
+_xcb_im_handle_unset_ic_focus(xcb_im_t* im, xcb_im_client_table_t* client,
+                              const xcb_im_proto_header_t* hdr,
+                              uint8_t* data, bool *del)
+{
+    size_t len = XIM_MESSAGE_BYTES(hdr);
+    unset_ic_focus_fr frame;
+    unset_ic_focus_fr_read(&frame, &data, &len,
+                           client->c.byte_order != im->byte_order);
+    if (!data) {
+        unset_ic_focus_fr_free(&frame);
+        return;
+    }
+
+    if (im->callback) {
+        im->callback(im, &client->c, hdr, &frame, im->user_data);
+    }
+    unset_ic_focus_fr_free(&frame);
+}
