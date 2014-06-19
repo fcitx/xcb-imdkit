@@ -476,8 +476,9 @@ xcb_im_t* xcb_im_create(xcb_connection_t* conn,
         im->imattr[i].im_attribute = (uint8_t*) Default_IMattr[i].name;
         im->imattr[i].length_of_im_attribute = strlen(Default_IMattr[i].name);
         im->imattr[i].type_of_the_value = Default_IMattr[i].type;
-        im->imattr[i].attribute_ID = id++;
+        im->imattr[i].attribute_ID = id;
         im->id2attr[id] = &im->imattr[i];
+        id++;
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(Default_ICattr); i++) {
@@ -1151,6 +1152,72 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t* im,
     xim_send_frame(reply_frame, encoding_negotiation_reply_fr, XIM_ENCODING_NEGOTIATION_REPLY);
 }
 
+void _xcb_im_handle_get_im_values(xcb_im_t* im,
+                                  xcb_im_client_t* client,
+                                  const xcb_im_proto_header_t* hdr,
+                                  uint8_t* data,
+                                  bool *del)
+{
+    size_t len = XIM_MESSAGE_BYTES(hdr);
+    get_im_values_fr frame;
+    memset(&frame, 0, sizeof(frame));
+    get_im_values_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
+    if (!data) {
+        return;
+    }
+
+    get_im_values_reply_fr reply_frame;
+    size_t nBuffers = 0;
+    ximattribute_fr buffers[ARRAY_SIZE(Default_IMattr)];
+    for (size_t i = 0; i < frame.im_attribute_id.size; i++) {
+        if (frame.im_attribute_id.items[i] >= ARRAY_SIZE(im->id2attr)) {
+            continue;
+        }
+        ximattr_fr* attr = im->id2attr[frame.im_attribute_id.items[i]];
+        if ((attr < im->imattr) || (attr >= im->imattr + ARRAY_SIZE(Default_IMattr))) {
+            continue;
+        }
+        // TODO, now we only have one
+
+        input_styles_fr fr;
+        fr.XIMStyle_list.size = im->inputStyles.nStyles;
+        fr.XIMStyle_list.items = calloc(im->inputStyles.nStyles, sizeof(inputstyle_fr));
+        for (size_t j = 0; j < im->inputStyles.nStyles; j ++) {
+            fr.XIMStyle_list.items[j].inputstyle = im->inputStyles.styles[j];
+        }
+
+        buffers[nBuffers].attribute_ID = frame.im_attribute_id.items[i];
+        buffers[nBuffers].value = malloc(input_styles_fr_size(&fr));
+        buffers[nBuffers].value_length = input_styles_fr_size(&fr);
+        input_styles_fr_write(&fr, buffers[nBuffers].value, client->byte_order != im->byte_order);
+        input_styles_fr_free(&fr);
+        nBuffers++;
+    }
+
+    reply_frame.input_method_ID = client->connect_id;
+    reply_frame.im_attribute_returned.items = buffers;
+    reply_frame.im_attribute_returned.size = nBuffers;
+
+    get_im_values_fr_free(&frame);
+    xim_send_frame(reply_frame, get_im_values_reply_fr, XIM_GET_IM_VALUES_REPLY);
+
+    for (size_t i = 0; i < nBuffers; i++) {
+        free(buffers[i].value);
+    }
+}
+
+void _xcb_im_handle_disconnect(xcb_im_t* im,
+                               xcb_im_client_t* client,
+                               const xcb_im_proto_header_t* hdr,
+                               uint8_t* data,
+                               bool *del)
+{
+    HASH_DELETE(hh2, im->clients_by_win, client);
+    HASH_DELETE(hh1, im->clients_by_id, client);
+    xcb_destroy_window(im->conn, client->accept_win);
+    im->free_list = client;
+}
+
 void _xcb_im_handle_message(xcb_im_t* im,
                             xcb_im_client_t* client,
                             const xcb_im_proto_header_t* hdr,
@@ -1165,6 +1232,7 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_DISCONNECT:
         DebugLog("-- XIM_DISCONNECT\n");
+        _xcb_im_handle_disconnect(im, client, hdr, data, del);
         break;
 
     case XIM_OPEN:
@@ -1183,6 +1251,7 @@ void _xcb_im_handle_message(xcb_im_t* im,
         break;
 
     case XIM_GET_IM_VALUES:
+        _xcb_im_handle_get_im_values(im, client, hdr, data, del);
         DebugLog("-- XIM_GET_IM_VALUES\n");
         break;
 

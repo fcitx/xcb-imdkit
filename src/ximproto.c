@@ -1654,6 +1654,7 @@ size_t get_im_values_fr_size(get_im_values_fr *frame)
 
 void get_im_values_fr_free(get_im_values_fr *frame)
 {
+    free(frame->im_attribute_id.items);
 }
 
 void get_im_values_reply_fr_read(get_im_values_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
@@ -1995,6 +1996,7 @@ size_t get_ic_values_fr_size(get_ic_values_fr *frame)
 
 void get_ic_values_fr_free(get_ic_values_fr *frame)
 {
+    free(frame->ic_attribute.items);
 }
 
 void get_ic_values_reply_fr_read(get_ic_values_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
@@ -2276,6 +2278,7 @@ size_t commit_fr_size(commit_fr *frame)
 void commit_fr_free(commit_fr *frame)
 {
     free(frame->committed_string);
+    free(frame->keysym.items);
 }
 
 void commit_chars_fr_read(commit_chars_fr *frame, uint8_t **data, size_t *len, bool swap)
@@ -2602,6 +2605,7 @@ size_t str_conversion_reply_fr_size(str_conversion_reply_fr *frame)
 void str_conversion_reply_fr_free(str_conversion_reply_fr *frame)
 {
     free(frame->retrieved_string);
+    free(frame->feedback_array.items);
 }
 
 void preedit_start_fr_read(preedit_start_fr *frame, uint8_t **data, size_t *len, bool swap)
@@ -2744,6 +2748,7 @@ size_t preedit_draw_fr_size(preedit_draw_fr *frame)
 void preedit_draw_fr_free(preedit_draw_fr *frame)
 {
     free(frame->preedit_string);
+    free(frame->feedback_array.items);
 }
 
 void preedit_caret_fr_read(preedit_caret_fr *frame, uint8_t **data, size_t *len, bool swap)
@@ -2944,6 +2949,7 @@ size_t status_draw_text_fr_size(status_draw_text_fr *frame)
 void status_draw_text_fr_free(status_draw_text_fr *frame)
 {
     free(frame->status_string);
+    free(frame->feedback_array.items);
 }
 
 void status_draw_bitmap_fr_read(status_draw_bitmap_fr *frame, uint8_t **data, size_t *len, bool swap)

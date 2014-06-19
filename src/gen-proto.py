@@ -279,7 +279,7 @@ else:
                     print("            {1}_free(&frame->{0}.items[i]);".format(name, gettypename(iterattr)))
                     print("        }")
                     print("    }")
-                    print("    free(frame->{0}.items);".format(name))
+                print("    free(frame->{0}.items);".format(name))
                 skip = True
 
 
