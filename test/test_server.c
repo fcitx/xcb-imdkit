@@ -51,7 +51,9 @@ int main(int argc, char* argv[])
                                  NULL,
                                  NULL,
                                  &encodings,
-                                 0
+                                 0,
+                                 NULL,
+                                 NULL
                                 );
     assert(xcb_im_open_im(im));
 

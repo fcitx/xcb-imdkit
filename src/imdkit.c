@@ -10,330 +10,8 @@
 #include "imdkit.h"
 #include "parser.h"
 #include "ximproto.h"
-
-#define XIM_MESSAGE_BYTES(hdr) ((hdr)->length * 4)
-
-#define XIM_DEBUG
-#ifdef XIM_DEBUG
-#define DebugLog(S...) fprintf(stderr, S)
-#else
-#define DebugLog(S...) ((void) (S))
-#endif
-
-#define LOCALES_BUFSIZE (sizeof(XCB_IM_ALL_LOCALES) + 32)
-
-#define XIM_SERVERS     "XIM_SERVERS"
-#define XIM_LOCALES     "LOCALES"
-#define XIM_TRANSPORT       "TRANSPORT"
-#define _XIM_PROTOCOL           "_XIM_PROTOCOL"
-#define _XIM_XCONNECT           "_XIM_XCONNECT"
-
-/*
- * categories in XIM_SERVERS
- */
-#define XIM_SERVER_CATEGORY "@server="
-#define XIM_LOCAL_CATEGORY  "@locale="
-#define XIM_TRANSPORT_CATEGORY  "@transport="
-
-/*
- * Xim implementation revision
- */
-#define PROTOCOLMAJORVERSION        0
-#define PROTOCOLMINORVERSION        0
-
-/*
- * Major Protocol number
- */
-#define XIM_CONNECT           1
-#define XIM_CONNECT_REPLY         2
-#define XIM_DISCONNECT            3
-#define XIM_DISCONNECT_REPLY          4
-
-#define XIM_AUTH_REQUIRED        10
-#define XIM_AUTH_REPLY           11
-#define XIM_AUTH_NEXT            12
-#define XIM_AUTH_SETUP           13
-#define XIM_AUTH_NG          14
-
-#define XIM_ERROR            20
-
-#define XIM_OPEN             30
-#define XIM_OPEN_REPLY           31
-#define XIM_CLOSE            32
-#define XIM_CLOSE_REPLY          33
-#define XIM_REGISTER_TRIGGERKEYS     34
-#define XIM_TRIGGER_NOTIFY       35
-#define XIM_TRIGGER_NOTIFY_REPLY     36
-#define XIM_SET_EVENT_MASK       37
-#define XIM_ENCODING_NEGOTIATION     38
-#define XIM_ENCODING_NEGOTIATION_REPLY   39
-#define XIM_QUERY_EXTENSION      40
-#define XIM_QUERY_EXTENSION_REPLY    41
-#define XIM_SET_IM_VALUES        42
-#define XIM_SET_IM_VALUES_REPLY      43
-#define XIM_GET_IM_VALUES        44
-#define XIM_GET_IM_VALUES_REPLY      45
-
-#define XIM_CREATE_IC            50
-#define XIM_CREATE_IC_REPLY      51
-#define XIM_DESTROY_IC           52
-#define XIM_DESTROY_IC_REPLY         53
-#define XIM_SET_IC_VALUES        54
-#define XIM_SET_IC_VALUES_REPLY      55
-#define XIM_GET_IC_VALUES        56
-#define XIM_GET_IC_VALUES_REPLY      57
-#define XIM_SET_IC_FOCUS         58
-#define XIM_UNSET_IC_FOCUS       59
-#define XIM_FORWARD_EVENT        60
-#define XIM_SYNC             61
-#define XIM_SYNC_REPLY           62
-#define XIM_COMMIT           63
-#define XIM_RESET_IC             64
-#define XIM_RESET_IC_REPLY       65
-
-#define XIM_GEOMETRY             70
-#define XIM_STR_CONVERSION       71
-#define XIM_STR_CONVERSION_REPLY     72
-#define XIM_PREEDIT_START        73
-#define XIM_PREEDIT_START_REPLY      74
-#define XIM_PREEDIT_DRAW         75
-#define XIM_PREEDIT_CARET        76
-#define XIM_PREEDIT_CARET_REPLY      77
-#define XIM_PREEDIT_DONE         78
-#define XIM_STATUS_START         79
-#define XIM_STATUS_DRAW          80
-#define XIM_STATUS_DONE          81
-
-/*
- * values for the flag of XIM_ERROR
- */
-#define XIM_IMID_VALID          0x0001
-#define XIM_ICID_VALID          0x0002
-
-/*
- * XIM Error Code
- */
-#define XIM_BadAlloc            1
-#define XIM_BadStyle            2
-#define XIM_BadClientWindow     3
-#define XIM_BadFocusWindow      4
-#define XIM_BadArea         5
-#define XIM_BadSpotLocation     6
-#define XIM_BadColormap         7
-#define XIM_BadAtom         8
-#define XIM_BadPixel            9
-#define XIM_BadPixmap           10
-#define XIM_BadName         11
-#define XIM_BadCursor           12
-#define XIM_BadProtocol         13
-#define XIM_BadForeground       14
-#define XIM_BadBackground       15
-#define XIM_LocaleNotSupported      16
-#define XIM_BadSomething        999
-
-/*
- * byte order
- */
-#define BIGENDIAN   (CARD8) 0x42    /* MSB first */
-#define LITTLEENDIAN    (CARD8) 0x6c    /* LSB first */
-
-/*
- * values for the type of XIMATTR & XICATTR
- */
-#define XimType_SeparatorOfNestedList   0
-#define XimType_CARD8           1
-#define XimType_CARD16          2
-#define XimType_CARD32          3
-#define XimType_STRING8         4
-#define XimType_Window          5
-#define XimType_XIMStyles       10
-#define XimType_XRectangle      11
-#define XimType_XPoint          12
-#define XimType_XFontSet        13
-#define XimType_XIMOptions      14
-#define XimType_XIMHotKeyTriggers   15
-#define XimType_XIMHotKeyState      16
-#define XimType_XIMStringConversion 17
-#define XimType_XIMValuesList       18
-#define XimType_NEST            0x7FFF
-
-/*
- * values for the category of XIM_ENCODING_NEGOTIATON_REPLY
- */
-#define XIM_Encoding_NameCategory   0
-#define XIM_Encoding_DetailCategory 1
-
-/*
- * value for the index of XIM_ENCODING_NEGOTIATON_REPLY
- */
-#define XIM_Default_Encoding_IDX    -1
-
-/*
- * value for the flag of XIM_FORWARD_EVENT, XIM_COMMIT
- */
-#define XimSYNCHRONUS         0x0001
-#define XimLookupChars        0x0002
-#define XimLookupKeySym       0x0004
-#define XimLookupBoth         0x0006
-
-
-/*
- * Client Message data size
- */
-#define XIM_CM_DATA_SIZE    20
-
-#define XCM_DATA_LIMIT      20
-
-#define XNVaNestedList "XNVaNestedList"
-#define XNQueryInputStyle "queryInputStyle"
-#define XNClientWindow "clientWindow"
-#define XNInputStyle "inputStyle"
-#define XNFocusWindow "focusWindow"
-#define XNResourceName "resourceName"
-#define XNResourceClass "resourceClass"
-#define XNGeometryCallback "geometryCallback"
-#define XNDestroyCallback "destroyCallback"
-#define XNFilterEvents "filterEvents"
-#define XNPreeditStartCallback "preeditStartCallback"
-#define XNPreeditDoneCallback "preeditDoneCallback"
-#define XNPreeditDrawCallback "preeditDrawCallback"
-#define XNPreeditCaretCallback "preeditCaretCallback"
-#define XNPreeditStateNotifyCallback "preeditStateNotifyCallback"
-#define XNPreeditAttributes "preeditAttributes"
-#define XNStatusStartCallback "statusStartCallback"
-#define XNStatusDoneCallback "statusDoneCallback"
-#define XNStatusDrawCallback "statusDrawCallback"
-#define XNStatusAttributes "statusAttributes"
-#define XNArea "area"
-#define XNAreaNeeded "areaNeeded"
-#define XNSpotLocation "spotLocation"
-#define XNColormap "colorMap"
-#define XNStdColormap "stdColorMap"
-#define XNForeground "foreground"
-#define XNBackground "background"
-#define XNBackgroundPixmap "backgroundPixmap"
-#define XNFontSet "fontSet"
-#define XNLineSpace "lineSpace"
-#define XNCursor "cursor"
-
-#define XNQueryIMValuesList "queryIMValuesList"
-#define XNQueryICValuesList "queryICValuesList"
-#define XNVisiblePosition "visiblePosition"
-#define XNR6PreeditCallback "r6PreeditCallback"
-#define XNStringConversionCallback "stringConversionCallback"
-#define XNStringConversion "stringConversion"
-#define XNResetState "resetState"
-#define XNHotKey "hotKey"
-#define XNHotKeyState "hotKeyState"
-#define XNPreeditState "preeditState"
-#define XNSeparatorofNestedList "separatorofNestedList"
-
-#define XimType_SeparatorOfNestedList   0
-#define XimType_CARD8           1
-#define XimType_CARD16          2
-#define XimType_CARD32          3
-#define XimType_STRING8         4
-#define XimType_Window          5
-#define XimType_XIMStyles       10
-#define XimType_XRectangle      11
-#define XimType_XPoint          12
-#define XimType_XFontSet        13
-#define XimType_XIMOptions      14
-#define XimType_XIMHotKeyTriggers   15
-#define XimType_XIMHotKeyState      16
-#define XimType_XIMStringConversion 17
-#define XimType_XIMValuesList       18
-#define XimType_NEST            0x7FFF
-
-#define ARRAY_SIZE(X) (sizeof(X) / sizeof(X[0]))
-
-#define xim_send_frame(FRAME, frame_type, message_type) \
-    do { \
-        bool fail; \
-        size_t length = frame_type##_size(&FRAME); \
-        uint8_t* reply = _xcb_im_new_message(im, client, message_type, 0, length); \
-        do { \
-            if (!reply) { \
-                break; \
-            } \
-            frame_type##_write(&FRAME, reply + XCB_IM_HEADER_SIZE, client->byte_order != im->byte_order); \
-            if (!_xcb_im_send_message(im, client, reply, length)) { \
-                break; \
-            } \
-            fail = false; \
-        } while(0); \
-        free(reply); \
-        if (fail) { \
-            _xcb_im_send_error_message(im, client); \
-        } \
-    } while(0)
-
-typedef struct
-{
-    xcb_window_t accept_win;
-    int connect_id;
-    xcb_window_t client_win;
-    UT_hash_handle hh1;
-    UT_hash_handle hh2;
-    uint8_t byte_order;
-} xcb_im_client_t;
-
-typedef struct _IMListOfAttr {
-    char *name;
-    uint16_t type;
-} IMListOfAttr;
-
-IMListOfAttr Default_IMattr[] = {
-    {XNQueryInputStyle,   XimType_XIMStyles},
-    /*    {XNQueryIMValuesList, XimType_XIMValuesList}, */
-};
-
-IMListOfAttr Default_ICattr[] = {
-    {XNInputStyle,              XimType_CARD32},
-    {XNClientWindow,            XimType_Window},
-    {XNFocusWindow,             XimType_Window},
-    {XNFilterEvents,            XimType_CARD32},
-    {XNPreeditAttributes,       XimType_NEST},
-    {XNStatusAttributes,        XimType_NEST},
-    {XNFontSet,                 XimType_XFontSet},
-    {XNArea,                    XimType_XRectangle},
-    {XNAreaNeeded,              XimType_XRectangle},
-    {XNColormap,                XimType_CARD32},
-    {XNStdColormap,             XimType_CARD32},
-    {XNForeground,              XimType_CARD32},
-    {XNBackground,              XimType_CARD32},
-    {XNBackgroundPixmap,        XimType_CARD32},
-    {XNSpotLocation,            XimType_XPoint},
-    {XNLineSpace,               XimType_CARD32},
-    {XNPreeditState,            XimType_CARD32},
-    {XNSeparatorofNestedList,   XimType_SeparatorOfNestedList},
-};
-
-typedef struct _xcb_im_proto_header_t {
-    uint8_t   major_opcode;
-    uint8_t   minor_opcode;
-    uint16_t  length;
-} xcb_im_proto_header_t;
-
-typedef struct {
-    char *name;
-    uint8_t major_opcode;
-    uint8_t minor_opcode;
-} IMExtList;
-
-/*
- * Minor Protocol Number for Extension Protocol
- */
-#define XIM_EXTENSION               128
-#define XIM_EXT_SET_EVENT_MASK          (0x30)
-#define XIM_EXT_FORWARD_KEYEVENT        (0x32)
-#define XIM_EXT_MOVE                (0x33)
-
-IMExtList Default_Extension[] = {
-    {"XIM_EXT_MOVE", XIM_EXTENSION, XIM_EXT_MOVE},
-    {"XIM_EXT_SET_EVENT_MASK", XIM_EXTENSION, XIM_EXT_SET_EVENT_MASK},
-    {"XIM_EXT_FORWARD_KEYEVENT", XIM_EXTENSION, XIM_EXT_FORWARD_KEYEVENT},
-};
+#include "protocolhandler.h"
+#include "message.h"
 
 typedef struct _xcb_im_ext_t {
     uint16_t  major_opcode;
@@ -341,47 +19,6 @@ typedef struct _xcb_im_ext_t {
     uint16_t  length;
     const char    *name;
 } xcb_im_ext_t;
-
-enum {
-    XIM_ATOM_SERVER_NAME,
-    XIM_ATOM_XIM_SERVERS,
-    XIM_ATOM_LOCALES,
-    XIM_ATOM_TRANSPORT,
-    XIM_ATOM_XIM_PROTOCOL,
-    XIM_ATOM_XIM_CONNECT,
-    XIM_ATOM_LAST
-};
-
-struct _xcb_im_t
-{
-    xcb_connection_t* conn;
-    char byte_order;
-    ximattr_fr imattr[ARRAY_SIZE(Default_IMattr)];
-    xicattr_fr icattr[ARRAY_SIZE(Default_ICattr)];
-    ext_fr  extension[ARRAY_SIZE(Default_Extension)];
-    uint16_t preeditAttr_id;
-    uint16_t statusAttr_id;
-    uint16_t separatorAttr_id;
-    ximattr_fr* id2attr[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
-    uint32_t event_mask;
-    xcb_im_trigger_keys_t onKeys;
-    xcb_im_trigger_keys_t offKeys;
-    xcb_im_styles_t inputStyles;
-    xcb_im_encodings_t encodings;
-    char* locale;
-    char* serverName;
-    xcb_window_t serverWindow;
-    int screen_id;
-    xcb_atom_t atoms[XIM_ATOM_LAST];
-    xcb_window_t root;
-    xcb_im_client_t* free_list;
-    xcb_im_client_t* clients_by_id;
-    xcb_im_client_t* clients_by_win;
-    int connect_id;
-    xcb_screen_t* screen;
-    uint32_t sequence;
-    bool init;
-};
 
 #define SIMPLE_ARRAY_FUNC(NAME, ARRAY_TYPE, ELEM_TYPE, NUM, PTR) \
 void _copy_##NAME(ARRAY_TYPE* to, const ARRAY_TYPE* from) \
@@ -444,11 +81,15 @@ xcb_im_t* xcb_im_create(xcb_connection_t* conn,
                         const xcb_im_trigger_keys_t* onKeysList,
                         const xcb_im_trigger_keys_t* offKeysList,
                         const xcb_im_encodings_t* encodingList,
-                        uint32_t event_mask)
+                        uint32_t event_mask,
+                        xcb_im_callback callback,
+                        void* user_data)
 {
     xcb_im_t* im = calloc(1, sizeof(xcb_im_t));
     im->conn = conn;
     im->screen_id = screen;
+    im->callback = callback;
+    im->user_data = user_data;
 
     if (event_mask) {
         im->event_mask = XCB_EVENT_MASK_KEY_PRESS;
@@ -631,6 +272,7 @@ bool _xcb_im_set_selection_owner(xcb_im_t* im)
             free(owner_reply);
             result = owner == im->serverWindow;
         }
+        xcb_flush(im->conn);
     } while(0);
     free(reply);
 
@@ -650,19 +292,19 @@ bool xcb_im_open_im(xcb_im_t* im)
     return true;
 }
 
-xcb_im_client_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_window)
+xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_window)
 {
-    xcb_im_client_t* client;
+    xcb_im_client_table_t* client;
     int new_connect_id;
     if (im->free_list) {
         client = im->free_list;
         im->free_list = im->free_list->hh1.next;
-        new_connect_id = client->connect_id;
+        new_connect_id = client->c.connect_id;
     } else {
-        client = calloc(1, sizeof(xcb_im_client_t));
+        client = calloc(1, sizeof(xcb_im_client_table_t));
         new_connect_id = ++im->connect_id;
-        client->connect_id = new_connect_id;
-        HASH_ADD(hh1, im->clients_by_id, connect_id, sizeof(int), client);
+        client->c.connect_id = new_connect_id;
+        HASH_ADD(hh1, im->clients_by_id, c.connect_id, sizeof(int), client);
     }
 
     xcb_window_t w = xcb_generate_id (im->conn);
@@ -672,10 +314,10 @@ xcb_im_client_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_window)
                        im->screen->root_visual,
                        0, NULL);
 
-    client->client_win = client_window;
-    client->accept_win = w;
-    client->byte_order = '?'; // initial value
-    HASH_ADD(hh2, im->clients_by_win, accept_win, sizeof(xcb_window_t), client);
+    client->c.client_win = client_window;
+    client->c.accept_win = w;
+    client->c.byte_order = '?'; // initial value
+    HASH_ADD(hh2, im->clients_by_win, c.accept_win, sizeof(xcb_window_t), client);
 
     return client;
 }
@@ -700,7 +342,7 @@ bool _xcb_im_filter_xconnect_message(xcb_im_t* im, xcb_generic_event_t* event)
         uint32_t major_version = clientmessage->data.data32[1];
         uint32_t minor_version = clientmessage->data.data32[2];
 
-        xcb_im_client_t *client = _xcb_im_new_client(im, client_window);
+        xcb_im_client_table_t *client = _xcb_im_new_client(im, client_window);
         if (major_version != 0  ||  minor_version != 0) {
             major_version = minor_version = 0;
             /* Only supporting only-CM & Property-with-CM method */
@@ -712,7 +354,7 @@ bool _xcb_im_filter_xconnect_message(xcb_im_t* im, xcb_generic_event_t* event)
         ev.type = im->atoms[XIM_ATOM_XIM_CONNECT];
         ev.sequence = 0;
         ev.format = 32;
-        ev.data.data32[0] = client->accept_win;
+        ev.data.data32[0] = client->c.accept_win;
         ev.data.data32[1] = major_version;
         ev.data.data32[2] = minor_version;
         ev.data.data32[3] = XCM_DATA_LIMIT;
@@ -779,25 +421,25 @@ bool _xcb_im_filter_selection_request(xcb_im_t* im, xcb_generic_event_t* event)
 
 static uint8_t* _xcb_im_read_message(xcb_im_t* im,
                                      xcb_client_message_event_t *ev,
-                                     xcb_im_client_t* client,
+                                     xcb_im_client_table_t* client,
                                      xcb_im_proto_header_t* hdr)
 {
     uint8_t *p = NULL;
 
     if (ev->format == 8) {
-        if (client->byte_order == '?') {
+        if (client->c.byte_order == '?') {
             // major_opcode
             if (ev->data.data8[0] != XIM_CONNECT) {
                 return (unsigned char *) NULL;  /* can do nothing */
             }
-            client->byte_order = ev->data.data8[XCB_IM_HEADER_SIZE];
+            client->c.byte_order = ev->data.data8[XCB_IM_HEADER_SIZE];
         }
         /* ClientMessage only */
         uint8_t* rec = ev->data.data8;
         size_t len  = sizeof(ev->data.data8);
-        uint8_t_read(&hdr->major_opcode, &rec, &len, client->byte_order != im->byte_order);
-        uint8_t_read(&hdr->minor_opcode, &rec, &len, client->byte_order != im->byte_order);
-        uint16_t_read(&hdr->length, &rec, &len, client->byte_order != im->byte_order);
+        uint8_t_read(&hdr->major_opcode, &rec, &len, client->c.byte_order != im->byte_order);
+        uint8_t_read(&hdr->minor_opcode, &rec, &len, client->c.byte_order != im->byte_order);
+        uint16_t_read(&hdr->length, &rec, &len, client->c.byte_order != im->byte_order);
 
         // check message is well formed
         if (len >= hdr->length * 4) {
@@ -813,7 +455,7 @@ static uint8_t* _xcb_im_read_message(xcb_im_t* im,
 
         xcb_get_property_cookie_t cookie = xcb_get_property(im->conn,
                                                            true,
-                                                           client->accept_win,
+                                                           client->c.accept_win,
                                                            atom,
                                                            XCB_ATOM_ANY,
                                                            0L,
@@ -839,9 +481,9 @@ static uint8_t* _xcb_im_read_message(xcb_im_t* im,
             else if (reply->format == 32)
                 length *= 4;
 
-            uint8_t_read(&hdr->major_opcode, &rec, &length, client->byte_order != im->byte_order);
-            uint8_t_read(&hdr->minor_opcode, &rec, &length, client->byte_order != im->byte_order);
-            uint16_t_read(&hdr->length, &rec, &length, client->byte_order != im->byte_order);
+            uint8_t_read(&hdr->major_opcode, &rec, &length, client->c.byte_order != im->byte_order);
+            uint8_t_read(&hdr->minor_opcode, &rec, &length, client->c.byte_order != im->byte_order);
+            uint16_t_read(&hdr->length, &rec, &length, client->c.byte_order != im->byte_order);
 
             // check message is well formed
             if (hdr->length * 4 <= length) {
@@ -858,368 +500,8 @@ static uint8_t* _xcb_im_read_message(xcb_im_t* im,
     return (unsigned char *) p;
 }
 
-void _xcb_im_write_message_header(xcb_im_t* im,
-                                  xcb_im_client_t* client,
-                                  uint8_t* message,
-                                  uint8_t major_opcode,
-                                  uint8_t minor_opcode,
-                                  size_t length)
-{
-    uint16_t p_len = length / 4;
-    message = uint8_t_write(&major_opcode, message, client->byte_order != im->byte_order);
-    message = uint8_t_write(&minor_opcode, message, client->byte_order != im->byte_order);
-    message = uint16_t_write(&p_len, message, client->byte_order != im->byte_order);
-}
-
-uint8_t* _xcb_im_new_message(xcb_im_t* im,
-                             xcb_im_client_t* client,
-                             uint8_t major_opcode,
-                             uint8_t minor_opcode,
-                             size_t length)
-{
-    uint8_t* message = calloc(length + XCB_IM_HEADER_SIZE, 1);
-    if (message) {
-        _xcb_im_write_message_header(im, client, message, major_opcode, minor_opcode, length);
-    }
-
-    return message;
-}
-
-// length is the body without header size in byte
-bool _xcb_im_send_message(xcb_im_t* im,
-                          xcb_im_client_t* client,
-                          uint8_t* data, size_t length)
-{
-    if (!data) {
-        return false;
-    }
-
-    // add header size
-    length += XCB_IM_HEADER_SIZE;
-
-    xcb_client_message_event_t event;
-
-    event.response_type = XCB_CLIENT_MESSAGE;
-    event.sequence = 0;
-    event.window = client->client_win;
-    event.type = im->atoms[XIM_ATOM_XIM_PROTOCOL];
-
-    if (length > XCM_DATA_LIMIT) {
-        xcb_atom_t atom;
-        char atomName[64];
-
-        int len = sprintf(atomName, "_server%u_%u", client->connect_id, im->sequence++);
-
-        xcb_intern_atom_cookie_t atom_cookie = xcb_intern_atom(im->conn, false, len, atomName);
-        xcb_intern_atom_reply_t* atom_reply = xcb_intern_atom_reply(im->conn, atom_cookie, NULL);
-        if (!atom_reply) {
-            return false;
-        }
-        atom = atom_reply->atom;
-        free(atom_reply);
-        xcb_get_property_cookie_t get_property_cookie = xcb_get_property(im->conn,
-                                                                         false,
-                                                                         client->client_win,
-                                                                         atom,
-                                                                         XCB_ATOM_STRING,
-                                                                         0L,
-                                                                         10000L);
-
-        xcb_get_property_reply_t* get_property_reply = xcb_get_property_reply(im->conn, get_property_cookie, NULL);
-        if (!get_property_reply) {
-            return false;
-        }
-        free(get_property_reply);
-        xcb_void_cookie_t cookie = xcb_change_property_checked(im->conn,
-                                            XCB_PROP_MODE_APPEND,
-                                            client->client_win,
-                                            atom,
-                                            XCB_ATOM_STRING,
-                                            8,
-                                            length,
-                                            data);
-        xcb_generic_error_t* error = NULL;
-        if ((error = xcb_request_check(im->conn, cookie)) != NULL) {
-            DebugLog("Error code: %d", error->error_code);
-            free(error);
-        }
-        event.format = 32;
-        event.data.data32[0] = length;
-        event.data.data32[1] = atom;
-        for (size_t i = 2; i < ARRAY_SIZE(event.data.data32); i++)
-            event.data.data32[i] = 0;
-    } else {
-        event.format = 8;
-
-        memcpy(event.data.data8, data, length);
-        /* Clear unused field with NULL */
-        for (size_t i = length; i < XCM_DATA_LIMIT; i++)
-            event.data.data8[i] = 0;
-    }
-    xcb_send_event(im->conn, false, client->client_win, XCB_EVENT_MASK_NO_EVENT, (const char*) &event);
-    xcb_flush(im->conn);
-    return true;
-}
-
-void _xcb_im_send_error_message(xcb_im_t* im,
-                                xcb_im_client_t* client)
-{
-    // use stack to avoid alloc fails
-    uint8_t message[XCB_IM_HEADER_SIZE];
-    _xcb_im_write_message_header(im, client, message, XIM_ERROR, 0, 0);
-    _xcb_im_send_message(im, client, message, 0);
-}
-
-void _xcb_im_handle_connect(xcb_im_t* im,
-                            xcb_im_client_t* client,
-                            const xcb_im_proto_header_t* hdr,
-                            uint8_t* data)
-{
-    size_t len = XIM_MESSAGE_BYTES(hdr);
-    connect_fr frame;
-    connect_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
-    if (!data) {
-        return;
-    }
-
-    connect_reply_fr reply_frame;
-    reply_frame.server_major_protocol_version = frame.client_major_protocol_version;
-    reply_frame.server_minor_protocol_version = frame.client_minor_protocol_version;
-
-    xim_send_frame(reply_frame, connect_reply_fr, XIM_CONNECT_REPLY);
-    return;
-}
-
-void _xcb_im_send_trigger_key(xcb_im_t* im, xcb_im_client_t* client)
-{
-    register_triggerkeys_fr frame;
-    /* Right now XIM_OPEN_REPLY hasn't been sent to this new client, so
-       the input-method-id is still invalid, and should be set to zero...
-       Reter to $(XC)/lib/X11/imDefLkup.c:_XimRegisterTriggerKeysCallback
-     */
-    frame.input_method_ID = 0;
-    frame.on_keys_list.size = im->onKeys.nKeys;
-    frame.on_keys_list.items = im->onKeys.keys;
-    frame.off_keys_list.size = im->offKeys.nKeys;
-    frame.off_keys_list.items = im->offKeys.keys;
-
-    xim_send_frame(frame, register_triggerkeys_fr, XIM_REGISTER_TRIGGERKEYS);
-}
-
-void _xcb_im_handle_open(xcb_im_t* im,
-                         xcb_im_client_t* client,
-                         const xcb_im_proto_header_t* hdr,
-                         uint8_t* data,
-                         bool *del)
-{
-    size_t len = XIM_MESSAGE_BYTES(hdr);
-    open_fr frame;
-    memset(&frame, 0, sizeof(open_fr));
-    open_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
-    if (!data) {
-        open_fr_free(&frame);
-        return;
-    }
-
-    open_fr_free(&frame);
-    /*endif*/
-    if (im->onKeys.nKeys || im->offKeys.nKeys) {
-        _xcb_im_send_trigger_key(im, client);
-    }
-
-    open_reply_fr reply_frame;
-    reply_frame.input_method_ID = client->connect_id;
-    reply_frame.IM_attribute_supported.size = ARRAY_SIZE(im->imattr);
-    reply_frame.IC_attribute_supported.size = ARRAY_SIZE(im->icattr);
-    reply_frame.IM_attribute_supported.items = im->imattr;
-    reply_frame.IC_attribute_supported.items = im->icattr;
-
-    xim_send_frame(reply_frame, open_reply_fr, XIM_OPEN_REPLY);
-}
-
-void _xcb_im_handle_close(xcb_im_t* im,
-                          xcb_im_client_t* client,
-                          const xcb_im_proto_header_t* hdr,
-                          uint8_t* data,
-                          bool *del)
-{
-    size_t len = XIM_MESSAGE_BYTES(hdr);
-    close_fr frame;
-    close_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
-    if (!data) {
-        return;
-    }
-
-    close_reply_fr reply_frame;
-    reply_frame.input_method_ID = frame.input_method_ID;
-    bool fail = true;
-    size_t length = close_reply_fr_size(&reply_frame);
-    uint8_t* reply = _xcb_im_new_message(im, client, XIM_CLOSE_REPLY, 0, length);
-    do {
-        if (!reply) {
-            break;
-        }
-        close_reply_fr_write(&reply_frame, reply + XCB_IM_HEADER_SIZE, client->byte_order != im->byte_order);
-        if (!_xcb_im_send_message(im, client, reply, length)) {
-            break;
-        }
-
-        fail = false;
-    } while(0);
-    free(reply);
-
-    if (fail) {
-        _xcb_im_send_error_message(im, client);
-    }
-    return;
-}
-
-void _xcb_im_handle_query_extension(xcb_im_t* im,
-                                    xcb_im_client_t* client,
-                                    const xcb_im_proto_header_t* hdr,
-                                    uint8_t* data,
-                                    bool *del)
-{
-    size_t len = XIM_MESSAGE_BYTES(hdr);
-    query_extension_fr frame;
-    query_extension_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
-    if (!data) {
-        return;
-    }
-
-    int nExts = 0;
-    ext_fr ext_list[ARRAY_SIZE(Default_Extension)];
-    for (size_t i = 0; i < frame.extensions_supported_by_the_IM_library.size; i++) {
-        for (size_t j = 0; j < ARRAY_SIZE(Default_Extension); j ++) {
-            if (frame.extensions_supported_by_the_IM_library.items[i].length_of_string
-                == im->extension[j].length_of_extension_name &&
-                strcmp((char*) frame.extensions_supported_by_the_IM_library.items[i].string,
-                       (char*) im->extension[j].extension_name) == 0) {
-                ext_list[nExts] = im->extension[j];
-                nExts ++;
-                break;
-            }
-        }
-    }
-
-    query_extension_fr_free(&frame);
-    query_extension_reply_fr reply_frame;
-    reply_frame.input_method_ID = client->connect_id;
-    reply_frame.list_of_extensions_supported_by_th.items = ext_list;
-    reply_frame.list_of_extensions_supported_by_th.size = nExts;
-
-    xim_send_frame(reply_frame, query_extension_reply_fr, XIM_QUERY_EXTENSION_REPLY);
-}
-
-void _xcb_im_handle_encoding_negotiation(xcb_im_t* im,
-                                         xcb_im_client_t* client,
-                                         const xcb_im_proto_header_t* hdr,
-                                         uint8_t* data,
-                                         bool *del)
-{
-    size_t len = XIM_MESSAGE_BYTES(hdr);
-    encoding_negotiation_fr frame;
-    memset(&frame, 0, sizeof(frame));
-    encoding_negotiation_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
-    if (!data) {
-        return;
-    }
-
-    size_t i, j;
-    for (i = 0; i < frame.supported_list_of_encoding_in_IM_library.size; i++) {
-        for (j = 0; j < im->encodings.nEncodings; j ++) {
-            if (strcmp((char*) frame.supported_list_of_encoding_in_IM_library.items[i].string,
-                       im->encodings.encodings[j]) == 0) {
-                break;
-            }
-        }
-        if (j != im->encodings.nEncodings) {
-            break;
-        }
-    }
-
-    // no match then we use 0.
-    if (i == frame.supported_list_of_encoding_in_IM_library.size) {
-        i = 0;
-    }
-
-    encoding_negotiation_fr_free(&frame);
-    encoding_negotiation_reply_fr reply_frame;
-    reply_frame.input_method_ID = client->connect_id;
-    reply_frame.index_of_the_encoding_dterminated = i;
-    reply_frame.category_of_the_encoding_determined = 0;
-
-    xim_send_frame(reply_frame, encoding_negotiation_reply_fr, XIM_ENCODING_NEGOTIATION_REPLY);
-}
-
-void _xcb_im_handle_get_im_values(xcb_im_t* im,
-                                  xcb_im_client_t* client,
-                                  const xcb_im_proto_header_t* hdr,
-                                  uint8_t* data,
-                                  bool *del)
-{
-    size_t len = XIM_MESSAGE_BYTES(hdr);
-    get_im_values_fr frame;
-    memset(&frame, 0, sizeof(frame));
-    get_im_values_fr_read(&frame, &data, &len, client->byte_order != im->byte_order);
-    if (!data) {
-        return;
-    }
-
-    get_im_values_reply_fr reply_frame;
-    size_t nBuffers = 0;
-    ximattribute_fr buffers[ARRAY_SIZE(Default_IMattr)];
-    for (size_t i = 0; i < frame.im_attribute_id.size; i++) {
-        if (frame.im_attribute_id.items[i] >= ARRAY_SIZE(im->id2attr)) {
-            continue;
-        }
-        ximattr_fr* attr = im->id2attr[frame.im_attribute_id.items[i]];
-        if ((attr < im->imattr) || (attr >= im->imattr + ARRAY_SIZE(Default_IMattr))) {
-            continue;
-        }
-        // TODO, now we only have one
-
-        input_styles_fr fr;
-        fr.XIMStyle_list.size = im->inputStyles.nStyles;
-        fr.XIMStyle_list.items = calloc(im->inputStyles.nStyles, sizeof(inputstyle_fr));
-        for (size_t j = 0; j < im->inputStyles.nStyles; j ++) {
-            fr.XIMStyle_list.items[j].inputstyle = im->inputStyles.styles[j];
-        }
-
-        buffers[nBuffers].attribute_ID = frame.im_attribute_id.items[i];
-        buffers[nBuffers].value = malloc(input_styles_fr_size(&fr));
-        buffers[nBuffers].value_length = input_styles_fr_size(&fr);
-        input_styles_fr_write(&fr, buffers[nBuffers].value, client->byte_order != im->byte_order);
-        input_styles_fr_free(&fr);
-        nBuffers++;
-    }
-
-    reply_frame.input_method_ID = client->connect_id;
-    reply_frame.im_attribute_returned.items = buffers;
-    reply_frame.im_attribute_returned.size = nBuffers;
-
-    get_im_values_fr_free(&frame);
-    xim_send_frame(reply_frame, get_im_values_reply_fr, XIM_GET_IM_VALUES_REPLY);
-
-    for (size_t i = 0; i < nBuffers; i++) {
-        free(buffers[i].value);
-    }
-}
-
-void _xcb_im_handle_disconnect(xcb_im_t* im,
-                               xcb_im_client_t* client,
-                               const xcb_im_proto_header_t* hdr,
-                               uint8_t* data,
-                               bool *del)
-{
-    HASH_DELETE(hh2, im->clients_by_win, client);
-    HASH_DELETE(hh1, im->clients_by_id, client);
-    xcb_destroy_window(im->conn, client->accept_win);
-    im->free_list = client;
-}
-
 void _xcb_im_handle_message(xcb_im_t* im,
-                            xcb_im_client_t* client,
+                            xcb_im_client_table_t* client,
                             const xcb_im_proto_header_t* hdr,
                             uint8_t* data,
                             bool *del)
@@ -1257,6 +539,7 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_CREATE_IC:
         DebugLog("-- XIM_CREATE_IC\n");
+        _xcb_im_handle_create_ic(im, client, hdr, data, del);
         break;
 
     case XIM_SET_IC_VALUES:
@@ -1336,7 +619,7 @@ bool _xcb_im_filter_client(xcb_im_t* im, xcb_generic_event_t* event)
             break;
         }
 
-        xcb_im_client_t* client = NULL;
+        xcb_im_client_table_t* client = NULL;
         HASH_FIND(hh2, im->clients_by_win, &clientmessage->window, sizeof(xcb_window_t), client);
         if (!client) {
             break;
@@ -1430,9 +713,9 @@ void xcb_im_close_im(xcb_im_t* im)
         HASH_DELETE(hh2, im->clients_by_win, im->clients_by_win);
     }
     while (im->clients_by_id) {
-        xcb_im_client_t* client = im->clients_by_id;
+        xcb_im_client_table_t* client = im->clients_by_id;
         HASH_DELETE(hh1, im->clients_by_id, im->clients_by_id);
-        xcb_destroy_window(im->conn, client->accept_win);
+        xcb_destroy_window(im->conn, client->c.accept_win);
         free(client);
     }
     im->connect_id = 0;

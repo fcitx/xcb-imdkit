@@ -42,6 +42,7 @@ typedef struct _xcb_im_styles_t
     uint32_t* styles;
 } xcb_im_styles_t;
 
+typedef packet_header_fr xcb_im_proto_header_t;
 typedef ximtriggerkey_fr xcb_im_trigger_key_t;
 
 typedef struct _xcb_im_trigger_keys_t{
@@ -58,6 +59,18 @@ typedef struct _xcb_im_encodings_t {
 
 typedef struct _xcb_im_t xcb_im_t;
 
+typedef struct _xcb_im_client_t
+{
+    xcb_window_t accept_win;
+    int connect_id;
+    xcb_window_t client_win;
+    uint8_t byte_order;
+} xcb_im_client_t;
+
+typedef bool (*xcb_im_callback)(xcb_im_t* im, xcb_im_client_t* client,
+                                const xcb_im_proto_header_t* hdr,
+                                void* frame, void* user_data);
+
 XCB_IMDKIT_EXPORT xcb_im_t* xcb_im_create(xcb_connection_t* conn,
                         int screen,
                         xcb_window_t serverWindow,
@@ -67,7 +80,9 @@ XCB_IMDKIT_EXPORT xcb_im_t* xcb_im_create(xcb_connection_t* conn,
                         const xcb_im_trigger_keys_t* onKeysList,
                         const xcb_im_trigger_keys_t* offKeysList,
                         const xcb_im_encodings_t* encodingList,
-                        uint32_t event_mask);
+                        uint32_t event_mask,
+                        xcb_im_callback callback,
+                        void* user_data);
 XCB_IMDKIT_EXPORT bool xcb_im_open_im(xcb_im_t* im);
 XCB_IMDKIT_EXPORT bool xcb_im_filter_event(xcb_im_t* im, xcb_generic_event_t* event);
 XCB_IMDKIT_EXPORT void xcb_im_close_im(xcb_im_t* im);
