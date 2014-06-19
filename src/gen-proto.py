@@ -113,6 +113,7 @@ if len(sys.argv) > 2:
         print("void {0}_free({0} *frame);".format(funcname))
         print("")
 else:
+    print("#include <string.h>")
     print("#include \"ximproto.h\"")
     print("")
 
@@ -124,6 +125,7 @@ else:
         usepad = any("_PAD" in attr for attr, name in attrs)
         print("void {0}_read({0} *frame, uint8_t **data, size_t *len, bool swap)".format(funcname))
         print("{")
+        print("    memset(frame, 0, sizeof(*frame));")
         if usepad:
             print("    uint8_t* start = *data;")
         if usecounter:
@@ -141,14 +143,14 @@ else:
                 continue
             if "_FRAME(BIT" in attr or "_PTR" in attr:
                 print("    {1}_read(&frame->{0}, data, len, swap);".format(name, gettypename(attr)))
-                print("    if (!data) { return; }")
+                print("    if (!*data) { return; }")
             elif "_FRAME(BARRAY" in attr:
                 (lenattr, lenname) = search_barray_length(attrs, i)
                 print("    {1}_read(&frame->{0}, frame->{2}, data, len, swap);".format(name, gettypename(attr), lenname))
-                print("    if (!data) { return; }")
+                print("    if (!*data) { return; }")
             elif "_PAD" in attr:
                 print("    *data = (uint8_t*) align_to_{0}((uintptr_t) *data, *data - start, len);".format(attr[4]))
-                print("    if (!data) { return; }")
+                print("    if (!*data) { return; }")
             elif "_BYTE_COUNTER" in attr:
                 if "BIT8" in attr:
                     countername = "counter8"
@@ -157,7 +159,7 @@ else:
                 elif "BIT32" in attr:
                     countername = "counter32"
                 print("    {1}_read(&{0}, data, len, swap);".format(countername, gettypename(attr)))
-                print("    if (!data) { return; }")
+                print("    if (!*data) { return; }")
                 if countername != "counter":
                     print("    counter = {0};".format(countername))
             elif attr == "_FRAME(ITER)":
@@ -166,10 +168,15 @@ else:
                 print("    frame->{0}.items = NULL;".format(name, gettypename(iterattr)))
                 print("    frame->{0}.size = 0;".format(name))
                 print("    while (counter != 0) {")
-                print("        frame->{0}.items = realloc(frame->{0}.items, (frame->{0}.size + 1) * sizeof({1}));".format(name, gettypename(iterattr)))
+                print("        void* temp = realloc(frame->{0}.items, (frame->{0}.size + 1) * sizeof({1}));".format(name, gettypename(iterattr)))
+                print("        if (!temp) {")
+                print("            *data = NULL;")
+                print("            return;")
+                print("        }")
+                print("        frame->{0}.items = temp;".format(name))
                 print("        {1}_read(&frame->{0}.items[frame->{0}.size], data, &counter, swap);".format(name, gettypename(iterattr)))
+                print("        if (!*data) { return; }")
                 print("        frame->{0}.size++;".format(name))
-                print("        if (!data) { return; }")
                 print("    }")
                 skip = True
 

@@ -1,18 +1,20 @@
+#include <string.h>
 #include "ximproto.h"
 
 void ximattr_fr_read(ximattr_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->attribute_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->type_of_the_value, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->length_of_im_attribute, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->im_attribute, frame->length_of_im_attribute, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* ximattr_fr_write(ximattr_fr *frame, uint8_t *data, bool swap)
@@ -44,17 +46,18 @@ void ximattr_fr_free(ximattr_fr *frame)
 
 void xicattr_fr_read(xicattr_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->attribute_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->type_of_the_value, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->length_of_ic_attribute, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->ic_attribute, frame->length_of_ic_attribute, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* xicattr_fr_write(xicattr_fr *frame, uint8_t *data, bool swap)
@@ -86,15 +89,16 @@ void xicattr_fr_free(xicattr_fr *frame)
 
 void ximattribute_fr_read(ximattribute_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->attribute_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->value_length, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->value, frame->value_length, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* ximattribute_fr_write(ximattribute_fr *frame, uint8_t *data, bool swap)
@@ -124,15 +128,16 @@ void ximattribute_fr_free(ximattribute_fr *frame)
 
 void xicattribute_fr_read(xicattribute_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->attribute_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->value_length, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->value, frame->value_length, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* xicattribute_fr_write(xicattribute_fr *frame, uint8_t *data, bool swap)
@@ -162,12 +167,13 @@ void xicattribute_fr_free(xicattribute_fr *frame)
 
 void ximtriggerkey_fr_read(ximtriggerkey_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint32_t_read(&frame->keysym, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->modifier, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->modifier_mask, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* ximtriggerkey_fr_write(ximtriggerkey_fr *frame, uint8_t *data, bool swap)
@@ -193,13 +199,14 @@ void ximtriggerkey_fr_free(ximtriggerkey_fr *frame)
 
 void encodinginfo_fr_read(encodinginfo_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->length_of_encoding_info, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->encoding_info, frame->length_of_encoding_info, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* encodinginfo_fr_write(encodinginfo_fr *frame, uint8_t *data, bool swap)
@@ -227,10 +234,11 @@ void encodinginfo_fr_free(encodinginfo_fr *frame)
 
 void str_fr_read(str_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t_read(&frame->length_of_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->string, frame->length_of_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* str_fr_write(str_fr *frame, uint8_t *data, bool swap)
@@ -255,13 +263,14 @@ void str_fr_free(str_fr *frame)
 
 void xpcs_fr_read(xpcs_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->length_of_string_in_bytes, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->string, frame->length_of_string_in_bytes, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* xpcs_fr_write(xpcs_fr *frame, uint8_t *data, bool swap)
@@ -289,17 +298,18 @@ void xpcs_fr_free(xpcs_fr *frame)
 
 void ext_fr_read(ext_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->extension_major_opcode, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->extension_minor_opcode, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->length_of_extension_name, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->extension_name, frame->length_of_extension_name, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* ext_fr_write(ext_fr *frame, uint8_t *data, bool swap)
@@ -331,8 +341,9 @@ void ext_fr_free(ext_fr *frame)
 
 void inputstyle_fr_read(inputstyle_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint32_t_read(&frame->inputstyle, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* inputstyle_fr_write(inputstyle_fr *frame, uint8_t *data, bool swap)
@@ -354,10 +365,11 @@ void inputstyle_fr_free(inputstyle_fr *frame)
 
 void attr_head_fr_read(attr_head_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->attribute_id, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->attribute_length, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* attr_head_fr_write(attr_head_fr *frame, uint8_t *data, bool swap)
@@ -381,8 +393,9 @@ void attr_head_fr_free(attr_head_fr *frame)
 
 void short_fr_read(short_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->value, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* short_fr_write(short_fr *frame, uint8_t *data, bool swap)
@@ -404,8 +417,9 @@ void short_fr_free(short_fr *frame)
 
 void long_fr_read(long_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint32_t_read(&frame->value, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* long_fr_write(long_fr *frame, uint8_t *data, bool swap)
@@ -427,14 +441,15 @@ void long_fr_free(long_fr *frame)
 
 void xrectangle_fr_read(xrectangle_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->x, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->y, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->width, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->height, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* xrectangle_fr_write(xrectangle_fr *frame, uint8_t *data, bool swap)
@@ -462,10 +477,11 @@ void xrectangle_fr_free(xrectangle_fr *frame)
 
 void xpoint_fr_read(xpoint_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->x, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->y, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* xpoint_fr_write(xpoint_fr *frame, uint8_t *data, bool swap)
@@ -489,13 +505,14 @@ void xpoint_fr_free(xpoint_fr *frame)
 
 void fontset_fr_read(fontset_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->length_of_base_font_name, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->base_font_name_list, frame->length_of_base_font_name, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* fontset_fr_write(fontset_fr *frame, uint8_t *data, bool swap)
@@ -523,22 +540,28 @@ void fontset_fr_free(fontset_fr *frame)
 
 void input_styles_fr_read(input_styles_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->XIMStyle_list.items = NULL;
     frame->XIMStyle_list.size = 0;
     while (counter != 0) {
-        frame->XIMStyle_list.items = realloc(frame->XIMStyle_list.items, (frame->XIMStyle_list.size + 1) * sizeof(inputstyle_fr));
+        void* temp = realloc(frame->XIMStyle_list.items, (frame->XIMStyle_list.size + 1) * sizeof(inputstyle_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->XIMStyle_list.items = temp;
         inputstyle_fr_read(&frame->XIMStyle_list.items[frame->XIMStyle_list.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->XIMStyle_list.size++;
-        if (!data) { return; }
     }
 }
 
@@ -581,12 +604,13 @@ void input_styles_fr_free(input_styles_fr *frame)
 
 void packet_header_fr_read(packet_header_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t_read(&frame->major_opcode, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint8_t_read(&frame->minor_opcode, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->length, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* packet_header_fr_write(packet_header_fr *frame, uint8_t *data, bool swap)
@@ -612,23 +636,24 @@ void packet_header_fr_free(packet_header_fr *frame)
 
 void error_fr_read(error_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->flag, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->Error_Code, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->length_of_error_detail, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->type_of_error_detail, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->error_detail, frame->length_of_error_detail, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* error_fr_write(error_fr *frame, uint8_t *data, bool swap)
@@ -666,28 +691,34 @@ void error_fr_free(error_fr *frame)
 
 void connect_fr_read(connect_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint8_t_read(&frame->byte_order, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_2((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->client_major_protocol_version, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->client_minor_protocol_version, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->client_auth_protocol_names.items = NULL;
     frame->client_auth_protocol_names.size = 0;
     while (counter != 0) {
-        frame->client_auth_protocol_names.items = realloc(frame->client_auth_protocol_names.items, (frame->client_auth_protocol_names.size + 1) * sizeof(xpcs_fr));
+        void* temp = realloc(frame->client_auth_protocol_names.items, (frame->client_auth_protocol_names.size + 1) * sizeof(xpcs_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->client_auth_protocol_names.items = temp;
         xpcs_fr_read(&frame->client_auth_protocol_names.items[frame->client_auth_protocol_names.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->client_auth_protocol_names.size++;
-        if (!data) { return; }
     }
 }
 
@@ -736,10 +767,11 @@ void connect_fr_free(connect_fr *frame)
 
 void connect_reply_fr_read(connect_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->server_major_protocol_version, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->server_minor_protocol_version, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* connect_reply_fr_write(connect_reply_fr *frame, uint8_t *data, bool swap)
@@ -763,15 +795,16 @@ void connect_reply_fr_free(connect_reply_fr *frame)
 
 void auth_required_fr_read(auth_required_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint8_t_read(&frame->auth_protocol_index, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint8_t_read(&frame->auth_data1, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->auth_data2, frame->auth_data1, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* auth_required_fr_write(auth_required_fr *frame, uint8_t *data, bool swap)
@@ -801,13 +834,14 @@ void auth_required_fr_free(auth_required_fr *frame)
 
 void auth_reply_fr_read(auth_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint8_t_read(&frame->field0, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->field1, frame->field0, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* auth_reply_fr_write(auth_reply_fr *frame, uint8_t *data, bool swap)
@@ -835,13 +869,14 @@ void auth_reply_fr_free(auth_reply_fr *frame)
 
 void auth_next_fr_read(auth_next_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint8_t_read(&frame->auth_data1, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->auth_data2, frame->auth_data1, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* auth_next_fr_write(auth_next_fr *frame, uint8_t *data, bool swap)
@@ -869,22 +904,28 @@ void auth_next_fr_free(auth_next_fr *frame)
 
 void auth_setup_fr_read(auth_setup_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->server_auth_protocol_names.items = NULL;
     frame->server_auth_protocol_names.size = 0;
     while (counter != 0) {
-        frame->server_auth_protocol_names.items = realloc(frame->server_auth_protocol_names.items, (frame->server_auth_protocol_names.size + 1) * sizeof(xpcs_fr));
+        void* temp = realloc(frame->server_auth_protocol_names.items, (frame->server_auth_protocol_names.size + 1) * sizeof(xpcs_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->server_auth_protocol_names.items = temp;
         xpcs_fr_read(&frame->server_auth_protocol_names.items[frame->server_auth_protocol_names.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->server_auth_protocol_names.size++;
-        if (!data) { return; }
     }
 }
 
@@ -927,6 +968,7 @@ void auth_setup_fr_free(auth_setup_fr *frame)
 
 void auth_ng_fr_read(auth_ng_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
 }
 
 uint8_t* auth_ng_fr_write(auth_ng_fr *frame, uint8_t *data, bool swap)
@@ -946,6 +988,7 @@ void auth_ng_fr_free(auth_ng_fr *frame)
 
 void disconnect_fr_read(disconnect_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
 }
 
 uint8_t* disconnect_fr_write(disconnect_fr *frame, uint8_t *data, bool swap)
@@ -965,6 +1008,7 @@ void disconnect_fr_free(disconnect_fr *frame)
 
 void disconnect_reply_fr_read(disconnect_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
 }
 
 uint8_t* disconnect_reply_fr_write(disconnect_reply_fr *frame, uint8_t *data, bool swap)
@@ -984,11 +1028,12 @@ void disconnect_reply_fr_free(disconnect_reply_fr *frame)
 
 void open_fr_read(open_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     str_fr_read(&frame->field0, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* open_fr_write(open_fr *frame, uint8_t *data, bool swap)
@@ -1013,36 +1058,47 @@ void open_fr_free(open_fr *frame)
 
 void open_reply_fr_read(open_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->IM_attribute_supported.items = NULL;
     frame->IM_attribute_supported.size = 0;
     while (counter != 0) {
-        frame->IM_attribute_supported.items = realloc(frame->IM_attribute_supported.items, (frame->IM_attribute_supported.size + 1) * sizeof(ximattr_fr));
+        void* temp = realloc(frame->IM_attribute_supported.items, (frame->IM_attribute_supported.size + 1) * sizeof(ximattr_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->IM_attribute_supported.items = temp;
         ximattr_fr_read(&frame->IM_attribute_supported.items[frame->IM_attribute_supported.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->IM_attribute_supported.size++;
-        if (!data) { return; }
     }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->IC_attribute_supported.items = NULL;
     frame->IC_attribute_supported.size = 0;
     while (counter != 0) {
-        frame->IC_attribute_supported.items = realloc(frame->IC_attribute_supported.items, (frame->IC_attribute_supported.size + 1) * sizeof(xicattr_fr));
+        void* temp = realloc(frame->IC_attribute_supported.items, (frame->IC_attribute_supported.size + 1) * sizeof(xicattr_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->IC_attribute_supported.items = temp;
         xicattr_fr_read(&frame->IC_attribute_supported.items[frame->IC_attribute_supported.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->IC_attribute_supported.size++;
-        if (!data) { return; }
     }
 }
 
@@ -1105,11 +1161,12 @@ void open_reply_fr_free(open_reply_fr *frame)
 
 void close_fr_read(close_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* close_fr_write(close_fr *frame, uint8_t *data, bool swap)
@@ -1134,11 +1191,12 @@ void close_fr_free(close_fr *frame)
 
 void close_reply_fr_read(close_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* close_reply_fr_write(close_reply_fr *frame, uint8_t *data, bool swap)
@@ -1163,36 +1221,47 @@ void close_reply_fr_free(close_reply_fr *frame)
 
 void register_triggerkeys_fr_read(register_triggerkeys_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint32_t counter32 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&counter32, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter32;
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->on_keys_list.items = NULL;
     frame->on_keys_list.size = 0;
     while (counter != 0) {
-        frame->on_keys_list.items = realloc(frame->on_keys_list.items, (frame->on_keys_list.size + 1) * sizeof(ximtriggerkey_fr));
+        void* temp = realloc(frame->on_keys_list.items, (frame->on_keys_list.size + 1) * sizeof(ximtriggerkey_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->on_keys_list.items = temp;
         ximtriggerkey_fr_read(&frame->on_keys_list.items[frame->on_keys_list.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->on_keys_list.size++;
-        if (!data) { return; }
     }
     uint32_t_read(&counter32, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter32;
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->off_keys_list.items = NULL;
     frame->off_keys_list.size = 0;
     while (counter != 0) {
-        frame->off_keys_list.items = realloc(frame->off_keys_list.items, (frame->off_keys_list.size + 1) * sizeof(ximtriggerkey_fr));
+        void* temp = realloc(frame->off_keys_list.items, (frame->off_keys_list.size + 1) * sizeof(ximtriggerkey_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->off_keys_list.items = temp;
         ximtriggerkey_fr_read(&frame->off_keys_list.items[frame->off_keys_list.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->off_keys_list.size++;
-        if (!data) { return; }
     }
 }
 
@@ -1255,16 +1324,17 @@ void register_triggerkeys_fr_free(register_triggerkeys_fr *frame)
 
 void trigger_notify_fr_read(trigger_notify_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_mehotd_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->flag, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->index_of_keys_list, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->client_select_event_mask, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* trigger_notify_fr_write(trigger_notify_fr *frame, uint8_t *data, bool swap)
@@ -1294,10 +1364,11 @@ void trigger_notify_fr_free(trigger_notify_fr *frame)
 
 void trigger_notify_reply_fr_read(trigger_notify_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* trigger_notify_reply_fr_write(trigger_notify_reply_fr *frame, uint8_t *data, bool swap)
@@ -1321,14 +1392,15 @@ void trigger_notify_reply_fr_free(trigger_notify_reply_fr *frame)
 
 void set_event_mask_fr_read(set_event_mask_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->forward_event_mask, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->synchronous_event_mask, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* set_event_mask_fr_write(set_event_mask_fr *frame, uint8_t *data, bool swap)
@@ -1356,38 +1428,49 @@ void set_event_mask_fr_free(set_event_mask_fr *frame)
 
 void encoding_negotiation_fr_read(encoding_negotiation_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->supported_list_of_encoding_in_IM_library.items = NULL;
     frame->supported_list_of_encoding_in_IM_library.size = 0;
     while (counter != 0) {
-        frame->supported_list_of_encoding_in_IM_library.items = realloc(frame->supported_list_of_encoding_in_IM_library.items, (frame->supported_list_of_encoding_in_IM_library.size + 1) * sizeof(str_fr));
+        void* temp = realloc(frame->supported_list_of_encoding_in_IM_library.items, (frame->supported_list_of_encoding_in_IM_library.size + 1) * sizeof(str_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->supported_list_of_encoding_in_IM_library.items = temp;
         str_fr_read(&frame->supported_list_of_encoding_in_IM_library.items[frame->supported_list_of_encoding_in_IM_library.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->supported_list_of_encoding_in_IM_library.size++;
-        if (!data) { return; }
     }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->list_of_encodings_supported_in_th.items = NULL;
     frame->list_of_encodings_supported_in_th.size = 0;
     while (counter != 0) {
-        frame->list_of_encodings_supported_in_th.items = realloc(frame->list_of_encodings_supported_in_th.items, (frame->list_of_encodings_supported_in_th.size + 1) * sizeof(encodinginfo_fr));
+        void* temp = realloc(frame->list_of_encodings_supported_in_th.items, (frame->list_of_encodings_supported_in_th.size + 1) * sizeof(encodinginfo_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->list_of_encodings_supported_in_th.items = temp;
         encodinginfo_fr_read(&frame->list_of_encodings_supported_in_th.items[frame->list_of_encodings_supported_in_th.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->list_of_encodings_supported_in_th.size++;
-        if (!data) { return; }
     }
 }
 
@@ -1452,15 +1535,16 @@ void encoding_negotiation_fr_free(encoding_negotiation_fr *frame)
 
 void encoding_negotiation_reply_fr_read(encoding_negotiation_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->category_of_the_encoding_determined, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->index_of_the_encoding_dterminated, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* encoding_negotiation_reply_fr_write(encoding_negotiation_reply_fr *frame, uint8_t *data, bool swap)
@@ -1489,25 +1573,31 @@ void encoding_negotiation_reply_fr_free(encoding_negotiation_reply_fr *frame)
 
 void query_extension_fr_read(query_extension_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->extensions_supported_by_the_IM_library.items = NULL;
     frame->extensions_supported_by_the_IM_library.size = 0;
     while (counter != 0) {
-        frame->extensions_supported_by_the_IM_library.items = realloc(frame->extensions_supported_by_the_IM_library.items, (frame->extensions_supported_by_the_IM_library.size + 1) * sizeof(str_fr));
+        void* temp = realloc(frame->extensions_supported_by_the_IM_library.items, (frame->extensions_supported_by_the_IM_library.size + 1) * sizeof(str_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->extensions_supported_by_the_IM_library.items = temp;
         str_fr_read(&frame->extensions_supported_by_the_IM_library.items[frame->extensions_supported_by_the_IM_library.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->extensions_supported_by_the_IM_library.size++;
-        if (!data) { return; }
     }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* query_extension_fr_write(query_extension_fr *frame, uint8_t *data, bool swap)
@@ -1551,21 +1641,27 @@ void query_extension_fr_free(query_extension_fr *frame)
 
 void query_extension_reply_fr_read(query_extension_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->list_of_extensions_supported_by_th.items = NULL;
     frame->list_of_extensions_supported_by_th.size = 0;
     while (counter != 0) {
-        frame->list_of_extensions_supported_by_th.items = realloc(frame->list_of_extensions_supported_by_th.items, (frame->list_of_extensions_supported_by_th.size + 1) * sizeof(ext_fr));
+        void* temp = realloc(frame->list_of_extensions_supported_by_th.items, (frame->list_of_extensions_supported_by_th.size + 1) * sizeof(ext_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->list_of_extensions_supported_by_th.items = temp;
         ext_fr_read(&frame->list_of_extensions_supported_by_th.items[frame->list_of_extensions_supported_by_th.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->list_of_extensions_supported_by_th.size++;
-        if (!data) { return; }
     }
 }
 
@@ -1607,25 +1703,31 @@ void query_extension_reply_fr_free(query_extension_reply_fr *frame)
 
 void get_im_values_fr_read(get_im_values_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->im_attribute_id.items = NULL;
     frame->im_attribute_id.size = 0;
     while (counter != 0) {
-        frame->im_attribute_id.items = realloc(frame->im_attribute_id.items, (frame->im_attribute_id.size + 1) * sizeof(uint16_t));
+        void* temp = realloc(frame->im_attribute_id.items, (frame->im_attribute_id.size + 1) * sizeof(uint16_t));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->im_attribute_id.items = temp;
         uint16_t_read(&frame->im_attribute_id.items[frame->im_attribute_id.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->im_attribute_id.size++;
-        if (!data) { return; }
     }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* get_im_values_fr_write(get_im_values_fr *frame, uint8_t *data, bool swap)
@@ -1659,21 +1761,27 @@ void get_im_values_fr_free(get_im_values_fr *frame)
 
 void get_im_values_reply_fr_read(get_im_values_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->im_attribute_returned.items = NULL;
     frame->im_attribute_returned.size = 0;
     while (counter != 0) {
-        frame->im_attribute_returned.items = realloc(frame->im_attribute_returned.items, (frame->im_attribute_returned.size + 1) * sizeof(ximattribute_fr));
+        void* temp = realloc(frame->im_attribute_returned.items, (frame->im_attribute_returned.size + 1) * sizeof(ximattribute_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->im_attribute_returned.items = temp;
         ximattribute_fr_read(&frame->im_attribute_returned.items[frame->im_attribute_returned.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->im_attribute_returned.size++;
-        if (!data) { return; }
     }
 }
 
@@ -1715,21 +1823,27 @@ void get_im_values_reply_fr_free(get_im_values_reply_fr *frame)
 
 void create_ic_fr_read(create_ic_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->ic_attributes.items = NULL;
     frame->ic_attributes.size = 0;
     while (counter != 0) {
-        frame->ic_attributes.items = realloc(frame->ic_attributes.items, (frame->ic_attributes.size + 1) * sizeof(xicattribute_fr));
+        void* temp = realloc(frame->ic_attributes.items, (frame->ic_attributes.size + 1) * sizeof(xicattribute_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->ic_attributes.items = temp;
         xicattribute_fr_read(&frame->ic_attributes.items[frame->ic_attributes.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->ic_attributes.size++;
-        if (!data) { return; }
     }
 }
 
@@ -1771,10 +1885,11 @@ void create_ic_fr_free(create_ic_fr *frame)
 
 void create_ic_reply_fr_read(create_ic_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* create_ic_reply_fr_write(create_ic_reply_fr *frame, uint8_t *data, bool swap)
@@ -1798,10 +1913,11 @@ void create_ic_reply_fr_free(create_ic_reply_fr *frame)
 
 void destroy_ic_fr_read(destroy_ic_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* destroy_ic_fr_write(destroy_ic_fr *frame, uint8_t *data, bool swap)
@@ -1825,10 +1941,11 @@ void destroy_ic_fr_free(destroy_ic_fr *frame)
 
 void destroy_ic_reply_fr_read(destroy_ic_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* destroy_ic_reply_fr_write(destroy_ic_reply_fr *frame, uint8_t *data, bool swap)
@@ -1852,26 +1969,32 @@ void destroy_ic_reply_fr_free(destroy_ic_reply_fr *frame)
 
 void set_ic_values_fr_read(set_ic_values_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->ic_attribute.items = NULL;
     frame->ic_attribute.size = 0;
     while (counter != 0) {
-        frame->ic_attribute.items = realloc(frame->ic_attribute.items, (frame->ic_attribute.size + 1) * sizeof(xicattribute_fr));
+        void* temp = realloc(frame->ic_attribute.items, (frame->ic_attribute.size + 1) * sizeof(xicattribute_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->ic_attribute.items = temp;
         xicattribute_fr_read(&frame->ic_attribute.items[frame->ic_attribute.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->ic_attribute.size++;
-        if (!data) { return; }
     }
 }
 
@@ -1918,10 +2041,11 @@ void set_ic_values_fr_free(set_ic_values_fr *frame)
 
 void set_ic_values_reply_fr_read(set_ic_values_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* set_ic_values_reply_fr_write(set_ic_values_reply_fr *frame, uint8_t *data, bool swap)
@@ -1945,27 +2069,33 @@ void set_ic_values_reply_fr_free(set_ic_values_reply_fr *frame)
 
 void get_ic_values_fr_read(get_ic_values_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->ic_attribute.items = NULL;
     frame->ic_attribute.size = 0;
     while (counter != 0) {
-        frame->ic_attribute.items = realloc(frame->ic_attribute.items, (frame->ic_attribute.size + 1) * sizeof(uint16_t));
+        void* temp = realloc(frame->ic_attribute.items, (frame->ic_attribute.size + 1) * sizeof(uint16_t));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->ic_attribute.items = temp;
         uint16_t_read(&frame->ic_attribute.items[frame->ic_attribute.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->ic_attribute.size++;
-        if (!data) { return; }
     }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* get_ic_values_fr_write(get_ic_values_fr *frame, uint8_t *data, bool swap)
@@ -2001,26 +2131,32 @@ void get_ic_values_fr_free(get_ic_values_fr *frame)
 
 void get_ic_values_reply_fr_read(get_ic_values_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->ic_attribute.items = NULL;
     frame->ic_attribute.size = 0;
     while (counter != 0) {
-        frame->ic_attribute.items = realloc(frame->ic_attribute.items, (frame->ic_attribute.size + 1) * sizeof(xicattribute_fr));
+        void* temp = realloc(frame->ic_attribute.items, (frame->ic_attribute.size + 1) * sizeof(xicattribute_fr));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->ic_attribute.items = temp;
         xicattribute_fr_read(&frame->ic_attribute.items[frame->ic_attribute.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->ic_attribute.size++;
-        if (!data) { return; }
     }
 }
 
@@ -2067,10 +2203,11 @@ void get_ic_values_reply_fr_free(get_ic_values_reply_fr *frame)
 
 void set_ic_focus_fr_read(set_ic_focus_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* set_ic_focus_fr_write(set_ic_focus_fr *frame, uint8_t *data, bool swap)
@@ -2094,10 +2231,11 @@ void set_ic_focus_fr_free(set_ic_focus_fr *frame)
 
 void unset_ic_focus_fr_read(unset_ic_focus_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* unset_ic_focus_fr_write(unset_ic_focus_fr *frame, uint8_t *data, bool swap)
@@ -2121,14 +2259,15 @@ void unset_ic_focus_fr_free(unset_ic_focus_fr *frame)
 
 void forward_event_fr_read(forward_event_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->flag, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->sequence_number, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* forward_event_fr_write(forward_event_fr *frame, uint8_t *data, bool swap)
@@ -2156,10 +2295,11 @@ void forward_event_fr_free(forward_event_fr *frame)
 
 void sync_fr_read(sync_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* sync_fr_write(sync_fr *frame, uint8_t *data, bool swap)
@@ -2183,10 +2323,11 @@ void sync_fr_free(sync_fr *frame)
 
 void sync_reply_fr_read(sync_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* sync_reply_fr_write(sync_reply_fr *frame, uint8_t *data, bool swap)
@@ -2210,35 +2351,41 @@ void sync_reply_fr_free(sync_reply_fr *frame)
 
 void commit_fr_read(commit_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->flag, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->byte_length_of_committed_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->committed_string, frame->byte_length_of_committed_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->keysym.items = NULL;
     frame->keysym.size = 0;
     while (counter != 0) {
-        frame->keysym.items = realloc(frame->keysym.items, (frame->keysym.size + 1) * sizeof(uint32_t));
+        void* temp = realloc(frame->keysym.items, (frame->keysym.size + 1) * sizeof(uint32_t));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->keysym.items = temp;
         uint32_t_read(&frame->keysym.items[frame->keysym.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->keysym.size++;
-        if (!data) { return; }
     }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* commit_fr_write(commit_fr *frame, uint8_t *data, bool swap)
@@ -2283,19 +2430,20 @@ void commit_fr_free(commit_fr *frame)
 
 void commit_chars_fr_read(commit_chars_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->flag, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->byte_length_of_committed_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->committed_string, frame->byte_length_of_committed_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* commit_chars_fr_write(commit_chars_fr *frame, uint8_t *data, bool swap)
@@ -2329,23 +2477,24 @@ void commit_chars_fr_free(commit_chars_fr *frame)
 
 void commit_both_fr_read(commit_both_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->flag, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->keysym, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->byte_length_of_committed_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->committed_string, frame->byte_length_of_committed_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* commit_both_fr_write(commit_both_fr *frame, uint8_t *data, bool swap)
@@ -2383,10 +2532,11 @@ void commit_both_fr_free(commit_both_fr *frame)
 
 void reset_ic_fr_read(reset_ic_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* reset_ic_fr_write(reset_ic_fr *frame, uint8_t *data, bool swap)
@@ -2410,17 +2560,18 @@ void reset_ic_fr_free(reset_ic_fr *frame)
 
 void reset_ic_reply_fr_read(reset_ic_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->byte_length_of_committed_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->committed_string, frame->byte_length_of_committed_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* reset_ic_reply_fr_write(reset_ic_reply_fr *frame, uint8_t *data, bool swap)
@@ -2452,10 +2603,11 @@ void reset_ic_reply_fr_free(reset_ic_reply_fr *frame)
 
 void geometry_fr_read(geometry_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* geometry_fr_write(geometry_fr *frame, uint8_t *data, bool swap)
@@ -2479,25 +2631,26 @@ void geometry_fr_free(geometry_fr *frame)
 
 void str_conversion_fr_read(str_conversion_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->XIMStringConversionPosition, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->XIMStringConversionType, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->XIMStringConversionOperation, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->length_to_multiply_th, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->length_of_the_string_to_b, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->string, frame->length_of_the_string_to_b, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* str_conversion_fr_write(str_conversion_fr *frame, uint8_t *data, bool swap)
@@ -2537,34 +2690,40 @@ void str_conversion_fr_free(str_conversion_fr *frame)
 
 void str_conversion_reply_fr_read(str_conversion_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->XIMStringConversionFeedback, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->length_of_the_retrieved_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->retrieved_string, frame->length_of_the_retrieved_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->feedback_array.items = NULL;
     frame->feedback_array.size = 0;
     while (counter != 0) {
-        frame->feedback_array.items = realloc(frame->feedback_array.items, (frame->feedback_array.size + 1) * sizeof(uint32_t));
+        void* temp = realloc(frame->feedback_array.items, (frame->feedback_array.size + 1) * sizeof(uint32_t));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->feedback_array.items = temp;
         uint32_t_read(&frame->feedback_array.items[frame->feedback_array.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->feedback_array.size++;
-        if (!data) { return; }
     }
 }
 
@@ -2610,10 +2769,11 @@ void str_conversion_reply_fr_free(str_conversion_reply_fr *frame)
 
 void preedit_start_fr_read(preedit_start_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* preedit_start_fr_write(preedit_start_fr *frame, uint8_t *data, bool swap)
@@ -2637,12 +2797,13 @@ void preedit_start_fr_free(preedit_start_fr *frame)
 
 void preedit_start_reply_fr_read(preedit_start_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->return_value, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* preedit_start_reply_fr_write(preedit_start_reply_fr *frame, uint8_t *data, bool swap)
@@ -2668,40 +2829,46 @@ void preedit_start_reply_fr_free(preedit_start_reply_fr *frame)
 
 void preedit_draw_fr_read(preedit_draw_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->caret, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->chg_first, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->chg_length, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->status, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->length_of_preedit_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->preedit_string, frame->length_of_preedit_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->feedback_array.items = NULL;
     frame->feedback_array.size = 0;
     while (counter != 0) {
-        frame->feedback_array.items = realloc(frame->feedback_array.items, (frame->feedback_array.size + 1) * sizeof(uint32_t));
+        void* temp = realloc(frame->feedback_array.items, (frame->feedback_array.size + 1) * sizeof(uint32_t));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->feedback_array.items = temp;
         uint32_t_read(&frame->feedback_array.items[frame->feedback_array.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->feedback_array.size++;
-        if (!data) { return; }
     }
 }
 
@@ -2753,16 +2920,17 @@ void preedit_draw_fr_free(preedit_draw_fr *frame)
 
 void preedit_caret_fr_read(preedit_caret_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->position, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->direction, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->style, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* preedit_caret_fr_write(preedit_caret_fr *frame, uint8_t *data, bool swap)
@@ -2792,12 +2960,13 @@ void preedit_caret_fr_free(preedit_caret_fr *frame)
 
 void preedit_caret_reply_fr_read(preedit_caret_reply_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->position, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* preedit_caret_reply_fr_write(preedit_caret_reply_fr *frame, uint8_t *data, bool swap)
@@ -2823,10 +2992,11 @@ void preedit_caret_reply_fr_free(preedit_caret_reply_fr *frame)
 
 void preedit_done_fr_read(preedit_done_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* preedit_done_fr_write(preedit_done_fr *frame, uint8_t *data, bool swap)
@@ -2850,10 +3020,11 @@ void preedit_done_fr_free(preedit_done_fr *frame)
 
 void status_start_fr_read(status_start_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* status_start_fr_write(status_start_fr *frame, uint8_t *data, bool swap)
@@ -2877,36 +3048,42 @@ void status_start_fr_free(status_start_fr *frame)
 
 void status_draw_text_fr_read(status_draw_text_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint8_t* start = *data;
     uint16_t counter16 = 0;
     size_t counter = 0;
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->type, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->status, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->length_of_status_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     bytearray_read(&frame->status_string, frame->length_of_status_string, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&counter16, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     counter = counter16;
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
-    if (!data) { return; }
+    if (!*data) { return; }
     if (counter > *len) { *data = NULL; return; } else { *len -= counter; } 
     frame->feedback_array.items = NULL;
     frame->feedback_array.size = 0;
     while (counter != 0) {
-        frame->feedback_array.items = realloc(frame->feedback_array.items, (frame->feedback_array.size + 1) * sizeof(uint32_t));
+        void* temp = realloc(frame->feedback_array.items, (frame->feedback_array.size + 1) * sizeof(uint32_t));
+        if (!temp) {
+            *data = NULL;
+            return;
+        }
+        frame->feedback_array.items = temp;
         uint32_t_read(&frame->feedback_array.items[frame->feedback_array.size], data, &counter, swap);
+        if (!*data) { return; }
         frame->feedback_array.size++;
-        if (!data) { return; }
     }
 }
 
@@ -2954,14 +3131,15 @@ void status_draw_text_fr_free(status_draw_text_fr *frame)
 
 void status_draw_bitmap_fr_read(status_draw_bitmap_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->type, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->pixmap_data, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* status_draw_bitmap_fr_write(status_draw_bitmap_fr *frame, uint8_t *data, bool swap)
@@ -2989,10 +3167,11 @@ void status_draw_bitmap_fr_free(status_draw_bitmap_fr *frame)
 
 void status_done_fr_read(status_done_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* status_done_fr_write(status_done_fr *frame, uint8_t *data, bool swap)
@@ -3016,20 +3195,21 @@ void status_done_fr_free(status_done_fr *frame)
 
 void ext_set_event_mask_fr_read(ext_set_event_mask_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->filter_event_mask, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->intercept_event_mask, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->select_event_mask, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->forward_event_mask, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->synchronous_event_mask, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* ext_set_event_mask_fr_write(ext_set_event_mask_fr *frame, uint8_t *data, bool swap)
@@ -3063,24 +3243,25 @@ void ext_set_event_mask_fr_free(ext_set_event_mask_fr *frame)
 
 void ext_forward_keyevent_fr_read(ext_forward_keyevent_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->flag, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->sequence_number, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint8_t_read(&frame->xEvent_u_u_type, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint8_t_read(&frame->keycode, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->state, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->time, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint32_t_read(&frame->window, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* ext_forward_keyevent_fr_write(ext_forward_keyevent_fr *frame, uint8_t *data, bool swap)
@@ -3118,14 +3299,15 @@ void ext_forward_keyevent_fr_free(ext_forward_keyevent_fr *frame)
 
 void ext_move_fr_read(ext_move_fr *frame, uint8_t **data, size_t *len, bool swap)
 {
+    memset(frame, 0, sizeof(*frame));
     uint16_t_read(&frame->input_method_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->X, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
     uint16_t_read(&frame->Y, data, len, swap);
-    if (!data) { return; }
+    if (!*data) { return; }
 }
 
 uint8_t* ext_move_fr_write(ext_move_fr *frame, uint8_t *data, bool swap)

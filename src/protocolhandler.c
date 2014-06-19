@@ -49,7 +49,6 @@ void _xcb_im_handle_open(xcb_im_t* im,
 {
     size_t len = XIM_MESSAGE_BYTES(hdr);
     open_fr frame;
-    memset(&frame, 0, sizeof(open_fr));
     open_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
     if (!data) {
         open_fr_free(&frame);
@@ -162,7 +161,6 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t* im,
 {
     size_t len = XIM_MESSAGE_BYTES(hdr);
     encoding_negotiation_fr frame;
-    memset(&frame, 0, sizeof(frame));
     encoding_negotiation_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
     if (!data) {
         return;
@@ -203,7 +201,6 @@ void _xcb_im_handle_get_im_values(xcb_im_t* im,
 {
     size_t len = XIM_MESSAGE_BYTES(hdr);
     get_im_values_fr frame;
-    memset(&frame, 0, sizeof(frame));
     get_im_values_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
     if (!data) {
         return;
@@ -276,7 +273,6 @@ void _xcb_im_handle_create_ic(xcb_im_t* im,
 {
     size_t len = XIM_MESSAGE_BYTES(hdr);
     create_ic_fr frame;
-    memset(&frame, 0, sizeof(frame));
     create_ic_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
     if (!data) {
         create_ic_fr_free(&frame);
