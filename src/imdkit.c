@@ -322,6 +322,26 @@ xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_wind
     return client;
 }
 
+xcb_im_input_context_table_t* _xcb_im_new_input_context(xcb_im_t* im,
+                                                        xcb_im_client_table_t* client)
+{
+    uint16_t icid = 0;
+    xcb_im_input_context_table_t* ic = NULL;
+    if (client->ic_free_list) {
+        ic = client->ic_free_list;
+        client->ic_free_list = client->ic_free_list->hh.next;
+        icid = ic->ic.id;
+    } else {
+        ic = calloc(1, sizeof(xcb_im_input_context_table_t));
+        icid = ++client->icid;
+        ic->ic.id = icid;
+        HASH_ADD(hh, client->input_contexts, ic.id, sizeof(uint16_t), ic);
+    }
+
+    ic->ic.client = &client->c;
+    return ic;
+}
+
 bool _xcb_im_filter_xconnect_message(xcb_im_t* im, xcb_generic_event_t* event)
 {
     do {
@@ -544,10 +564,12 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_SET_IC_VALUES:
         DebugLog("-- XIM_SET_IC_VALUES\n");
+        _xcb_im_handle_set_ic_values(im, client, hdr, data, del);
         break;
 
     case XIM_GET_IC_VALUES:
         DebugLog("-- XIM_GET_IC_VALUES\n");
+        _xcb_im_handle_get_ic_values(im, client, hdr, data, del);
         break;
 
     case XIM_SET_IC_FOCUS:
@@ -775,4 +797,31 @@ bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, 
     }
     input_styles_fr_free(&fr);
     return attr->value != NULL;
+}
+
+void xcb_im_parse_ic_values(xcb_im_t* im,
+                            xcb_im_client_table_t* client,
+                            uint32_t nICAttrs,
+                            xicattribute_fr* icattrs)
+{
+    bool met[ARRAY_SIZE(Default_ICattr)];
+    for (uint32_t i = 0;  i < nICAttrs;  i++) {
+        if (icattrs[i].attribute_ID >= ARRAY_SIZE(im->id2attr)) {
+            continue;
+        }
+        xicattr_fr* attr = (xicattr_fr*) im->id2attr[icattrs[i].attribute_ID];
+        if ((attr < im->icattr) || (attr >= im->icattr + ARRAY_SIZE(Default_ICattr))) {
+            continue;
+        }
+
+        if (met[attr - im->icattr]) {
+            continue;
+        }
+
+        if (!Default_ICattr[attr - im->icattr].parse_value) {
+            continue;
+        }
+
+        Default_ICattr[attr - im->icattr].parse_value(im, client, icattrs[i].value, icattrs[i].value_length);
+    }
 }

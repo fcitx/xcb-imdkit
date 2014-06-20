@@ -67,9 +67,15 @@ typedef struct _xcb_im_client_t
     uint8_t byte_order;
 } xcb_im_client_t;
 
-typedef bool (*xcb_im_callback)(xcb_im_t* im, xcb_im_client_t* client,
+typedef struct _xcb_im_input_context_t
+{
+    uint16_t id;
+    xcb_im_client_t* client;
+} xcb_im_input_context_t;
+
+typedef bool (*xcb_im_callback)(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
                                 const xcb_im_proto_header_t* hdr,
-                                void* frame, void* user_data);
+                                void* frame, void* reply_frame, void* user_data);
 
 XCB_IMDKIT_EXPORT xcb_im_t* xcb_im_create(xcb_connection_t* conn,
                                           int screen,

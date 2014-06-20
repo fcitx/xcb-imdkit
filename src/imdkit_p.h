@@ -259,10 +259,14 @@
     query_extension_reply_fr: XIM_QUERY_EXTENSION_REPLY, \
     encoding_negotiation_reply_fr: XIM_ENCODING_NEGOTIATION_REPLY, \
     get_im_values_reply_fr: XIM_GET_IM_VALUES_REPLY, \
+    set_event_mask_fr: XIM_SET_EVENT_MASK, \
+    create_ic_reply_fr: XIM_CREATE_IC_REPLY, \
+    set_ic_values_reply_fr: XIM_SET_IC_VALUES_REPLY, \
+    get_ic_values_reply_fr: XIM_GET_IC_VALUES_REPLY, \
     register_triggerkeys_fr: XIM_REGISTER_TRIGGERKEYS \
     )
 
-#define _xcb_im_send_frame(IM, CLIENT, FRAME) \
+#define _xcb_im_send_frame(IM, CLIENT, FRAME, SEND_ERROR) \
     do { \
         bool fail; \
         size_t length = frame_size_func(FRAME)(&FRAME); \
@@ -278,14 +282,24 @@
             fail = false; \
         } while(0); \
         free(reply); \
-        if (fail) { \
+        if ((SEND_ERROR) && fail) { \
             _xcb_im_send_error_message((IM), (CLIENT)); \
         } \
     } while(0)
 
+typedef struct _xcb_im_input_context_table_t
+{
+    xcb_im_input_context_t ic;
+    UT_hash_handle hh;
+} xcb_im_input_context_table_t;
+
 typedef struct _xcb_im_client_table_t
 {
     xcb_im_client_t c;
+    uint16_t icid;
+    xcb_im_input_context_table_t* ic_free_list;
+    xcb_im_input_context_table_t* input_contexts;
+
     UT_hash_handle hh1;
     UT_hash_handle hh2;
 } xcb_im_client_table_t;
@@ -305,7 +319,7 @@ typedef struct _IMListOfAttr {
     char *name;
     uint16_t type;
     bool (*get_value)(xcb_im_t* im, xcb_im_client_table_t* client, ximattribute_fr* attr);
-    bool (*set_value)(xcb_im_t* im, xcb_im_client_table_t* client, uint8_t* data, size_t length);
+    bool (*parse_value)(xcb_im_t* im, xcb_im_client_table_t* client, uint8_t* data, size_t length);
 } IMListOfAttr;
 
 bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, ximattribute_fr* attr);
@@ -388,5 +402,8 @@ struct _xcb_im_t
     xcb_im_callback callback;
     void* user_data;
 };
+
+xcb_im_input_context_table_t* _xcb_im_new_input_context(xcb_im_t* im,
+                                                        xcb_im_client_table_t* client);
 
 #endif // IMDKIT_P_H
