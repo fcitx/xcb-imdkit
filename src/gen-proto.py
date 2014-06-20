@@ -98,8 +98,19 @@ if len(sys.argv) > 2:
             
         print("}} {0};".format(funcname))
         print("")
-
-    print("")
+    def print_generic(cat):
+        print("#define frame_{0}_func(FRAME) _Generic((FRAME), \\".format(cat))
+        first = True
+        for funcname, attrs in funcs.items():
+            if first:
+                first=False
+            else:
+                print(",\\")
+            print("    {0} : {0}_{1}".format(funcname, cat), end='')
+        print(")")
+        print("")
+    for cat in ["read", "write", "size", "free"]:
+        print_generic(cat)
 
     for funcname, attrs in funcs.items():
         usecounter = any("_BYTE_COUNTER" in attr for attr, name in attrs)

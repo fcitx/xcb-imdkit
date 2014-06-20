@@ -753,3 +753,26 @@ void xcb_im_preedit_end(xcb_im_t* im)
 void xcb_im_sync_xlib(xcb_im_t* im)
 {
 }
+
+bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, ximattribute_fr* attr)
+{
+    input_styles_fr fr;
+    memset(&fr, 0, sizeof(fr));
+    fr.XIMStyle_list.size = im->inputStyles.nStyles;
+    if (im->inputStyles.nStyles) {
+        if ((fr.XIMStyle_list.items = calloc(im->inputStyles.nStyles, sizeof(inputstyle_fr))) == NULL) {
+            return false;
+        }
+        for (size_t j = 0; j < im->inputStyles.nStyles; j ++) {
+            fr.XIMStyle_list.items[j].inputstyle = im->inputStyles.styles[j];
+        }
+    }
+
+    size_t frame_size = input_styles_fr_size(&fr);
+    if ((attr->value = malloc(frame_size)) != NULL) {;
+        attr->value_length = frame_size;
+        input_styles_fr_write(&fr, attr->value, client->c.byte_order != im->byte_order);
+    }
+    input_styles_fr_free(&fr);
+    return attr->value != NULL;
+}

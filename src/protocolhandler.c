@@ -6,13 +6,8 @@ void _xcb_im_handle_connect(xcb_im_t* im,
                             const xcb_im_proto_header_t* hdr,
                             uint8_t* data)
 {
-    size_t len = XIM_MESSAGE_BYTES(hdr);
     connect_fr frame;
-    connect_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
-    if (!data) {
-        connect_fr_free(&frame);
-        return;
-    }
+    _xcb_im_read_frame(im, client, frame);
 
     if (im->callback) {
         im->callback(im, &client->c, hdr, &frame, im->user_data);
@@ -23,7 +18,7 @@ void _xcb_im_handle_connect(xcb_im_t* im,
     reply_frame.server_major_protocol_version = frame.client_major_protocol_version;
     reply_frame.server_minor_protocol_version = frame.client_minor_protocol_version;
 
-    xim_send_frame(reply_frame, connect_reply_fr, XIM_CONNECT_REPLY);
+    _xcb_im_send_frame(im, client, reply_frame);
     return;
 }
 
@@ -40,7 +35,7 @@ static void _xcb_im_send_trigger_key(xcb_im_t* im, xcb_im_client_table_t* client
     frame.off_keys_list.size = im->offKeys.nKeys;
     frame.off_keys_list.items = im->offKeys.keys;
 
-    xim_send_frame(frame, register_triggerkeys_fr, XIM_REGISTER_TRIGGERKEYS);
+    _xcb_im_send_frame(im, client, frame);
 }
 
 void _xcb_im_handle_open(xcb_im_t* im,
@@ -49,13 +44,8 @@ void _xcb_im_handle_open(xcb_im_t* im,
                          uint8_t* data,
                          bool *del)
 {
-    size_t len = XIM_MESSAGE_BYTES(hdr);
     open_fr frame;
-    open_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
-    if (!data) {
-        open_fr_free(&frame);
-        return;
-    }
+    _xcb_im_read_frame(im, client, frame);
 
     if (im->callback) {
         im->callback(im, &client->c, hdr, &frame, im->user_data);
@@ -74,7 +64,7 @@ void _xcb_im_handle_open(xcb_im_t* im,
     reply_frame.IM_attribute_supported.items = im->imattr;
     reply_frame.IC_attribute_supported.items = im->icattr;
 
-    xim_send_frame(reply_frame, open_reply_fr, XIM_OPEN_REPLY);
+    _xcb_im_send_frame(im, client, reply_frame);
 }
 
 void _xcb_im_handle_close(xcb_im_t* im,
@@ -83,13 +73,8 @@ void _xcb_im_handle_close(xcb_im_t* im,
                           uint8_t* data,
                           bool *del)
 {
-    size_t len = XIM_MESSAGE_BYTES(hdr);
     close_fr frame;
-    close_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
-    if (!data) {
-        close_fr_free(&frame);
-        return;
-    }
+    _xcb_im_read_frame(im, client, frame);
 
     if (im->callback) {
         im->callback(im, &client->c, hdr, &frame, im->user_data);
@@ -98,25 +83,7 @@ void _xcb_im_handle_close(xcb_im_t* im,
     close_fr_free(&frame);
     close_reply_fr reply_frame;
     reply_frame.input_method_ID = frame.input_method_ID;
-    bool fail = true;
-    size_t length = close_reply_fr_size(&reply_frame);
-    uint8_t* reply = _xcb_im_new_message(im, client, XIM_CLOSE_REPLY, 0, length);
-    do {
-        if (!reply) {
-            break;
-        }
-        close_reply_fr_write(&reply_frame, reply + XCB_IM_HEADER_SIZE, client->c.byte_order != im->byte_order);
-        if (!_xcb_im_send_message(im, client, reply, length)) {
-            break;
-        }
-
-        fail = false;
-    } while(0);
-    free(reply);
-
-    if (fail) {
-        _xcb_im_send_error_message(im, client);
-    }
+    _xcb_im_send_frame(im, client, reply_frame);
     return;
 }
 
@@ -126,13 +93,8 @@ void _xcb_im_handle_query_extension(xcb_im_t* im,
                                     uint8_t* data,
                                     bool *del)
 {
-    size_t len = XIM_MESSAGE_BYTES(hdr);
     query_extension_fr frame;
-    query_extension_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
-    if (!data) {
-        query_extension_fr_free(&frame);
-        return;
-    }
+    _xcb_im_read_frame(im, client, frame);
 
     int nExts = 0;
     ext_fr ext_list[ARRAY_SIZE(Default_Extension)];
@@ -155,7 +117,7 @@ void _xcb_im_handle_query_extension(xcb_im_t* im,
     reply_frame.list_of_extensions_supported_by_th.items = ext_list;
     reply_frame.list_of_extensions_supported_by_th.size = nExts;
 
-    xim_send_frame(reply_frame, query_extension_reply_fr, XIM_QUERY_EXTENSION_REPLY);
+    _xcb_im_send_frame(im, client, reply_frame);
 }
 
 void _xcb_im_handle_encoding_negotiation(xcb_im_t* im,
@@ -164,13 +126,8 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t* im,
                                          uint8_t* data,
                                          bool *del)
 {
-    size_t len = XIM_MESSAGE_BYTES(hdr);
     encoding_negotiation_fr frame;
-    encoding_negotiation_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
-    if (!data) {
-        encoding_negotiation_fr_free(&frame);
-        return;
-    }
+    _xcb_im_read_frame(im, client, frame);
 
     size_t i, j;
     for (i = 0; i < frame.supported_list_of_encoding_in_IM_library.size; i++) {
@@ -196,7 +153,7 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t* im,
     reply_frame.index_of_the_encoding_dterminated = i;
     reply_frame.category_of_the_encoding_determined = 0;
 
-    xim_send_frame(reply_frame, encoding_negotiation_reply_fr, XIM_ENCODING_NEGOTIATION_REPLY);
+    _xcb_im_send_frame(im, client, reply_frame);
 }
 
 void _xcb_im_handle_get_im_values(xcb_im_t* im,
@@ -205,17 +162,14 @@ void _xcb_im_handle_get_im_values(xcb_im_t* im,
                                   uint8_t* data,
                                   bool *del)
 {
-    size_t len = XIM_MESSAGE_BYTES(hdr);
     get_im_values_fr frame;
-    get_im_values_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
-    if (!data) {
-        get_im_values_fr_free(&frame);
-        return;
-    }
+    _xcb_im_read_frame(im, client, frame);
 
     get_im_values_reply_fr reply_frame;
     size_t nBuffers = 0;
     ximattribute_fr buffers[ARRAY_SIZE(Default_IMattr)];
+    bool met[ARRAY_SIZE(Default_IMattr)];
+    memset(met, 0, sizeof(met));
     for (size_t i = 0; i < frame.im_attribute_id.size; i++) {
         if (frame.im_attribute_id.items[i] >= ARRAY_SIZE(im->id2attr)) {
             continue;
@@ -224,21 +178,20 @@ void _xcb_im_handle_get_im_values(xcb_im_t* im,
         if ((attr < im->imattr) || (attr >= im->imattr + ARRAY_SIZE(Default_IMattr))) {
             continue;
         }
-        // TODO, now we only have one attribute, so no check is needed here
-        // in the future this can be a function pointer
 
-        input_styles_fr fr;
-        fr.XIMStyle_list.size = im->inputStyles.nStyles;
-        fr.XIMStyle_list.items = calloc(im->inputStyles.nStyles, sizeof(inputstyle_fr));
-        for (size_t j = 0; j < im->inputStyles.nStyles; j ++) {
-            fr.XIMStyle_list.items[j].inputstyle = im->inputStyles.styles[j];
+        if (met[attr - im->imattr]) {
+            continue;
         }
 
+        if (Default_IMattr[attr - im->imattr].get_value) {
+            continue;
+        }
+
+        if (!Default_IMattr[attr - im->imattr].get_value(im, client, &buffers[nBuffers])) {
+            continue;
+        }
         buffers[nBuffers].attribute_ID = frame.im_attribute_id.items[i];
-        buffers[nBuffers].value = malloc(input_styles_fr_size(&fr));
-        buffers[nBuffers].value_length = input_styles_fr_size(&fr);
-        input_styles_fr_write(&fr, buffers[nBuffers].value, client->c.byte_order != im->byte_order);
-        input_styles_fr_free(&fr);
+        met[attr - im->imattr] = true;
         nBuffers++;
     }
 
@@ -247,7 +200,7 @@ void _xcb_im_handle_get_im_values(xcb_im_t* im,
     reply_frame.im_attribute_returned.size = nBuffers;
 
     get_im_values_fr_free(&frame);
-    xim_send_frame(reply_frame, get_im_values_reply_fr, XIM_GET_IM_VALUES_REPLY);
+    _xcb_im_send_frame(im, client, reply_frame);
 
     for (size_t i = 0; i < nBuffers; i++) {
         free(buffers[i].value);
@@ -272,19 +225,43 @@ void _xcb_im_handle_disconnect(xcb_im_t* im,
     im->free_list = client;
 }
 
+void _xcb_im_set_ic_values(xcb_im_t* im,
+                           xcb_im_client_table_t* client,
+                           uint32_t nICAttrs,
+                           xicattribute_fr* icattrs)
+{
+    bool met[ARRAY_SIZE(Default_ICattr)];
+    for (uint32_t i = 0;  i < nICAttrs;  i++) {
+        if (icattrs[i].attribute_ID >= ARRAY_SIZE(im->id2attr)) {
+            continue;
+        }
+        xicattr_fr* attr = (xicattr_fr*) im->id2attr[icattrs[i].attribute_ID];
+        if ((attr < im->icattr) || (attr >= im->icattr + ARRAY_SIZE(Default_ICattr))) {
+            continue;
+        }
+
+        if (met[attr - im->icattr]) {
+            continue;
+        }
+
+        if (Default_ICattr[attr - im->icattr].set_value) {
+            continue;
+        }
+
+        if (Default_ICattr[attr - im->icattr].set_value(im, client, icattrs[i].value, icattrs[i].value_length)) {
+            continue;
+        }
+    }
+}
+
 void _xcb_im_handle_create_ic(xcb_im_t* im,
                               xcb_im_client_table_t* client,
                               const xcb_im_proto_header_t* hdr,
                               uint8_t* data,
                               bool *del)
 {
-    size_t len = XIM_MESSAGE_BYTES(hdr);
     create_ic_fr frame;
-    create_ic_fr_read(&frame, &data, &len, client->c.byte_order != im->byte_order);
-    if (!data) {
-        create_ic_fr_free(&frame);
-        return;
-    }
+    _xcb_im_read_frame(im, client, frame);
 
     // TODO
     create_ic_fr_free(&frame);
@@ -293,7 +270,7 @@ void _xcb_im_handle_create_ic(xcb_im_t* im,
     create_ic_reply_fr reply_frame;
     reply_frame.input_method_ID = client->c.connect_id;
 
-    xim_send_frame(reply_frame, create_ic_reply_fr, XIM_CREATE_IC_REPLY);
+    _xcb_im_send_frame(im, client, reply_frame);
     if (im->onKeys.nKeys == 0 && im->offKeys.nKeys == 0) {
         _xcb_im_set_event_mask(im, client, icid, im->event_mask, ~im->event_mask);
     }*/
@@ -304,14 +281,8 @@ _xcb_im_handle_set_ic_focus(xcb_im_t* im, xcb_im_client_table_t* client,
                             const xcb_im_proto_header_t* hdr,
                             uint8_t* data, bool *del)
 {
-    size_t len = XIM_MESSAGE_BYTES(hdr);
     set_ic_focus_fr frame;
-    set_ic_focus_fr_read(&frame, &data, &len,
-                         client->c.byte_order != im->byte_order);
-    if (!data) {
-        set_ic_focus_fr_free(&frame);
-        return;
-    }
+    _xcb_im_read_frame(im, client, frame);
 
     if (im->callback) {
         im->callback(im, &client->c, hdr, &frame, im->user_data);
@@ -324,14 +295,8 @@ _xcb_im_handle_unset_ic_focus(xcb_im_t* im, xcb_im_client_table_t* client,
                               const xcb_im_proto_header_t* hdr,
                               uint8_t* data, bool *del)
 {
-    size_t len = XIM_MESSAGE_BYTES(hdr);
     unset_ic_focus_fr frame;
-    unset_ic_focus_fr_read(&frame, &data, &len,
-                           client->c.byte_order != im->byte_order);
-    if (!data) {
-        unset_ic_focus_fr_free(&frame);
-        return;
-    }
+    _xcb_im_read_frame(im, client, frame);
 
     if (im->callback) {
         im->callback(im, &client->c, hdr, &frame, im->user_data);
@@ -344,14 +309,8 @@ _xcb_im_handle_preedit_caret_reply(xcb_im_t* im, xcb_im_client_table_t* client,
                                    const xcb_im_proto_header_t* hdr,
                                    uint8_t* data, bool *del)
 {
-    size_t len = XIM_MESSAGE_BYTES(hdr);
     preedit_caret_reply_fr frame;
-    preedit_caret_reply_fr_read(&frame, &data, &len,
-                           client->c.byte_order != im->byte_order);
-    if (!data) {
-        preedit_caret_reply_fr_free(&frame);
-        return;
-    }
+    _xcb_im_read_frame(im, client, frame);
 
     if (im->callback) {
         im->callback(im, &client->c, hdr, &frame, im->user_data);

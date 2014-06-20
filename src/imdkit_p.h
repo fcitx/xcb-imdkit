@@ -241,25 +241,45 @@
 #define XimType_XIMValuesList       18
 #define XimType_NEST            0x7FFF
 
+#define _xcb_im_read_frame(IM, CLIENT, FRAME) \
+    do { \
+        size_t len = XIM_MESSAGE_BYTES(hdr); \
+        frame_read_func(FRAME)(&FRAME, &data, &len, (CLIENT)->c.byte_order != (IM)->byte_order); \
+        if (!data) { \
+            frame_free_func(FRAME)(&FRAME); \
+            _xcb_im_send_error_message((IM), (CLIENT)); \
+            return; \
+        } \
+    } while(0)
 
-#define xim_send_frame(FRAME, frame_type, message_type) \
+#define frame_opcode(FRAME) _Generic((FRAME), \
+    connect_reply_fr: XIM_CONNECT_REPLY, \
+    open_reply_fr: XIM_OPEN_REPLY, \
+    close_reply_fr: XIM_CLOSE_REPLY, \
+    query_extension_reply_fr: XIM_QUERY_EXTENSION_REPLY, \
+    encoding_negotiation_reply_fr: XIM_ENCODING_NEGOTIATION_REPLY, \
+    get_im_values_reply_fr: XIM_GET_IM_VALUES_REPLY, \
+    register_triggerkeys_fr: XIM_REGISTER_TRIGGERKEYS \
+    )
+
+#define _xcb_im_send_frame(IM, CLIENT, FRAME) \
     do { \
         bool fail; \
-        size_t length = frame_type##_size(&FRAME); \
-        uint8_t* reply = _xcb_im_new_message(im, client, message_type, 0, length); \
+        size_t length = frame_size_func(FRAME)(&FRAME); \
+        uint8_t* reply = _xcb_im_new_message((IM), (CLIENT), frame_opcode(FRAME), 0, length); \
         do { \
             if (!reply) { \
                 break; \
             } \
-            frame_type##_write(&FRAME, reply + XCB_IM_HEADER_SIZE, client->c.byte_order != im->byte_order); \
-            if (!_xcb_im_send_message(im, client, reply, length)) { \
+            frame_write_func(FRAME)(&FRAME, reply + XCB_IM_HEADER_SIZE, (CLIENT)->c.byte_order != (IM)->byte_order); \
+            if (!_xcb_im_send_message((IM), (CLIENT), reply, length)) { \
                 break; \
             } \
             fail = false; \
         } while(0); \
         free(reply); \
         if (fail) { \
-            _xcb_im_send_error_message(im, client); \
+            _xcb_im_send_error_message((IM), (CLIENT)); \
         } \
     } while(0)
 
@@ -284,32 +304,36 @@ enum {
 typedef struct _IMListOfAttr {
     char *name;
     uint16_t type;
+    bool (*get_value)(xcb_im_t* im, xcb_im_client_table_t* client, ximattribute_fr* attr);
+    bool (*set_value)(xcb_im_t* im, xcb_im_client_table_t* client, uint8_t* data, size_t length);
 } IMListOfAttr;
 
+bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, ximattribute_fr* attr);
+
 static const IMListOfAttr Default_IMattr[] = {
-    {XNQueryInputStyle,   XimType_XIMStyles},
+    {XNQueryInputStyle,   XimType_XIMStyles, _xcb_im_get_input_styles_attr, NULL},
     /*    {XNQueryIMValuesList, XimType_XIMValuesList}, */
 };
 
 static const IMListOfAttr Default_ICattr[] = {
-    {XNInputStyle,              XimType_CARD32},
-    {XNClientWindow,            XimType_Window},
-    {XNFocusWindow,             XimType_Window},
-    {XNFilterEvents,            XimType_CARD32},
-    {XNPreeditAttributes,       XimType_NEST},
-    {XNStatusAttributes,        XimType_NEST},
-    {XNFontSet,                 XimType_XFontSet},
-    {XNArea,                    XimType_XRectangle},
-    {XNAreaNeeded,              XimType_XRectangle},
-    {XNColormap,                XimType_CARD32},
-    {XNStdColormap,             XimType_CARD32},
-    {XNForeground,              XimType_CARD32},
-    {XNBackground,              XimType_CARD32},
-    {XNBackgroundPixmap,        XimType_CARD32},
-    {XNSpotLocation,            XimType_XPoint},
-    {XNLineSpace,               XimType_CARD32},
-    {XNPreeditState,            XimType_CARD32},
-    {XNSeparatorofNestedList,   XimType_SeparatorOfNestedList},
+    {XNInputStyle,              XimType_CARD32, NULL, NULL},
+    {XNClientWindow,            XimType_Window, NULL, NULL},
+    {XNFocusWindow,             XimType_Window, NULL, NULL},
+    {XNFilterEvents,            XimType_CARD32, NULL, NULL},
+    {XNPreeditAttributes,       XimType_NEST, NULL, NULL},
+    {XNStatusAttributes,        XimType_NEST, NULL, NULL},
+    {XNFontSet,                 XimType_XFontSet, NULL, NULL},
+    {XNArea,                    XimType_XRectangle, NULL, NULL},
+    {XNAreaNeeded,              XimType_XRectangle, NULL, NULL},
+    {XNColormap,                XimType_CARD32, NULL, NULL},
+    {XNStdColormap,             XimType_CARD32, NULL, NULL},
+    {XNForeground,              XimType_CARD32, NULL, NULL},
+    {XNBackground,              XimType_CARD32, NULL, NULL},
+    {XNBackgroundPixmap,        XimType_CARD32, NULL, NULL},
+    {XNSpotLocation,            XimType_XPoint, NULL, NULL},
+    {XNLineSpace,               XimType_CARD32, NULL, NULL},
+    {XNPreeditState,            XimType_CARD32, NULL, NULL},
+    {XNSeparatorofNestedList,   XimType_SeparatorOfNestedList, NULL, NULL},
 };
 
 typedef struct {

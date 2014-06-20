@@ -7,13 +7,13 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
 include(CheckCCompilerFlag)
 include(CheckFunctionExists)
 
-check_c_compiler_flag("-std=c99" C99_SUPPORTED)
-if (NOT C99_SUPPORTED)
-    message(FATAL_ERROR "C99 is required to compile Fcitx.")
+check_c_compiler_flag("-std=c11" C11_SUPPORTED)
+if (NOT C11_SUPPORTED)
+    message(FATAL_ERROR "C11 is required to compile xcb-imdkit.")
 endif()
 
 add_definitions(-D_GNU_SOURCE)
-set(CMAKE_C_FLAGS "-fPIC -std=c99 -Wall -Wextra -Wno-unused-parameter -fvisibility=hidden ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "-fPIC -std=c11 -Wall -Wextra -Wno-unused-parameter -fvisibility=hidden ${CMAKE_C_FLAGS}")
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed -Wl,--no-undefined ${CMAKE_SHARED_LINKER_FLAGS}")
 set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_MODULE_LINKER_FLAGS}")
 
