@@ -370,19 +370,12 @@ void _xcb_im_handle_destroy_ic(xcb_im_t* im,
             break;
         }
 
-        if (im->callback) {
-            im->callback(im, &client->c, &ic->ic, hdr, &frame, NULL, im->user_data);
-        }
-        xcb_im_destroy_ic_fr_free(&frame);
-
         xcb_im_destroy_ic_reply_fr_t reply_frame;
         reply_frame.input_method_ID = client->c.connect_id;
         reply_frame.input_context_ID = frame.input_context_ID;
+        xcb_im_destroy_ic_fr_free(&frame);
 
-        // Destroy ic
-        HASH_DEL(client->input_contexts, ic);
-        ic->hh.next = client->ic_free_list;
-        client->ic_free_list = ic;
+        _xcb_im_destroy_ic(im, ic);
 
         _xcb_im_send_frame(im, client, reply_frame, true);
         return;

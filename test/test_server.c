@@ -5,10 +5,16 @@
 #include <assert.h>
 #include "imdkit.h"
 
+bool end = false;
+
 bool callback(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
               const xcb_im_proto_header_t* hdr,
               void* frame, void* arg, void* user_data)
 {
+    if (hdr->major_opcode == XIM_DISCONNECT) {
+        end = true;
+    }
+
     if (hdr->major_opcode != XIM_FORWARD_EVENT) {
         return false;
     }
@@ -93,7 +99,16 @@ int main(int argc, char* argv[])
     while ( (event = xcb_wait_for_event (connection)) ) {
         xcb_im_filter_event(im, event);
         free(event);
+        if (end) {
+            break;
+        }
     }
+
+    xcb_im_close_im(im);
+    xcb_im_destroy(im);
+
+    xcb_key_symbols_free(key_symbols);
+    xcb_disconnect(connection);
 
     return 0;
 }

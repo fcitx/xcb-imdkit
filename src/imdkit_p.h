@@ -393,6 +393,8 @@ const xcb_im_default_ic_attr_t* _xcb_im_default_ic_attr_entry(xcb_im_t* im,
 
 void _xcb_im_destroy_client(xcb_im_t* im,
                             xcb_im_client_table_t* client);
+void _xcb_im_destroy_ic(xcb_im_t* im,
+                        xcb_im_input_context_table_t* ic);
 void _xcb_im_set_event_mask(xcb_im_t* im, xcb_im_client_table_t* client, uint32_t icid, uint32_t forward_event_mask, uint32_t sync_mask);
 void _xcb_im_add_queue(xcb_im_t* im, xcb_im_client_table_t* client, uint16_t icid, const xcb_im_proto_header_t* hdr, xcb_im_forward_event_fr_t* frame, uint8_t* data);
 void _xcb_im_process_queue(xcb_im_t* im, xcb_im_client_table_t* client);

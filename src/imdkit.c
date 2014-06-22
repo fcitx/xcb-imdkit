@@ -781,7 +781,7 @@ void xcb_im_close_im(xcb_im_t* im)
         if (reply->type != XCB_ATOM_NONE && (reply->type != XCB_ATOM_ATOM || reply->format != 32)) {
             break;
         }
-        long* data = xcb_get_property_value(reply);
+        uint32_t* data = xcb_get_property_value(reply);
         if (!data) {
             break;
         }
@@ -821,21 +821,24 @@ void xcb_im_close_im(xcb_im_t* im)
         }
     } while(0);
     free(reply);
-    while (im->clients_by_win) {
-        HASH_DELETE(hh2, im->clients_by_win, im->clients_by_win);
-    }
     while (im->clients_by_id) {
-        xcb_im_client_table_t* client = im->clients_by_id;
-        HASH_DELETE(hh1, im->clients_by_id, im->clients_by_id);
-        xcb_destroy_window(im->conn, client->c.accept_win);
-        free(client);
+        _xcb_im_destroy_client(im, im->clients_by_id);
+    }
+
+    while (im->free_list) {
+        xcb_im_client_table_t* p = im->free_list;
+        // TODO: mind need to free more?
+        im->free_list = im->free_list->hh1.next;
+        free(p);
     }
     im->connect_id = 0;
 }
 
-void xcb_im_destory(xcb_im_t* im)
+void xcb_im_destroy(xcb_im_t* im)
 {
     // TODO
+    free(im->locale);
+    free(im->serverName);
     _free_encodings(&im->encodings);
     _free_trigger_keys(&im->onKeys);
     _free_trigger_keys(&im->offKeys);
@@ -954,6 +957,25 @@ const xcb_im_default_ic_attr_t* _xcb_im_default_ic_attr_entry(xcb_im_t* im,
     return &Default_ICattr[attr - im->icattr];
 }
 
+void _xcb_im_destroy_ic(xcb_im_t* im,
+                        xcb_im_input_context_table_t* ic) {
+
+    xcb_im_client_table_t* client = (xcb_im_client_table_t*) ic->ic.client;
+
+    if (im->callback) {
+        xcb_im_proto_header_t hdr;
+        hdr.length = 0;
+        hdr.major_opcode = XIM_DESTROY_IC;
+        hdr.minor_opcode = 0;
+        im->callback(im, ic->ic.client, &ic->ic, &hdr, NULL, NULL, im->user_data);
+    }
+
+    // Destroy ic
+    HASH_DEL(client->input_contexts, ic);
+    ic->hh.next = client->ic_free_list;
+    client->ic_free_list = ic;
+}
+
 void _xcb_im_destroy_client(xcb_im_t* im,
                             xcb_im_client_table_t* client)
 {
@@ -961,6 +983,11 @@ void _xcb_im_destroy_client(xcb_im_t* im,
     hdr.length = 0;
     hdr.major_opcode = XIM_DISCONNECT;
     hdr.minor_opcode = 0;
+
+    while (client->input_contexts) {
+        _xcb_im_destroy_ic(im, client->input_contexts);
+    }
+
     if (im->callback) {
         im->callback(im, &client->c, NULL, &hdr, NULL, NULL, im->user_data);
     }
@@ -977,13 +1004,6 @@ void _xcb_im_destroy_client(xcb_im_t* im,
         xcb_im_input_context_table_t* p = client->ic_free_list;
         // TODO: mind need to free more?
         client->ic_free_list = client->ic_free_list->hh.next;
-        free(p);
-    }
-
-    while (client->input_contexts) {
-        xcb_im_input_context_table_t* p = client->input_contexts;
-        // TODO: mind need to free more?
-        HASH_DEL(client->input_contexts, p);
         free(p);
     }
 

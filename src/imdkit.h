@@ -121,7 +121,7 @@ XCB_IMDKIT_EXPORT xcb_im_t* xcb_im_create(xcb_connection_t* conn,
 XCB_IMDKIT_EXPORT bool xcb_im_open_im(xcb_im_t* im);
 XCB_IMDKIT_EXPORT bool xcb_im_filter_event(xcb_im_t* im, xcb_generic_event_t* event);
 XCB_IMDKIT_EXPORT void xcb_im_close_im(xcb_im_t* im);
-XCB_IMDKIT_EXPORT void xcb_im_destory(xcb_im_t* im);
+XCB_IMDKIT_EXPORT void xcb_im_destroy(xcb_im_t* im);
 XCB_IMDKIT_EXPORT void xcb_im_forward_event(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_key_press_event_t* event);
 XCB_IMDKIT_EXPORT void xcb_im_commit_string(xcb_im_t* im, xcb_im_input_context_t* ic, uint32_t flag, char* str, uint32_t length, uint32_t keysym);
 XCB_IMDKIT_EXPORT void xcb_im_geometry_callback(xcb_im_t* im, xcb_im_input_context_t* ic);
