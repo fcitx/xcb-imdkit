@@ -641,6 +641,7 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_SYNC:
         DebugLog("-- XIM_SYNC\n");
+        // nothing is needed here
         break;
 
     case XIM_SYNC_REPLY:
@@ -667,6 +668,7 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_STR_CONVERSION_REPLY:
         DebugLog("-- XIM_STR_CONVERSION_REPLY\n");
+        // we don't care this one.
         break;
     }
     /*endswitch*/
