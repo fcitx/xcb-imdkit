@@ -624,6 +624,7 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_DESTROY_IC:
         DebugLog("-- XIM_DESTROY_IC\n");
+        _xcb_im_handle_destroy_ic(im, client, hdr, data, del);
         break;
 
     case XIM_RESET_IC:

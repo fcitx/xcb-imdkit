@@ -51,6 +51,12 @@ void _xcb_im_handle_create_ic(xcb_im_t* im,
                               uint8_t* data,
                               bool *del);
 
+void _xcb_im_handle_destroy_ic(xcb_im_t* im,
+                               xcb_im_client_table_t* client,
+                               const xcb_im_proto_header_t* hdr,
+                               uint8_t* data,
+                               bool *del);
+
 void _xcb_im_handle_set_ic_values(xcb_im_t* im,
                                   xcb_im_client_table_t* client,
                                   const xcb_im_proto_header_t* hdr,

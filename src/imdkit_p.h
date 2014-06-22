@@ -273,7 +273,8 @@
     xcb_im_create_ic_reply_fr_t: XIM_CREATE_IC_REPLY, \
     xcb_im_set_ic_values_reply_fr_t: XIM_SET_IC_VALUES_REPLY, \
     xcb_im_get_ic_values_reply_fr_t: XIM_GET_IC_VALUES_REPLY, \
-    xcb_im_register_triggerkeys_fr_t: XIM_REGISTER_TRIGGERKEYS \
+    xcb_im_register_triggerkeys_fr_t: XIM_REGISTER_TRIGGERKEYS, \
+    xcb_im_destroy_ic_reply_fr_t: XIM_DESTROY_IC_REPLY \
     )
 
 #define _xcb_im_send_frame(IM, CLIENT, FRAME, SEND_ERROR) \

@@ -237,6 +237,7 @@ void _xcb_im_handle_disconnect(xcb_im_t* im,
         free(p);
     }
 
+    client->hh1.next = im->free_list;
     im->free_list = client;
 }
 
@@ -379,6 +380,50 @@ void _xcb_im_handle_create_ic(xcb_im_t* im,
     } while(0);
     // error
     xcb_im_create_ic_fr_free(&frame);
+    _xcb_im_send_error_message(im, client);
+    return;
+}
+
+
+void _xcb_im_handle_destroy_ic(xcb_im_t* im,
+                               xcb_im_client_table_t* client,
+                               const xcb_im_proto_header_t* hdr,
+                               uint8_t* data,
+                               bool *del)
+{
+    xcb_im_destroy_ic_fr_t frame;
+    _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
+
+    do {
+        if (frame.input_method_ID != client->c.connect_id) {
+            break;
+        }
+
+        xcb_im_input_context_table_t* ic = NULL;
+        HASH_FIND(hh, client->input_contexts, &frame.input_context_ID, sizeof(uint16_t), ic);
+        if (!ic) {
+            break;
+        }
+
+        if (im->callback) {
+            im->callback(im, &client->c, &ic->ic, hdr, &frame, NULL, im->user_data);
+        }
+        xcb_im_destroy_ic_fr_free(&frame);
+
+        xcb_im_destroy_ic_reply_fr_t reply_frame;
+        reply_frame.input_method_ID = client->c.connect_id;
+        reply_frame.input_context_ID = frame.input_context_ID;
+
+        // Destroy ic
+        HASH_DEL(client->input_contexts, ic);
+        ic->hh.next = client->ic_free_list;
+        client->ic_free_list = ic;
+
+        _xcb_im_send_frame(im, client, reply_frame, true);
+        return;
+    } while(0);
+    // error
+    xcb_im_destroy_ic_fr_free(&frame);
     _xcb_im_send_error_message(im, client);
     return;
 }
