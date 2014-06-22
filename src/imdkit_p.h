@@ -437,4 +437,7 @@ xcb_im_input_context_table_t* _xcb_im_new_input_context(xcb_im_t* im,
 const xcb_im_default_ic_attr_t* _xcb_im_default_ic_attr_entry(xcb_im_t* im,
                                                               uint32_t id);
 
+void _xcb_im_destroy_client(xcb_im_t* im,
+                            xcb_im_client_table_t* client);
+
 #endif // IMDKIT_P_H

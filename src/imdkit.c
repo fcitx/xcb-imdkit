@@ -359,6 +359,16 @@ xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_wind
     client->c.byte_order = '?'; // initial value
     HASH_ADD(hh2, im->clients_by_win, c.accept_win, sizeof(xcb_window_t), client);
 
+
+    uint32_t mask[] = { XCB_EVENT_MASK_STRUCTURE_NOTIFY };
+    xcb_void_cookie_t cookie = xcb_change_window_attributes_checked(im->conn, client_window, XCB_CW_EVENT_MASK, mask);
+
+    xcb_generic_error_t* error = NULL;
+    if ((error = xcb_request_check(im->conn, cookie)) != NULL) {
+        DebugLog("Error code: %d", error->error_code);
+        free(error);
+    }
+
     return client;
 }
 
@@ -710,11 +720,37 @@ bool _xcb_im_filter_client(xcb_im_t* im, xcb_generic_event_t* event)
     return false;
 }
 
+bool _xcb_im_filter_destroy_window(xcb_im_t* im, xcb_generic_event_t* event)
+{
+    do {
+        if ((event->response_type & ~0x80) != XCB_DESTROY_NOTIFY) {
+            break;
+        }
+
+        xcb_destroy_notify_event_t* destroy_notify = (xcb_destroy_notify_event_t*) event;
+
+        xcb_im_client_table_t* client = im->clients_by_win;
+        while (client && client->c.client_win != destroy_notify->window) {
+            client = client->hh1.next;
+        }
+        if (!client) {
+            break;
+        }
+
+        _xcb_im_destroy_client(im, client);
+
+        return true;
+    } while(0);
+
+    return false;
+}
+
 bool xcb_im_filter_event(xcb_im_t* im, xcb_generic_event_t* event)
 {
     return _xcb_im_filter_xconnect_message(im, event)
         || _xcb_im_filter_selection_request(im, event)
-        || _xcb_im_filter_client(im, event);
+        || _xcb_im_filter_client(im, event)
+        || _xcb_im_filter_destroy_window(im, event);
 }
 
 void xcb_im_close_im(xcb_im_t* im)
@@ -791,6 +827,7 @@ void xcb_im_close_im(xcb_im_t* im)
 
 void xcb_im_destory(xcb_im_t* im)
 {
+    // TODO
     _free_encodings(&im->encodings);
     _free_trigger_keys(&im->onKeys);
     _free_trigger_keys(&im->offKeys);
@@ -854,4 +891,37 @@ const xcb_im_default_ic_attr_t* _xcb_im_default_ic_attr_entry(xcb_im_t* im,
     }
 
     return &Default_ICattr[attr - im->icattr];
+}
+
+void _xcb_im_destroy_client(xcb_im_t* im,
+                            xcb_im_client_table_t* client)
+{
+    xcb_im_proto_header_t hdr;
+    hdr.length = 0;
+    hdr.major_opcode = XIM_DISCONNECT;
+    hdr.minor_opcode = 0;
+    if (im->callback) {
+        im->callback(im, &client->c, NULL, &hdr, NULL, NULL, im->user_data);
+    }
+
+    HASH_DELETE(hh2, im->clients_by_win, client);
+    HASH_DELETE(hh1, im->clients_by_id, client);
+    xcb_destroy_window(im->conn, client->c.accept_win);
+
+    while (client->ic_free_list) {
+        xcb_im_input_context_table_t* p = client->ic_free_list;
+        // TODO: mind need to free more?
+        client->ic_free_list = client->ic_free_list->hh.next;
+        free(p);
+    }
+
+    while (client->input_contexts) {
+        xcb_im_input_context_table_t* p = client->input_contexts;
+        // TODO: mind need to free more?
+        HASH_DEL(client->input_contexts, p);
+        free(p);
+    }
+
+    client->hh1.next = im->free_list;
+    im->free_list = client;
 }

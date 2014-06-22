@@ -213,32 +213,7 @@ void _xcb_im_handle_disconnect(xcb_im_t* im,
                                uint8_t* data,
                                bool *del)
 {
-    // disconnect doesn't come with message, so we skip parse.
-
-    if (im->callback) {
-        im->callback(im, &client->c, NULL, hdr, NULL, NULL, im->user_data);
-    }
-
-    HASH_DELETE(hh2, im->clients_by_win, client);
-    HASH_DELETE(hh1, im->clients_by_id, client);
-    xcb_destroy_window(im->conn, client->c.accept_win);
-
-    while (client->ic_free_list) {
-        xcb_im_input_context_table_t* p = client->ic_free_list;
-        // TODO: mind need to free more?
-        client->ic_free_list = client->ic_free_list->hh.next;
-        free(p);
-    }
-
-    while (client->input_contexts) {
-        xcb_im_input_context_table_t* p = client->input_contexts;
-        // TODO: mind need to free more?
-        HASH_DEL(client->input_contexts, p);
-        free(p);
-    }
-
-    client->hh1.next = im->free_list;
-    im->free_list = client;
+    _xcb_im_destroy_client(im, client);
 }
 
 static void _xcb_im_set_event_mask(xcb_im_t* im, xcb_im_client_table_t* client, uint32_t icid, uint32_t forward_event_mask, uint32_t sync_mask)
