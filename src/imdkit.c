@@ -831,6 +831,7 @@ void xcb_im_close_im(xcb_im_t* im)
         im->free_list = im->free_list->hh1.next;
         free(p);
     }
+    im->sync = false;
     im->connect_id = 0;
 }
 
