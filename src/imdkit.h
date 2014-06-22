@@ -42,8 +42,8 @@ typedef struct _xcb_im_styles_t
     uint32_t* styles;
 } xcb_im_styles_t;
 
-typedef packet_header_fr xcb_im_proto_header_t;
-typedef ximtriggerkey_fr xcb_im_trigger_key_t;
+typedef xcb_im_packet_header_fr_t xcb_im_proto_header_t;
+typedef xcb_im_ximtriggerkey_fr_t xcb_im_trigger_key_t;
 
 typedef struct _xcb_im_trigger_keys_t{
     uint16_t nKeys;
@@ -67,10 +67,38 @@ typedef struct _xcb_im_client_t
     uint8_t byte_order;
 } xcb_im_client_t;
 
+typedef struct _xcb_im_preedit_attr_t {
+    xcb_rectangle_t area;
+    xcb_rectangle_t area_needed;
+    xcb_point_t spot_location;
+    xcb_colormap_t colormap;
+    uint32_t foreground;
+    uint32_t background;
+    xcb_window_t bg_pixmap;
+    uint32_t line_space;
+} xcb_im_preedit_attr_t;
+
+typedef struct _xcb_im_status_attr_t {
+    xcb_rectangle_t area;
+    xcb_rectangle_t area_needed;
+    xcb_point_t spot_location;
+    xcb_colormap_t colormap;
+    uint32_t foreground;
+    uint32_t background;
+    xcb_window_t bg_pixmap;
+    uint32_t line_space;
+} xcb_im_status_attr_t;
+
 typedef struct _xcb_im_input_context_t
 {
     uint16_t id;
     xcb_im_client_t* client;
+    uint32_t input_style;
+    xcb_window_t client_win;
+    xcb_window_t focus_win;
+
+    xcb_im_preedit_attr_t preedit;
+    xcb_im_status_attr_t status;
 } xcb_im_input_context_t;
 
 typedef bool (*xcb_im_callback)(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,

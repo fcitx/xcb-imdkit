@@ -18,7 +18,7 @@ for line in fileinput.input(sys.argv[1]):
             if "[]" in token:
                 break
         if token is not None:
-            funcname = token[:-2]
+            funcname = "xcb_im_" + token[:-2]
             funcs[funcname] = []
             fieldidx = 0
     elif "FRAME(EOL)" in line:
@@ -50,7 +50,7 @@ def gettypename(attr):
     elif attr == "_FRAME(BARRAY)":
         return ("bytearray")
     elif "_PTR" in attr:
-        return attr[attr.find("(") + 1:attr.find(")")]
+        return "xcb_im_" + attr[attr.find("(") + 1:attr.find(")")]
     else:
         print(attr)
         assert(False)
@@ -75,15 +75,17 @@ def search_barray_length(attrs, i):
 
 if len(sys.argv) > 2:
     for funcname, attrs in funcs.items():
-        print("typedef struct _{0}".format(funcname))
+        print("typedef struct _{0}_t".format(funcname))
         print("{")
         skip = False
         for i, (attr, name) in enumerate(attrs):
             if skip:
                 skip = False
                 continue
-            if "_FRAME(B" in attr or "_PTR" in attr:
+            if "_FRAME(B" in attr:
                 print("    {1} {0};".format(name, gettypename(attr)))
+            if "_PTR" in attr:
+                print("    {1}_t {0};".format(name, gettypename(attr)))
             elif "_PAD" in attr:
                 pass
             elif "_BYTE_COUNTER" in attr:
@@ -92,11 +94,14 @@ if len(sys.argv) > 2:
                 (iterattr, itername) = attrs[i + 1]
                 print("    struct {")
                 print("        uint32_t size;")
-                print("        {0}* items;".format(gettypename(iterattr)))
+                if "_FRAME(B" in iterattr:
+                    print("        {0}* items;".format(gettypename(iterattr)))
+                if "_PTR" in iterattr:
+                    print("        {0}_t* items;".format(gettypename(iterattr)))
                 print("    }} {0};".format(name))
                 skip = True
             
-        print("}} {0};".format(funcname))
+        print("}} {0}_t;".format(funcname))
         print("")
     def print_generic(cat):
         print("#define frame_{0}_func(FRAME) _Generic((FRAME), \\".format(cat))
@@ -106,7 +111,7 @@ if len(sys.argv) > 2:
                 first=False
             else:
                 print(",\\")
-            print("    {0} : {0}_{1}".format(funcname, cat), end='')
+            print("    {0}_t : {0}_{1}".format(funcname, cat), end='')
         print(")")
         print("")
     for cat in ["read", "write", "size", "free"]:
@@ -118,10 +123,10 @@ if len(sys.argv) > 2:
         usecounter16 = any("_BYTE_COUNTER(BIT16" in attr for attr, name in attrs)
         usecounter32 = any("_BYTE_COUNTER(BIT32" in attr for attr, name in attrs)
         usepad = any("_PAD" in attr for attr, name in attrs)
-        print("void {0}_read({0} *frame, uint8_t **data, size_t *len, bool swap);".format(funcname))
-        print("uint8_t* {0}_write({0} *frame, uint8_t *data, bool swap);".format(funcname))
-        print("size_t {0}_size({0} *frame);".format(funcname))
-        print("void {0}_free({0} *frame);".format(funcname))
+        print(("""void {0}_read({0}_t *frame, uint8_t **data, size_t *len, bool swap);\n"""
+               """uint8_t* {0}_write({0}_t *frame, uint8_t *data, bool swap);\n"""
+               """size_t {0}_size({0}_t *frame);\n"""
+               """void {0}_free({0}_t *frame);""").format(funcname))
         print("")
 else:
     print("#include <string.h>")
@@ -134,7 +139,7 @@ else:
         usecounter16 = any("_BYTE_COUNTER(BIT16" in attr for attr, name in attrs)
         usecounter32 = any("_BYTE_COUNTER(BIT32" in attr for attr, name in attrs)
         usepad = any("_PAD" in attr for attr, name in attrs)
-        print("void {0}_read({0} *frame, uint8_t **data, size_t *len, bool swap)".format(funcname))
+        print("void {0}_read({0}_t *frame, uint8_t **data, size_t *len, bool swap)".format(funcname))
         print("{")
         print("    memset(frame, 0, sizeof(*frame));")
         if usepad:
@@ -179,7 +184,10 @@ else:
                 print("    frame->{0}.items = NULL;".format(name, gettypename(iterattr)))
                 print("    frame->{0}.size = 0;".format(name))
                 print("    while (counter != 0) {")
-                print("        void* temp = realloc(frame->{0}.items, (frame->{0}.size + 1) * sizeof({1}));".format(name, gettypename(iterattr)))
+                if "_PTR" in iterattr:
+                    print("        void* temp = realloc(frame->{0}.items, (frame->{0}.size + 1) * sizeof({1}_t));".format(name, gettypename(iterattr)))
+                else:
+                    print("        void* temp = realloc(frame->{0}.items, (frame->{0}.size + 1) * sizeof({1}));".format(name, gettypename(iterattr)))
                 print("        if (!temp) {")
                 print("            *data = NULL;")
                 print("            return;")
@@ -193,7 +201,7 @@ else:
 
         print("}")
         print("")
-        print("uint8_t* {0}_write({0} *frame, uint8_t *data, bool swap)".format(funcname))
+        print("uint8_t* {0}_write({0}_t *frame, uint8_t *data, bool swap)".format(funcname))
         print("{")
         if usepad:
             print("    uint8_t* start = data;")
@@ -248,7 +256,7 @@ else:
 
         print("}")
         print("")
-        print("size_t {0}_size({0} *frame)".format(funcname))
+        print("size_t {0}_size({0}_t *frame)".format(funcname))
         print("{")
         print("    size_t size = 0;")
         skip = False
@@ -279,7 +287,7 @@ else:
         print("}")
         print("")
 
-        print("void {0}_free({0} *frame)".format(funcname))
+        print("void {0}_free({0}_t *frame)".format(funcname))
         print("{")
         for i, (attr, name) in enumerate(attrs):
             if skip:
@@ -288,7 +296,7 @@ else:
             if "_PTR" in attr:
                 print("    {1}_free(&frame->{0});".format(name, gettypename(attr)))
             elif "_FRAME(BARRAY" in attr:
-                print("    free(frame->{0});".format(name))
+                pass
             elif attr == "_FRAME(ITER)":
                 (iterattr, itername) = attrs[i + 1]
                 if "_PTR" in iterattr:

@@ -241,34 +241,44 @@
 #define XimType_XIMValuesList       18
 #define XimType_NEST            0x7FFF
 
-#define _xcb_im_read_frame(IM, CLIENT, FRAME) \
+#define _xcb_im_read_frame_with_error(IM, CLIENT, FRAME, DATA, LEN) \
     do { \
-        size_t len = XIM_MESSAGE_BYTES(hdr); \
-        frame_read_func(FRAME)(&FRAME, &data, &len, (CLIENT)->c.byte_order != (IM)->byte_order); \
-        if (!data) { \
+        size_t len = (LEN); \
+        frame_read_func(FRAME)(&FRAME, &DATA, &len, (CLIENT)->c.byte_order != (IM)->byte_order); \
+        if (!DATA) { \
             frame_free_func(FRAME)(&FRAME); \
             _xcb_im_send_error_message((IM), (CLIENT)); \
             return; \
         } \
     } while(0)
 
+#define _xcb_im_read_frame(IM, CLIENT, FRAME, DATA, LEN) \
+    do { \
+        size_t len = (LEN); \
+        frame_read_func(FRAME)(&FRAME, &DATA, &len, (CLIENT)->c.byte_order != (IM)->byte_order); \
+        if (!DATA) { \
+            frame_free_func(FRAME)(&FRAME); \
+            return; \
+        } \
+    } while(0)
+
 #define frame_opcode(FRAME) _Generic((FRAME), \
-    connect_reply_fr: XIM_CONNECT_REPLY, \
-    open_reply_fr: XIM_OPEN_REPLY, \
-    close_reply_fr: XIM_CLOSE_REPLY, \
-    query_extension_reply_fr: XIM_QUERY_EXTENSION_REPLY, \
-    encoding_negotiation_reply_fr: XIM_ENCODING_NEGOTIATION_REPLY, \
-    get_im_values_reply_fr: XIM_GET_IM_VALUES_REPLY, \
-    set_event_mask_fr: XIM_SET_EVENT_MASK, \
-    create_ic_reply_fr: XIM_CREATE_IC_REPLY, \
-    set_ic_values_reply_fr: XIM_SET_IC_VALUES_REPLY, \
-    get_ic_values_reply_fr: XIM_GET_IC_VALUES_REPLY, \
-    register_triggerkeys_fr: XIM_REGISTER_TRIGGERKEYS \
+    xcb_im_connect_reply_fr_t: XIM_CONNECT_REPLY, \
+    xcb_im_open_reply_fr_t: XIM_OPEN_REPLY, \
+    xcb_im_close_reply_fr_t: XIM_CLOSE_REPLY, \
+    xcb_im_query_extension_reply_fr_t: XIM_QUERY_EXTENSION_REPLY, \
+    xcb_im_encoding_negotiation_reply_fr_t: XIM_ENCODING_NEGOTIATION_REPLY, \
+    xcb_im_get_im_values_reply_fr_t: XIM_GET_IM_VALUES_REPLY, \
+    xcb_im_set_event_mask_fr_t: XIM_SET_EVENT_MASK, \
+    xcb_im_create_ic_reply_fr_t: XIM_CREATE_IC_REPLY, \
+    xcb_im_set_ic_values_reply_fr_t: XIM_SET_IC_VALUES_REPLY, \
+    xcb_im_get_ic_values_reply_fr_t: XIM_GET_IC_VALUES_REPLY, \
+    xcb_im_register_triggerkeys_fr_t: XIM_REGISTER_TRIGGERKEYS \
     )
 
 #define _xcb_im_send_frame(IM, CLIENT, FRAME, SEND_ERROR) \
     do { \
-        bool fail; \
+        bool fail = true; \
         size_t length = frame_size_func(FRAME)(&FRAME); \
         uint8_t* reply = _xcb_im_new_message((IM), (CLIENT), frame_opcode(FRAME), 0, length); \
         do { \
@@ -315,46 +325,50 @@ enum {
 };
 
 
-typedef struct _IMListOfAttr {
+typedef struct _xcb_im_default_im_attr_t {
     char *name;
     uint16_t type;
-    bool (*get_value)(xcb_im_t* im, xcb_im_client_table_t* client, ximattribute_fr* attr);
-    bool (*parse_value)(xcb_im_t* im, xcb_im_client_table_t* client, uint8_t* data, size_t length);
-} IMListOfAttr;
+    bool (*get_value)(xcb_im_t* im, xcb_im_client_table_t* client, xcb_im_ximattribute_fr_t* attr);
+} xcb_im_default_im_attr_t;
 
-bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, ximattribute_fr* attr);
+bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, xcb_im_ximattribute_fr_t* attr);
 
-static const IMListOfAttr Default_IMattr[] = {
-    {XNQueryInputStyle,   XimType_XIMStyles, _xcb_im_get_input_styles_attr, NULL},
+static const xcb_im_default_im_attr_t Default_IMattr[] = {
+    {XNQueryInputStyle,   XimType_XIMStyles, _xcb_im_get_input_styles_attr},
     /*    {XNQueryIMValuesList, XimType_XIMValuesList}, */
 };
 
-static const IMListOfAttr Default_ICattr[] = {
-    {XNInputStyle,              XimType_CARD32, NULL, NULL},
-    {XNClientWindow,            XimType_Window, NULL, NULL},
-    {XNFocusWindow,             XimType_Window, NULL, NULL},
-    {XNFilterEvents,            XimType_CARD32, NULL, NULL},
-    {XNPreeditAttributes,       XimType_NEST, NULL, NULL},
-    {XNStatusAttributes,        XimType_NEST, NULL, NULL},
-    {XNFontSet,                 XimType_XFontSet, NULL, NULL},
-    {XNArea,                    XimType_XRectangle, NULL, NULL},
-    {XNAreaNeeded,              XimType_XRectangle, NULL, NULL},
-    {XNColormap,                XimType_CARD32, NULL, NULL},
-    {XNStdColormap,             XimType_CARD32, NULL, NULL},
-    {XNForeground,              XimType_CARD32, NULL, NULL},
-    {XNBackground,              XimType_CARD32, NULL, NULL},
-    {XNBackgroundPixmap,        XimType_CARD32, NULL, NULL},
-    {XNSpotLocation,            XimType_XPoint, NULL, NULL},
-    {XNLineSpace,               XimType_CARD32, NULL, NULL},
-    {XNPreeditState,            XimType_CARD32, NULL, NULL},
-    {XNSeparatorofNestedList,   XimType_SeparatorOfNestedList, NULL, NULL},
+typedef struct _xcb_im_default_ic_attr_t {
+    char *name;
+    uint16_t type;
+    bool read;
+} xcb_im_default_ic_attr_t;
+
+static const xcb_im_default_ic_attr_t Default_ICattr[] = {
+    {XNInputStyle,              XimType_CARD32, false},
+    {XNClientWindow,            XimType_Window, false},
+    {XNFocusWindow,             XimType_Window, false},
+    {XNFilterEvents,            XimType_CARD32, false},
+    {XNPreeditAttributes,       XimType_NEST, false},
+    {XNStatusAttributes,        XimType_NEST, false},
+    {XNFontSet,                 XimType_XFontSet, false},
+    {XNArea,                    XimType_XRectangle, true},
+    {XNAreaNeeded,              XimType_XRectangle, true},
+    {XNColormap,                XimType_CARD32, false},
+    {XNStdColormap,             XimType_CARD32, false},
+    {XNForeground,              XimType_CARD32, true},
+    {XNBackground,              XimType_CARD32, true},
+    {XNBackgroundPixmap,        XimType_CARD32, false},
+    {XNSpotLocation,            XimType_XPoint, true},
+    {XNLineSpace,               XimType_CARD32, true},
+    {XNSeparatorofNestedList,   XimType_SeparatorOfNestedList, false},
 };
 
-typedef struct {
+typedef struct _xcb_im_ext_list{
     char *name;
     uint8_t major_opcode;
     uint8_t minor_opcode;
-} IMExtList;
+} xcb_im_ext_list;
 
 /*
  * Minor Protocol Number for Extension Protocol
@@ -364,7 +378,7 @@ typedef struct {
 #define XIM_EXT_FORWARD_KEYEVENT        (0x32)
 #define XIM_EXT_MOVE                (0x33)
 
-static const IMExtList Default_Extension[] = {
+static const xcb_im_ext_list Default_Extension[] = {
     {"XIM_EXT_MOVE", XIM_EXTENSION, XIM_EXT_MOVE},
     {"XIM_EXT_SET_EVENT_MASK", XIM_EXTENSION, XIM_EXT_SET_EVENT_MASK},
     {"XIM_EXT_FORWARD_KEYEVENT", XIM_EXTENSION, XIM_EXT_FORWARD_KEYEVENT},
@@ -374,13 +388,16 @@ struct _xcb_im_t
 {
     xcb_connection_t* conn;
     char byte_order;
-    ximattr_fr imattr[ARRAY_SIZE(Default_IMattr)];
-    xicattr_fr icattr[ARRAY_SIZE(Default_ICattr)];
-    ext_fr  extension[ARRAY_SIZE(Default_Extension)];
+    xcb_im_ximattr_fr_t imattr[ARRAY_SIZE(Default_IMattr)];
+    xcb_im_xicattr_fr_t icattr[ARRAY_SIZE(Default_ICattr)];
+    xcb_im_ext_fr_t  extension[ARRAY_SIZE(Default_Extension)];
     uint16_t preeditAttr_id;
     uint16_t statusAttr_id;
     uint16_t separatorAttr_id;
-    ximattr_fr* id2attr[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
+    xcb_im_ximattr_fr_t* id2attr[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
+    ssize_t id2preeditoffset[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
+    ssize_t id2statusoffset[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
+    ssize_t id2icoffset[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
     uint32_t event_mask;
     xcb_im_trigger_keys_t onKeys;
     xcb_im_trigger_keys_t offKeys;
@@ -403,7 +420,20 @@ struct _xcb_im_t
     void* user_data;
 };
 
+typedef union _xcb_im_ic_attr_value_t
+{
+    xcb_rectangle_t rect;
+    xcb_point_t point;
+    uint32_t byte4;
+    struct {
+        uint8_t* data;
+        uint8_t len;
+    } raw;
+} xcb_im_ic_attr_value_t;
+
 xcb_im_input_context_table_t* _xcb_im_new_input_context(xcb_im_t* im,
                                                         xcb_im_client_table_t* client);
+const xcb_im_default_ic_attr_t* _xcb_im_default_ic_attr_entry(xcb_im_t* im,
+                                                              uint32_t id);
 
 #endif // IMDKIT_P_H

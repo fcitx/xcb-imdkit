@@ -91,10 +91,7 @@ void bytearray_read(bytearray* p, uint32_t arraylen, uint8_t** data, size_t* len
         return;
     }
 
-    // we force null termination for easier life
-    *p = malloc((arraylen + 1) * sizeof(uint8_t));
-    memcpy(*p, *data, arraylen);
-    (*p)[arraylen] = 0;
+    *p = *data;
     *data += arraylen;
     *len -= arraylen;
 }

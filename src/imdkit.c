@@ -91,7 +91,7 @@ xcb_im_t* xcb_im_create(xcb_connection_t* conn,
     im->callback = callback;
     im->user_data = user_data;
 
-    if (event_mask) {
+    if (!event_mask) {
         im->event_mask = XCB_EVENT_MASK_KEY_PRESS;
     } else {
         im->event_mask = event_mask;
@@ -126,15 +126,55 @@ xcb_im_t* xcb_im_create(xcb_connection_t* conn,
         im->icattr[i].ic_attribute = (uint8_t*) Default_ICattr[i].name;
         im->icattr[i].length_of_ic_attribute = strlen(Default_ICattr[i].name);
         im->icattr[i].type_of_the_value = Default_ICattr[i].type;
-        im->icattr[i].attribute_ID = id++;
+        im->icattr[i].attribute_ID = id;
+        im->id2preeditoffset[id] = -1;
+        im->id2statusoffset[id] = -1;
+        im->id2icoffset[id] = -1;
+        // this is comparing two constant string so it should be fast
         if (strcmp(Default_ICattr[i].name, XNPreeditAttributes) == 0) {
             im->preeditAttr_id = im->icattr[i].attribute_ID;
         } else if (strcmp(Default_ICattr[i].name, XNStatusAttributes) == 0) {
             im->statusAttr_id = im->icattr[i].attribute_ID;
         } else if (strcmp(Default_ICattr[i].name, XNSeparatorofNestedList) == 0) {
             im->separatorAttr_id = im->icattr[i].attribute_ID;
+        } else if (strcmp(Default_ICattr[i].name, XNArea) == 0) {
+            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, area);
+            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, area);
+        } else if (strcmp(Default_ICattr[i].name, XNAreaNeeded) == 0) {
+            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
+            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
+        } else if (strcmp(Default_ICattr[i].name, XNAreaNeeded) == 0) {
+            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
+            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
+        } else if (strcmp(Default_ICattr[i].name, XNSpotLocation) == 0) {
+            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, spot_location);
+        } else if (strcmp(Default_ICattr[i].name, XNColormap) == 0) {
+            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
+            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
+        } else if (strcmp(Default_ICattr[i].name, XNStdColormap) == 0) {
+            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
+            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
+        } else if (strcmp(Default_ICattr[i].name, XNForeground) == 0) {
+            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, foreground);
+            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, foreground);
+        } else if (strcmp(Default_ICattr[i].name, XNBackground) == 0) {
+            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, background);
+            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, background);
+        } else if (strcmp(Default_ICattr[i].name, XNBackgroundPixmap) == 0) {
+            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, bg_pixmap);
+            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, bg_pixmap);
+        } else if (strcmp(Default_ICattr[i].name, XNLineSpace) == 0) {
+            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, line_space);
+            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, line_space);
+        } else if (strcmp(Default_ICattr[i].name, XNClientWindow) == 0) {
+            im->id2icoffset[id] = offsetof(xcb_im_input_context_t, client_win);
+        } else if (strcmp(Default_ICattr[i].name, XNInputStyle) == 0) {
+            im->id2icoffset[id] = offsetof(xcb_im_input_context_t, input_style);
+        } else if (strcmp(Default_ICattr[i].name, XNFocusWindow) == 0) {
+            im->id2icoffset[id] = offsetof(xcb_im_input_context_t, focus_win);
         }
-        im->id2attr[id] = (ximattr_fr*) &im->icattr[i];
+        im->id2attr[id] = (xcb_im_ximattr_fr_t*) &im->icattr[i];
+        id++;
     }
 
     for (size_t i = 0;  i < ARRAY_SIZE(Default_Extension);  i++) {
@@ -776,13 +816,13 @@ void xcb_im_sync_xlib(xcb_im_t* im)
 {
 }
 
-bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, ximattribute_fr* attr)
+bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, xcb_im_ximattribute_fr_t* attr)
 {
-    input_styles_fr fr;
+    xcb_im_input_styles_fr_t fr;
     memset(&fr, 0, sizeof(fr));
     fr.XIMStyle_list.size = im->inputStyles.nStyles;
     if (im->inputStyles.nStyles) {
-        if ((fr.XIMStyle_list.items = calloc(im->inputStyles.nStyles, sizeof(inputstyle_fr))) == NULL) {
+        if ((fr.XIMStyle_list.items = calloc(im->inputStyles.nStyles, sizeof(xcb_im_inputstyle_fr_t))) == NULL) {
             return false;
         }
         for (size_t j = 0; j < im->inputStyles.nStyles; j ++) {
@@ -790,38 +830,25 @@ bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, 
         }
     }
 
-    size_t frame_size = input_styles_fr_size(&fr);
+    size_t frame_size = xcb_im_input_styles_fr_size(&fr);
     if ((attr->value = malloc(frame_size)) != NULL) {;
         attr->value_length = frame_size;
-        input_styles_fr_write(&fr, attr->value, client->c.byte_order != im->byte_order);
+        xcb_im_input_styles_fr_write(&fr, attr->value, client->c.byte_order != im->byte_order);
     }
-    input_styles_fr_free(&fr);
+    xcb_im_input_styles_fr_free(&fr);
     return attr->value != NULL;
 }
 
-void xcb_im_parse_ic_values(xcb_im_t* im,
-                            xcb_im_client_table_t* client,
-                            uint32_t nICAttrs,
-                            xicattribute_fr* icattrs)
+const xcb_im_default_ic_attr_t* _xcb_im_default_ic_attr_entry(xcb_im_t* im,
+                                                              uint32_t id)
 {
-    bool met[ARRAY_SIZE(Default_ICattr)];
-    for (uint32_t i = 0;  i < nICAttrs;  i++) {
-        if (icattrs[i].attribute_ID >= ARRAY_SIZE(im->id2attr)) {
-            continue;
-        }
-        xicattr_fr* attr = (xicattr_fr*) im->id2attr[icattrs[i].attribute_ID];
-        if ((attr < im->icattr) || (attr >= im->icattr + ARRAY_SIZE(Default_ICattr))) {
-            continue;
-        }
-
-        if (met[attr - im->icattr]) {
-            continue;
-        }
-
-        if (!Default_ICattr[attr - im->icattr].parse_value) {
-            continue;
-        }
-
-        Default_ICattr[attr - im->icattr].parse_value(im, client, icattrs[i].value, icattrs[i].value_length);
+    if (id >= ARRAY_SIZE(im->id2attr)) {
+        return NULL;
     }
+    xcb_im_xicattr_fr_t* attr = (xcb_im_xicattr_fr_t*) im->id2attr[id];
+    if ((attr < im->icattr) || (attr >= im->icattr + ARRAY_SIZE(Default_ICattr))) {
+        return NULL;
+    }
+
+    return &Default_ICattr[attr - im->icattr];
 }
