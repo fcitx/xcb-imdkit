@@ -12,6 +12,7 @@
 #include "ximproto.h"
 #include "protocolhandler.h"
 #include "message.h"
+#include "common.h"
 
 typedef struct _xcb_im_ext_t {
     uint16_t  major_opcode;
@@ -204,26 +205,8 @@ bool _xcb_im_init(xcb_im_t* im)
     char* buf;
     asprintf(&buf, "@server=%s", im->serverName);
     const char* atom_names[] = {buf, XIM_SERVERS, XIM_LOCALES, XIM_TRANSPORT, _XIM_PROTOCOL, _XIM_XCONNECT};
-    xcb_intern_atom_cookie_t atom_cookies[ARRAY_SIZE(atom_names)];
-    for (size_t i = 0; i < ARRAY_SIZE(atom_names); i ++) {
-        atom_cookies[i] = xcb_intern_atom(im->conn, false, strlen(atom_names[i]), atom_names[i]);
-    }
-    xcb_atom_t* atoms = im->atoms;
-    size_t i;
-    for (i = 0; i < ARRAY_SIZE(atom_names); i ++) {
-        xcb_intern_atom_reply_t* atom_reply = xcb_intern_atom_reply(im->conn, atom_cookies[i], NULL);
-        if (atom_reply) {
-            atoms[i] = atom_reply->atom;
-            free(atom_reply);
-        } else {
-            break;
-        }
-    }
-
+    im->init = _xcb_im_init_atoms(im->conn, ARRAY_SIZE(atom_names), atom_names, im->atoms);
     free(buf);
-    if (i == ARRAY_SIZE(atom_names)) {
-        im->init = true;
-    }
 
     return im->init;
 }

@@ -4,34 +4,9 @@
 #include "imdkit.h"
 #include "uthash.h"
 #include "list.h"
-
-#define ARRAY_SIZE(X) (sizeof(X) / sizeof(X[0]))
-
-#define XIM_MESSAGE_BYTES(hdr) ((hdr)->length * 4)
-
-
-#define XIM_DEBUG
-#ifdef XIM_DEBUG
-#define DebugLog(S...) fprintf(stderr, S)
-#else
-#define DebugLog(S...) ((void) (S))
-#endif
+#include "common.h"
 
 #define LOCALES_BUFSIZE (sizeof(XCB_IM_ALL_LOCALES) + 32)
-
-#define XIM_SERVERS     "XIM_SERVERS"
-#define XIM_LOCALES     "LOCALES"
-#define XIM_TRANSPORT       "TRANSPORT"
-#define _XIM_PROTOCOL           "_XIM_PROTOCOL"
-#define _XIM_XCONNECT           "_XIM_XCONNECT"
-
-/*
- * categories in XIM_SERVERS
- */
-#define XIM_SERVER_CATEGORY "@server="
-#define XIM_LOCAL_CATEGORY  "@locale="
-#define XIM_TRANSPORT_CATEGORY  "@transport="
-
 
 /*
  * values for the flag of XIM_ERROR
@@ -258,17 +233,6 @@ typedef struct _xcb_im_client_table_t
     UT_hash_handle hh1;
     UT_hash_handle hh2;
 } xcb_im_client_table_t;
-
-enum {
-    XIM_ATOM_SERVER_NAME,
-    XIM_ATOM_XIM_SERVERS,
-    XIM_ATOM_LOCALES,
-    XIM_ATOM_TRANSPORT,
-    XIM_ATOM_XIM_PROTOCOL,
-    XIM_ATOM_XIM_CONNECT,
-    XIM_ATOM_LAST
-};
-
 
 typedef struct _xcb_im_default_im_attr_t {
     char *name;
