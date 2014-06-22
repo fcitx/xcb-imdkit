@@ -4,6 +4,21 @@
 #include <assert.h>
 #include "imdkit.h"
 
+bool callback(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
+              const xcb_im_proto_header_t* hdr,
+              void* frame, void* arg, void* user_data)
+{
+    if (hdr->major_opcode != XIM_FORWARD_EVENT) {
+        return false;
+    }
+
+    xcb_key_press_event_t* event = arg;
+
+    xcb_im_forward_event(im, ic, event);
+
+    return true;
+}
+
 static uint32_t style_array[] = {
     XCB_IM_PreeditPosition | XCB_IM_StatusArea, //OverTheSpot
     XCB_IM_PreeditPosition | XCB_IM_StatusNothing,      //OverTheSpot
@@ -42,17 +57,24 @@ int main(int argc, char* argv[])
                        XCB_WINDOW_CLASS_INPUT_OUTPUT,
                        screen->root_visual,
                        0, NULL);
+    xcb_im_trigger_keys_t keys;
+    xcb_im_trigger_key_t key;
+    key.keysym = ' ';
+    key.modifier = 1 << 2;
+    key.modifier_mask = 1 << 2;
+    keys.nKeys = 1;
+    keys.keys = &key;
     xcb_im_t* im = xcb_im_create(connection,
                                  screen_default_nbr,
                                  w,
                                  "test_server",
                                  XCB_IM_ALL_LOCALES,
                                  &styles,
-                                 NULL,
-                                 NULL,
+                                 &keys,
+                                 &keys,
                                  &encodings,
                                  0,
-                                 NULL,
+                                 callback,
                                  NULL
                                 );
     assert(xcb_im_open_im(im));

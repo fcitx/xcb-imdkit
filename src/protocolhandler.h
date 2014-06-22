@@ -87,4 +87,40 @@ void _xcb_im_handle_preedit_caret_reply(xcb_im_t* im,
                                         uint8_t* data,
                                         bool *del);
 
+void _xcb_im_handle_reset_ic(xcb_im_t* im,
+                                        xcb_im_client_table_t* client,
+                                        const xcb_im_proto_header_t* hdr,
+                                        uint8_t* data,
+                                        bool *del);
+
+void _xcb_im_handle_forward_event(xcb_im_t* im,
+                                        xcb_im_client_table_t* client,
+                                        const xcb_im_proto_header_t* hdr,
+                                        uint8_t* data,
+                                        bool *del);
+
+void _xcb_im_handle_extension(xcb_im_t* im,
+                                        xcb_im_client_table_t* client,
+                                        const xcb_im_proto_header_t* hdr,
+                                        uint8_t* data,
+                                        bool *del);
+
+void _xcb_im_handle_sync_reply(xcb_im_t* im,
+                                        xcb_im_client_table_t* client,
+                                        const xcb_im_proto_header_t* hdr,
+                                        uint8_t* data,
+                                        bool *del);
+
+void _xcb_im_handle_trigger_notify(xcb_im_t* im,
+                                        xcb_im_client_table_t* client,
+                                        const xcb_im_proto_header_t* hdr,
+                                        uint8_t* data,
+                                        bool *del);
+
+void _xcb_im_handle_preedit_start_reply(xcb_im_t* im,
+                                        xcb_im_client_table_t* client,
+                                        const xcb_im_proto_header_t* hdr,
+                                        uint8_t* data,
+                                        bool *del);
+
 #endif // PROTOCOLHANDLER_H

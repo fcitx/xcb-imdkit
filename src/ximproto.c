@@ -1312,7 +1312,7 @@ void xcb_im_register_triggerkeys_fr_free(xcb_im_register_triggerkeys_fr_t *frame
 void xcb_im_trigger_notify_fr_read(xcb_im_trigger_notify_fr_t *frame, uint8_t **data, size_t *len, bool swap)
 {
     memset(frame, 0, sizeof(*frame));
-    uint16_t_read(&frame->input_mehotd_ID, data, len, swap);
+    uint16_t_read(&frame->input_method_ID, data, len, swap);
     if (!*data) { return; }
     uint16_t_read(&frame->input_context_ID, data, len, swap);
     if (!*data) { return; }
@@ -1326,7 +1326,7 @@ void xcb_im_trigger_notify_fr_read(xcb_im_trigger_notify_fr_t *frame, uint8_t **
 
 uint8_t* xcb_im_trigger_notify_fr_write(xcb_im_trigger_notify_fr_t *frame, uint8_t *data, bool swap)
 {
-    data = uint16_t_write(&frame->input_mehotd_ID, data, swap);
+    data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     data = uint32_t_write(&frame->flag, data, swap);
     data = uint32_t_write(&frame->index_of_keys_list, data, swap);

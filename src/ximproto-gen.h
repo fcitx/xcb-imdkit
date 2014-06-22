@@ -227,7 +227,7 @@ typedef struct _xcb_im_register_triggerkeys_fr_t
 
 typedef struct _xcb_im_trigger_notify_fr_t
 {
-    uint16_t input_mehotd_ID;
+    uint16_t input_method_ID;
     uint16_t input_context_ID;
     uint32_t flag;
     uint32_t index_of_keys_list;

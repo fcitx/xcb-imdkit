@@ -65,6 +65,7 @@ typedef struct _xcb_im_client_t
     int connect_id;
     xcb_window_t client_win;
     uint8_t byte_order;
+    bool sync;
 } xcb_im_client_t;
 
 typedef struct _xcb_im_preedit_attr_t {
@@ -103,7 +104,7 @@ typedef struct _xcb_im_input_context_t
 
 typedef bool (*xcb_im_callback)(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
                                 const xcb_im_proto_header_t* hdr,
-                                void* frame, void* reply_frame, void* user_data);
+                                void* frame, void* arg, void* user_data);
 
 XCB_IMDKIT_EXPORT xcb_im_t* xcb_im_create(xcb_connection_t* conn,
                                           int screen,
@@ -121,12 +122,11 @@ XCB_IMDKIT_EXPORT bool xcb_im_open_im(xcb_im_t* im);
 XCB_IMDKIT_EXPORT bool xcb_im_filter_event(xcb_im_t* im, xcb_generic_event_t* event);
 XCB_IMDKIT_EXPORT void xcb_im_close_im(xcb_im_t* im);
 XCB_IMDKIT_EXPORT void xcb_im_destory(xcb_im_t* im);
-XCB_IMDKIT_EXPORT void xcb_im_forward_event(xcb_im_t* im, xcb_key_press_event_t* event);
-XCB_IMDKIT_EXPORT void xcb_im_comming_string(xcb_im_t* im);
-XCB_IMDKIT_EXPORT void xcb_im_preedit_start(xcb_im_t* im);
-XCB_IMDKIT_EXPORT void xcb_im_preedit_end(xcb_im_t* im);
-
-void xcb_im_sync_xlib(xcb_im_t* im);
+XCB_IMDKIT_EXPORT void xcb_im_forward_event(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_key_press_event_t* event);
+XCB_IMDKIT_EXPORT void xcb_im_comming_string(xcb_im_t* im, xcb_im_input_context_t* ic);
+XCB_IMDKIT_EXPORT void xcb_im_preedit_start(xcb_im_t* im, xcb_im_input_context_t* ic);
+XCB_IMDKIT_EXPORT void xcb_im_preedit_end(xcb_im_t* im, xcb_im_input_context_t* ic);
+XCB_IMDKIT_EXPORT void xcb_im_sync_xlib(xcb_im_t* im, xcb_im_input_context_t* ic);
 
 
 #endif // IMDKIT_H

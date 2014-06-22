@@ -347,6 +347,8 @@ xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_wind
         HASH_ADD(hh1, im->clients_by_id, c.connect_id, sizeof(int), client);
     }
 
+    list_init(&client->queue);
+
     xcb_window_t w = xcb_generate_id (im->conn);
     xcb_create_window (im->conn, XCB_COPY_FROM_PARENT, w, im->root,
                        0, 0, 1, 1, 1,
@@ -639,14 +641,17 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_RESET_IC:
         DebugLog("-- XIM_RESET_IC\n");
+        _xcb_im_handle_reset_ic(im, client, hdr, data, del);
         break;
 
     case XIM_FORWARD_EVENT:
         DebugLog("-- XIM_FORWARD_EVENT\n");
+        _xcb_im_handle_forward_event(im, client, hdr, data, del);
         break;
 
     case XIM_EXTENSION:
         DebugLog("-- XIM_EXTENSION\n");
+        _xcb_im_handle_extension(im, client, hdr, data, del);
         break;
 
     case XIM_SYNC:
@@ -656,10 +661,12 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_SYNC_REPLY:
         DebugLog("-- XIM_SYNC_REPLY\n");
+        _xcb_im_handle_sync_reply(im, client, hdr, data, del);
         break;
 
     case XIM_TRIGGER_NOTIFY:
         DebugLog("-- XIM_TRIGGER_NOTIFY\n");
+        _xcb_im_handle_trigger_notify(im, client, hdr, data, del);
         break;
 
     case XIM_ENCODING_NEGOTIATION:
@@ -669,6 +676,7 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_PREEDIT_START_REPLY:
         DebugLog("-- XIM_PREEDIT_START_REPLY\n");
+        _xcb_im_handle_preedit_start_reply(im, client, hdr, data, del);
         break;
 
     case XIM_PREEDIT_CARET_REPLY:
@@ -835,25 +843,60 @@ void xcb_im_destory(xcb_im_t* im)
     free(im);
 }
 
-void xcb_im_forward_event(xcb_im_t* im, xcb_key_press_event_t* event)
+void xcb_im_forward_event(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_key_press_event_t* event)
 {
+    xcb_im_forward_event_fr_t frame;
+    frame.input_method_ID = ic->client->connect_id;
+    frame.input_context_ID = ic->id;
+    frame.flag = XimSYNCHRONUS;
+    frame.sequence_number = event->sequence;
+    xcb_im_client_table_t* client = (xcb_im_client_table_t*) ic->client;
+    client->c.sync = true;
+
+    const size_t length = 8 /* xcb_im_forward_event_fr_size(&frame) */ + sizeof(xcb_key_press_event_t);
+    uint8_t data[XCB_IM_HEADER_SIZE + length];
+    _xcb_im_write_message_header(im, client, data, XIM_FORWARD_EVENT, 0, length);
+    uint8_t* p = xcb_im_forward_event_fr_write(&frame, data + XCB_IM_HEADER_SIZE, client->c.byte_order != im->byte_order);
+    memcpy(p, event, sizeof(xcb_key_press_event_t));
+
+    _xcb_im_send_message(im, client, data, length);
 }
 
 
-void xcb_im_comming_string(xcb_im_t* im)
+void xcb_im_comming_string(xcb_im_t* im, xcb_im_input_context_t* ic)
 {
 }
 
-void xcb_im_preedit_start(xcb_im_t* im)
+void xcb_im_preedit_start(xcb_im_t* im, xcb_im_input_context_t* ic)
 {
+    if (im->onKeys.nKeys == 0  &&  im->onKeys.nKeys == 0) {
+        return;
+    }
+
+    _xcb_im_set_event_mask(im, (xcb_im_client_table_t*) ic->client, ic->id, im->event_mask, ~im->event_mask);
 }
 
-void xcb_im_preedit_end(xcb_im_t* im)
+void xcb_im_preedit_end(xcb_im_t* im, xcb_im_input_context_t* ic)
 {
+    if (im->onKeys.nKeys == 0  &&  im->onKeys.nKeys == 0) {
+        return;
+    }
+
+    _xcb_im_set_event_mask(im, (xcb_im_client_table_t*) ic->client, ic->id, 0, 0);
 }
 
-void xcb_im_sync_xlib(xcb_im_t* im)
+void xcb_im_sync_xlib(xcb_im_t* im, xcb_im_input_context_t* ic)
 {
+    im->sync = true;
+    xcb_im_sync_fr_t frame;
+    frame.input_method_ID = ic->client->connect_id;
+    frame.input_context_ID = ic->id;
+
+    // use stack to avoid alloc fails
+    uint8_t message[XCB_IM_HEADER_SIZE + 4];
+    _xcb_im_write_message_header(im, (xcb_im_client_table_t*) ic->client, message, XIM_SYNC, 0, 4);
+    xcb_im_sync_fr_write(&frame, message + XCB_IM_HEADER_SIZE, ic->client->byte_order != im->byte_order);
+    _xcb_im_send_message(im, (xcb_im_client_table_t*) ic->client, message, 4);
 }
 
 bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, xcb_im_ximattribute_fr_t* attr)
@@ -904,6 +947,10 @@ void _xcb_im_destroy_client(xcb_im_t* im,
         im->callback(im, &client->c, NULL, &hdr, NULL, NULL, im->user_data);
     }
 
+    list_entry_foreach_safe(item, xcb_im_queue_t, &client->queue, list) {
+        free(item);
+    }
+
     HASH_DELETE(hh2, im->clients_by_win, client);
     HASH_DELETE(hh1, im->clients_by_id, client);
     xcb_destroy_window(im->conn, client->c.accept_win);
@@ -924,4 +971,49 @@ void _xcb_im_destroy_client(xcb_im_t* im,
 
     client->hh1.next = im->free_list;
     im->free_list = client;
+}
+
+
+void _xcb_im_set_event_mask(xcb_im_t* im, xcb_im_client_table_t* client, uint32_t icid, uint32_t forward_event_mask, uint32_t sync_mask)
+{
+    xcb_im_set_event_mask_fr_t frame;
+    frame.forward_event_mask = forward_event_mask;
+    frame.synchronous_event_mask = sync_mask;
+    frame.input_method_ID = client->c.connect_id;
+    frame.input_context_ID = icid;
+    _xcb_im_send_frame(im, client, frame, false);
+}
+
+void _xcb_im_add_queue(xcb_im_t* im, xcb_im_client_table_t* client, uint16_t icid, const xcb_im_proto_header_t* hdr, xcb_im_forward_event_fr_t* frame, uint8_t* data)
+{
+    xcb_im_queue_t* item = malloc(sizeof(xcb_im_queue_t));
+    if (!item) {
+        return;
+    }
+
+    item->icid = icid;
+    memcpy(&item->event, data, sizeof(xcb_key_press_event_t));
+    memcpy(&item->hdr, hdr, sizeof(xcb_im_proto_header_t));
+    memcpy(&item->frame, frame, sizeof(xcb_im_forward_event_fr_t));
+
+
+    list_append(&item->list, &client->queue);
+}
+
+void _xcb_im_process_queue(xcb_im_t* im, xcb_im_client_table_t* client)
+{
+    while (!client->c.sync && !list_is_empty(&client->queue))
+    {
+        xcb_im_queue_t* item = list_container_of(client->queue.next, xcb_im_queue_t, list);
+        list_remove(&item->list);
+
+        xcb_im_input_context_table_t* ic = NULL;
+        HASH_FIND(hh, client->input_contexts, &item->icid, sizeof(uint16_t), ic);
+        if (ic) {
+            if (im->callback) {
+                im->callback(im, &client->c, &ic->ic, &item->hdr, &item->frame, &item->event, im->user_data);
+            }
+        }
+        free(item);
+    }
 }
