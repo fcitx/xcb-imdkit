@@ -863,8 +863,26 @@ void xcb_im_forward_event(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_key_pres
 }
 
 
-void xcb_im_comming_string(xcb_im_t* im, xcb_im_input_context_t* ic)
+void xcb_im_commit_string(xcb_im_t* im, xcb_im_input_context_t* ic, uint32_t flag, char* str, uint32_t length, uint32_t keysym)
 {
+    if (!(flag & XimLookupKeySym) && (flag & XimLookupChars)) {
+        xcb_im_commit_chars_fr_t frame;
+        frame.input_method_ID = ic->client->connect_id;
+        frame.input_context_ID = ic->id;
+        frame.byte_length_of_committed_string = length;
+        frame.flag = flag | XimSYNCHRONUS;
+        frame.committed_string = (uint8_t*) str;
+        _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+    } else {
+        xcb_im_commit_both_fr_t frame;
+        frame.input_method_ID = ic->client->connect_id;
+        frame.input_context_ID = ic->id;
+        frame.byte_length_of_committed_string = length;
+        frame.flag = flag | XimSYNCHRONUS;
+        frame.committed_string = (uint8_t*) str;
+        frame.keysym = keysym;
+        _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+    }
 }
 
 void xcb_im_preedit_start(xcb_im_t* im, xcb_im_input_context_t* ic)
@@ -1016,4 +1034,81 @@ void _xcb_im_process_queue(xcb_im_t* im, xcb_im_client_table_t* client)
         }
         free(item);
     }
+}
+
+void xcb_im_geometry_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
+{
+    xcb_im_geometry_fr_t frame;
+    frame.input_method_ID = ic->client->connect_id;
+    frame.input_context_ID = ic->id;
+
+    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+}
+
+void xcb_im_preedit_start_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
+{
+    xcb_im_preedit_start_fr_t frame;
+    frame.input_method_ID = ic->client->connect_id;
+    frame.input_context_ID = ic->id;
+
+    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+}
+
+void xcb_im_preedit_draw_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_preedit_draw_fr_t* frame)
+{
+    frame->input_method_ID = ic->client->connect_id;
+    frame->input_context_ID = ic->id;
+
+    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, *frame, false);
+}
+
+void xcb_im_preedit_caret_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_preedit_caret_fr_t* frame)
+{
+    frame->input_method_ID = ic->client->connect_id;
+    frame->input_context_ID = ic->id;
+
+    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, *frame, false);
+}
+
+void xcb_im_preedit_done_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
+{
+    xcb_im_preedit_done_fr_t frame;
+    frame.input_method_ID = ic->client->connect_id;
+    frame.input_context_ID = ic->id;
+
+    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+}
+
+void xcb_im_status_start_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
+{
+    xcb_im_status_start_fr_t frame;
+    frame.input_method_ID = ic->client->connect_id;
+    frame.input_context_ID = ic->id;
+
+    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+}
+
+void xcb_im_status_done_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
+{
+    xcb_im_status_done_fr_t frame;
+    frame.input_method_ID = ic->client->connect_id;
+    frame.input_context_ID = ic->id;
+
+    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+}
+
+void xcb_im_status_draw_text_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_status_draw_text_fr_t* frame)
+{
+    frame->input_method_ID = ic->client->connect_id;
+    frame->input_context_ID = ic->id;
+
+    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, *frame, false);
+}
+
+void xcb_im_status_draw_bitmap_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_status_draw_bitmap_fr_t* frame)
+{
+    frame->input_method_ID = ic->client->connect_id;
+    frame->input_context_ID = ic->id;
+
+    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, *frame, false);
 }

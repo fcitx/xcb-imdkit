@@ -101,9 +101,6 @@
  * value for the flag of XIM_FORWARD_EVENT, XIM_COMMIT
  */
 #define XimSYNCHRONUS         0x0001
-#define XimLookupChars        0x0002
-#define XimLookupKeySym       0x0004
-#define XimLookupBoth         0x0006
 
 
 /*
@@ -209,19 +206,30 @@
     xcb_im_register_triggerkeys_fr_t: XIM_REGISTER_TRIGGERKEYS, \
     xcb_im_destroy_ic_reply_fr_t: XIM_DESTROY_IC_REPLY, \
     xcb_im_reset_ic_reply_fr_t: XIM_RESET_IC_REPLY, \
-    xcb_im_trigger_notify_reply_fr_t: XIM_TRIGGER_NOTIFY_REPLY \
+    xcb_im_trigger_notify_reply_fr_t: XIM_TRIGGER_NOTIFY_REPLY, \
+    xcb_im_preedit_start_fr_t: XIM_PREEDIT_START, \
+    xcb_im_preedit_draw_fr_t: XIM_PREEDIT_DRAW, \
+    xcb_im_preedit_caret_fr_t: XIM_PREEDIT_CARET, \
+    xcb_im_preedit_done_fr_t: XIM_PREEDIT_DONE, \
+    xcb_im_status_start_fr_t: XIM_STATUS_START, \
+    xcb_im_status_draw_text_fr_t: XIM_STATUS_DRAW, \
+    xcb_im_status_draw_bitmap_fr_t: XIM_STATUS_DRAW, \
+    xcb_im_status_done_fr_t: XIM_STATUS_DONE, \
+    xcb_im_commit_chars_fr_t: XIM_COMMIT, \
+    xcb_im_commit_both_fr_t: XIM_COMMIT, \
+    xcb_im_geometry_fr_t: XIM_GEOMETRY \
     )
 
 #define _xcb_im_send_frame(IM, CLIENT, FRAME, SEND_ERROR) \
     do { \
         bool fail = true; \
-        size_t length = frame_size_func(FRAME)(&FRAME); \
+        size_t length = frame_size_func(FRAME)(&(FRAME)); \
         uint8_t* reply = _xcb_im_new_message((IM), (CLIENT), frame_opcode(FRAME), 0, length); \
         do { \
             if (!reply) { \
                 break; \
             } \
-            frame_write_func(FRAME)(&FRAME, reply + XCB_IM_HEADER_SIZE, (CLIENT)->c.byte_order != (IM)->byte_order); \
+            frame_write_func(FRAME)(&(FRAME), reply + XCB_IM_HEADER_SIZE, (CLIENT)->c.byte_order != (IM)->byte_order); \
             if (!_xcb_im_send_message((IM), (CLIENT), reply, length)) { \
                 break; \
             } \

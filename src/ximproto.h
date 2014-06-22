@@ -77,4 +77,8 @@
 #define XIM_STATUS_DRAW          80
 #define XIM_STATUS_DONE          81
 
+#define XimLookupChars        0x0002
+#define XimLookupKeySym       0x0004
+#define XimLookupBoth         0x0006
+
 #endif // XIMPROTO_H

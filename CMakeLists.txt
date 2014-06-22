@@ -17,7 +17,7 @@ set(CMAKE_C_FLAGS "-fPIC -std=c11 -Wall -Wextra -Wno-unused-parameter -fvisibili
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed -Wl,--no-undefined ${CMAKE_SHARED_LINKER_FLAGS}")
 set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_MODULE_LINKER_FLAGS}")
 
-find_package(XCB REQUIRED COMPONENTS XCB UTIL)
+find_package(XCB REQUIRED COMPONENTS XCB UTIL KEYSYMS)
 
 enable_testing()
 

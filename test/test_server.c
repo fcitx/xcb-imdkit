@@ -1,5 +1,6 @@
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
+#include <xcb/xcb_keysyms.h>
 #include <stdlib.h>
 #include <assert.h>
 #include "imdkit.h"
@@ -14,7 +15,13 @@ bool callback(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
 
     xcb_key_press_event_t* event = arg;
 
-    xcb_im_forward_event(im, ic, event);
+    xcb_key_symbols_t* key_symbols = user_data;
+    xcb_keysym_t sym = xcb_key_symbols_get_keysym(key_symbols, event->detail, 0);
+    if (sym == 't') {
+        xcb_im_commit_string(im, ic, XimLookupChars, "hello world", strlen("hello world"), 0);
+    } else {
+        xcb_im_forward_event(im, ic, event);
+    }
 
     return true;
 }
@@ -45,6 +52,7 @@ int main(int argc, char* argv[])
     int screen_default_nbr;
     xcb_connection_t *connection = xcb_connect (NULL, &screen_default_nbr);
     xcb_screen_t* screen = xcb_aux_get_screen(connection, screen_default_nbr);
+    xcb_key_symbols_t* key_symbols = xcb_key_symbols_alloc(connection);
 
     if (!screen) {
         return false;
@@ -75,7 +83,7 @@ int main(int argc, char* argv[])
                                  &encodings,
                                  0,
                                  callback,
-                                 NULL
+                                 key_symbols
                                 );
     assert(xcb_im_open_im(im));
 
