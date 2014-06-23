@@ -497,8 +497,7 @@ static uint8_t* _xcb_im_read_message(xcb_im_t* im,
 void _xcb_im_handle_message(xcb_im_t* im,
                             xcb_im_client_table_t* client,
                             const xcb_im_packet_header_fr_t* hdr,
-                            uint8_t* data,
-                            bool *del)
+                            uint8_t* data)
 {
     switch (hdr->major_opcode) {
     case XIM_CONNECT:
@@ -508,72 +507,72 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_DISCONNECT:
         DebugLog("-- XIM_DISCONNECT\n");
-        _xcb_im_handle_disconnect(im, client, hdr, data, del);
+        _xcb_im_handle_disconnect(im, client, hdr, data);
         break;
 
     case XIM_OPEN:
         DebugLog("-- XIM_OPEN\n");
-        _xcb_im_handle_open(im, client, hdr, data, del);
+        _xcb_im_handle_open(im, client, hdr, data);
         break;
 
     case XIM_CLOSE:
         DebugLog("-- XIM_CLOSE\n");
-        _xcb_im_handle_close(im, client, hdr, data, del);
+        _xcb_im_handle_close(im, client, hdr, data);
         break;
 
     case XIM_QUERY_EXTENSION:
         DebugLog("-- XIM_QUERY_EXTENSION\n");
-        _xcb_im_handle_query_extension(im, client, hdr, data, del);
+        _xcb_im_handle_query_extension(im, client, hdr, data);
         break;
 
     case XIM_GET_IM_VALUES:
         DebugLog("-- XIM_GET_IM_VALUES\n");
-        _xcb_im_handle_get_im_values(im, client, hdr, data, del);
+        _xcb_im_handle_get_im_values(im, client, hdr, data);
         break;
 
     case XIM_CREATE_IC:
         DebugLog("-- XIM_CREATE_IC\n");
-        _xcb_im_handle_create_ic(im, client, hdr, data, del);
+        _xcb_im_handle_create_ic(im, client, hdr, data);
         break;
 
     case XIM_SET_IC_VALUES:
         DebugLog("-- XIM_SET_IC_VALUES\n");
-        _xcb_im_handle_set_ic_values(im, client, hdr, data, del);
+        _xcb_im_handle_set_ic_values(im, client, hdr, data);
         break;
 
     case XIM_GET_IC_VALUES:
         DebugLog("-- XIM_GET_IC_VALUES\n");
-        _xcb_im_handle_get_ic_values(im, client, hdr, data, del);
+        _xcb_im_handle_get_ic_values(im, client, hdr, data);
         break;
 
     case XIM_SET_IC_FOCUS:
         DebugLog("-- XIM_SET_IC_FOCUS\n");
-        _xcb_im_handle_set_ic_focus(im, client, hdr, data, del);
+        _xcb_im_handle_set_ic_focus(im, client, hdr, data);
         break;
 
     case XIM_UNSET_IC_FOCUS:
         DebugLog("-- XIM_UNSET_IC_FOCUS\n");
-        _xcb_im_handle_unset_ic_focus(im, client, hdr, data, del);
+        _xcb_im_handle_unset_ic_focus(im, client, hdr, data);
         break;
 
     case XIM_DESTROY_IC:
         DebugLog("-- XIM_DESTROY_IC\n");
-        _xcb_im_handle_destroy_ic(im, client, hdr, data, del);
+        _xcb_im_handle_destroy_ic(im, client, hdr, data);
         break;
 
     case XIM_RESET_IC:
         DebugLog("-- XIM_RESET_IC\n");
-        _xcb_im_handle_reset_ic(im, client, hdr, data, del);
+        _xcb_im_handle_reset_ic(im, client, hdr, data);
         break;
 
     case XIM_FORWARD_EVENT:
         DebugLog("-- XIM_FORWARD_EVENT\n");
-        _xcb_im_handle_forward_event(im, client, hdr, data, del);
+        _xcb_im_handle_forward_event(im, client, hdr, data);
         break;
 
     case XIM_EXTENSION:
         DebugLog("-- XIM_EXTENSION\n");
-        _xcb_im_handle_extension(im, client, hdr, data, del);
+        _xcb_im_handle_extension(im, client, hdr, data);
         break;
 
     case XIM_SYNC:
@@ -583,27 +582,27 @@ void _xcb_im_handle_message(xcb_im_t* im,
 
     case XIM_SYNC_REPLY:
         DebugLog("-- XIM_SYNC_REPLY\n");
-        _xcb_im_handle_sync_reply(im, client, hdr, data, del);
+        _xcb_im_handle_sync_reply(im, client, hdr, data);
         break;
 
     case XIM_TRIGGER_NOTIFY:
         DebugLog("-- XIM_TRIGGER_NOTIFY\n");
-        _xcb_im_handle_trigger_notify(im, client, hdr, data, del);
+        _xcb_im_handle_trigger_notify(im, client, hdr, data);
         break;
 
     case XIM_ENCODING_NEGOTIATION:
         DebugLog("-- XIM_ENCODING_NEGOTIATION\n");
-        _xcb_im_handle_encoding_negotiation(im, client, hdr, data, del);
+        _xcb_im_handle_encoding_negotiation(im, client, hdr, data);
         break;
 
     case XIM_PREEDIT_START_REPLY:
         DebugLog("-- XIM_PREEDIT_START_REPLY\n");
-        _xcb_im_handle_preedit_start_reply(im, client, hdr, data, del);
+        _xcb_im_handle_preedit_start_reply(im, client, hdr, data);
         break;
 
     case XIM_PREEDIT_CARET_REPLY:
         DebugLog("-- XIM_PREEDIT_CARET_REPLY\n");
-        _xcb_im_handle_preedit_caret_reply(im, client, hdr, data, del);
+        _xcb_im_handle_preedit_caret_reply(im, client, hdr, data);
         break;
 
     case XIM_STR_CONVERSION_REPLY:
@@ -633,14 +632,11 @@ bool _xcb_im_filter_client(xcb_im_t* im, xcb_generic_event_t* event)
             break;
         }
 
-        bool del = true;
         xcb_im_packet_header_fr_t hdr;
         uint8_t* message = _xcb_im_read_message(im, clientmessage, client, &hdr);
         if (message) {
-            _xcb_im_handle_message(im, client, &hdr, message, &del);
-            if (del) {
-                free(message);
-            }
+            _xcb_im_handle_message(im, client, &hdr, message);
+            free(message);
         }
 
         return true;

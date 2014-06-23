@@ -89,6 +89,7 @@
 
 #define frame_opcode(FRAME) _Generic((FRAME), \
     xcb_im_connect_reply_fr_t: XIM_CONNECT_REPLY, \
+    xcb_im_open_fr_t: XIM_OPEN, \
     xcb_im_open_reply_fr_t: XIM_OPEN_REPLY, \
     xcb_im_close_reply_fr_t: XIM_CLOSE_REPLY, \
     xcb_im_query_extension_reply_fr_t: XIM_QUERY_EXTENSION_REPLY, \

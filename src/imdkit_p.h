@@ -297,7 +297,7 @@ struct _xcb_im_t
     xcb_im_client_table_t* free_list;
     xcb_im_client_table_t* clients_by_id;
     xcb_im_client_table_t* clients_by_win;
-    int connect_id;
+    uint16_t connect_id;
     xcb_screen_t* screen;
     uint32_t sequence;
     bool init;

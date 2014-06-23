@@ -41,8 +41,7 @@ static void _xcb_im_send_trigger_key(xcb_im_t* im, xcb_im_client_table_t* client
 void _xcb_im_handle_open(xcb_im_t* im,
                          xcb_im_client_table_t* client,
                          const xcb_im_packet_header_fr_t* hdr,
-                         uint8_t* data,
-                         bool *del)
+                         uint8_t* data)
 {
     xcb_im_open_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -70,8 +69,7 @@ void _xcb_im_handle_open(xcb_im_t* im,
 void _xcb_im_handle_close(xcb_im_t* im,
                           xcb_im_client_table_t* client,
                           const xcb_im_packet_header_fr_t* hdr,
-                          uint8_t* data,
-                          bool *del)
+                          uint8_t* data)
 {
     xcb_im_close_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -90,8 +88,7 @@ void _xcb_im_handle_close(xcb_im_t* im,
 void _xcb_im_handle_query_extension(xcb_im_t* im,
                                     xcb_im_client_table_t* client,
                                     const xcb_im_packet_header_fr_t* hdr,
-                                    uint8_t* data,
-                                    bool *del)
+                                    uint8_t* data)
 {
     xcb_im_query_extension_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -123,8 +120,7 @@ void _xcb_im_handle_query_extension(xcb_im_t* im,
 void _xcb_im_handle_encoding_negotiation(xcb_im_t* im,
                                          xcb_im_client_table_t* client,
                                          const xcb_im_packet_header_fr_t* hdr,
-                                         uint8_t* data,
-                                         bool *del)
+                                         uint8_t* data)
 {
     xcb_im_encoding_negotiation_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -159,8 +155,7 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t* im,
 void _xcb_im_handle_get_im_values(xcb_im_t* im,
                                   xcb_im_client_table_t* client,
                                   const xcb_im_packet_header_fr_t* hdr,
-                                  uint8_t* data,
-                                  bool *del)
+                                  uint8_t* data)
 {
     xcb_im_get_im_values_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -210,8 +205,7 @@ void _xcb_im_handle_get_im_values(xcb_im_t* im,
 void _xcb_im_handle_disconnect(xcb_im_t* im,
                                xcb_im_client_table_t* client,
                                const xcb_im_packet_header_fr_t* hdr,
-                               uint8_t* data,
-                               bool *del)
+                               uint8_t* data)
 {
     _xcb_im_destroy_client(im, client);
 }
@@ -313,8 +307,7 @@ void _xcb_im_parse_ic_values(xcb_im_t* im,
 void _xcb_im_handle_create_ic(xcb_im_t* im,
                               xcb_im_client_table_t* client,
                               const xcb_im_packet_header_fr_t* hdr,
-                              uint8_t* data,
-                              bool *del)
+                              uint8_t* data)
 {
     xcb_im_create_ic_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -353,8 +346,7 @@ void _xcb_im_handle_create_ic(xcb_im_t* im,
 void _xcb_im_handle_destroy_ic(xcb_im_t* im,
                                xcb_im_client_table_t* client,
                                const xcb_im_packet_header_fr_t* hdr,
-                               uint8_t* data,
-                               bool *del)
+                               uint8_t* data)
 {
     xcb_im_destroy_ic_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -389,8 +381,7 @@ void _xcb_im_handle_destroy_ic(xcb_im_t* im,
 void _xcb_im_handle_set_ic_values(xcb_im_t* im,
                                   xcb_im_client_table_t* client,
                                   const xcb_im_packet_header_fr_t* hdr,
-                                  uint8_t* data,
-                                  bool *del)
+                                  uint8_t* data)
 {
     xcb_im_set_ic_values_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -540,8 +531,7 @@ uint32_t _xcb_im_get_nested_ic_values(xcb_im_t* im,
 void _xcb_im_handle_get_ic_values(xcb_im_t* im,
                                   xcb_im_client_table_t* client,
                                   const xcb_im_packet_header_fr_t* hdr,
-                                  uint8_t* data,
-                                  bool *del)
+                                  uint8_t* data)
 {
     xcb_im_get_ic_values_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -617,7 +607,7 @@ void _xcb_im_handle_get_ic_values(xcb_im_t* im,
 void
 _xcb_im_handle_set_ic_focus(xcb_im_t* im, xcb_im_client_table_t* client,
                             const xcb_im_packet_header_fr_t* hdr,
-                            uint8_t* data, bool *del)
+                            uint8_t* data)
 {
     xcb_im_set_ic_focus_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -644,7 +634,7 @@ _xcb_im_handle_set_ic_focus(xcb_im_t* im, xcb_im_client_table_t* client,
 void
 _xcb_im_handle_unset_ic_focus(xcb_im_t* im, xcb_im_client_table_t* client,
                               const xcb_im_packet_header_fr_t* hdr,
-                              uint8_t* data, bool *del)
+                              uint8_t* data)
 {
     xcb_im_unset_ic_focus_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -671,7 +661,7 @@ _xcb_im_handle_unset_ic_focus(xcb_im_t* im, xcb_im_client_table_t* client,
 void
 _xcb_im_handle_preedit_caret_reply(xcb_im_t* im, xcb_im_client_table_t* client,
                                    const xcb_im_packet_header_fr_t* hdr,
-                                   uint8_t* data, bool *del)
+                                   uint8_t* data)
 {
     xcb_im_preedit_caret_reply_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -695,7 +685,7 @@ _xcb_im_handle_preedit_caret_reply(xcb_im_t* im, xcb_im_client_table_t* client,
     xcb_im_preedit_caret_reply_fr_free(&frame);
 }
 
-void _xcb_im_handle_reset_ic(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data, bool* del)
+void _xcb_im_handle_reset_ic(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
     xcb_im_reset_ic_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -728,7 +718,7 @@ void _xcb_im_handle_reset_ic(xcb_im_t* im, xcb_im_client_table_t* client, const 
     xcb_im_reset_ic_fr_free(&frame);
 }
 
-void _xcb_im_handle_forward_event(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data, bool* del)
+void _xcb_im_handle_forward_event(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
     xcb_im_forward_event_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -762,7 +752,7 @@ void _xcb_im_handle_forward_event(xcb_im_t* im, xcb_im_client_table_t* client, c
     xcb_im_forward_event_fr_free(&frame);
 }
 
-void _xcb_im_handle_ext_forward_keyevent(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data, bool* del)
+void _xcb_im_handle_ext_forward_keyevent(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
     xcb_im_ext_forward_keyevent_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -796,7 +786,7 @@ void _xcb_im_handle_ext_forward_keyevent(xcb_im_t* im, xcb_im_client_table_t* cl
     xcb_im_ext_forward_keyevent_fr_free(&frame);
 }
 
-void _xcb_im_handle_ext_move(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data, bool* del)
+void _xcb_im_handle_ext_move(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
     xcb_im_ext_move_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -820,19 +810,19 @@ void _xcb_im_handle_ext_move(xcb_im_t* im, xcb_im_client_table_t* client, const 
     xcb_im_ext_move_fr_free(&frame);
 }
 
-void _xcb_im_handle_extension(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data, bool* del)
+void _xcb_im_handle_extension(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
     switch (hdr->minor_opcode) {
         case XIM_EXT_FORWARD_KEYEVENT:
-            _xcb_im_handle_ext_forward_keyevent(im, client, hdr, data, del);
+            _xcb_im_handle_ext_forward_keyevent(im, client, hdr, data);
             break;
         case XIM_EXT_MOVE:
-            _xcb_im_handle_ext_move(im, client, hdr, data, del);
+            _xcb_im_handle_ext_move(im, client, hdr, data);
             break;
     }
 }
 
-void _xcb_im_handle_sync_reply(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data, bool* del)
+void _xcb_im_handle_sync_reply(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
     xcb_im_sync_reply_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -863,7 +853,7 @@ void _xcb_im_handle_sync_reply(xcb_im_t* im, xcb_im_client_table_t* client, cons
     xcb_im_sync_reply_fr_free(&frame);
 }
 
-void _xcb_im_handle_trigger_notify(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data, bool* del)
+void _xcb_im_handle_trigger_notify(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
     xcb_im_trigger_notify_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));
@@ -914,7 +904,7 @@ void _xcb_im_handle_trigger_notify(xcb_im_t* im, xcb_im_client_table_t* client, 
     xcb_im_trigger_notify_fr_free(&frame);
 }
 
-void _xcb_im_handle_preedit_start_reply(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data, bool* del)
+void _xcb_im_handle_preedit_start_reply(xcb_im_t* im, xcb_im_client_table_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
     xcb_im_preedit_start_reply_fr_t frame;
     _xcb_im_read_frame_with_error(im, client, frame, data, XIM_MESSAGE_BYTES(hdr));

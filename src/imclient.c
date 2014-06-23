@@ -1,4 +1,5 @@
 #include "imclient.h"
+#include "imclient_p.h"
 #include "common.h"
 #include "ximproto.h"
 #include "message.h"
@@ -6,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+// this phase is basically a directly mapping from _XimSOMETHING function in Xlib
+// state machine is more suitable for xcb asynchronous nature.
 typedef enum _xcb_xim_open_phase_t {
     XIM_OPEN_PHASE_DONE,
     XIM_OPEN_PHASE_FAIL,
@@ -13,19 +16,20 @@ typedef enum _xcb_xim_open_phase_t {
     XIM_OPEN_PHASE_CONNECT,
 } xcb_xim_open_phase_t;
 
-typedef enum _xcb_xim_open_check_server_phase {
+typedef enum _xcb_xim_open_check_server_phase_t {
     XIM_OPEN_PHASE_CHECK_SERVER_PREPARE,
     XIM_OPEN_PHASE_CHECK_SERVER_LOCALE,
     XIM_OPEN_PHASE_CHECK_SERVER_LOCALE_WAIT,
     XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT,
     XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT_WAIT,
-} xcb_xim_open_check_server_phase;
+} xcb_xim_open_check_server_phase_t;
 
-typedef enum _xcb_xim_open_connect_phase {
+typedef enum _xcb_xim_open_connect_phase_t {
     XIM_OPEN_PHASE_CONNECT_PREPARE,
     XIM_OPEN_PHASE_CONNECT_WAIT,
     XIM_OPEN_PHASE_CONNECT_WAIT_REPLY,
-} xcb_xim_open_connect_phase;
+    XIM_OPEN_PHASE_CONNECT_WAIT_OPEN_REPLY
+} xcb_xim_open_connect_phase_t;
 
 typedef struct _xcb_xim_open_t
 {
@@ -33,13 +37,13 @@ typedef struct _xcb_xim_open_t
     union {
         struct {
             int index;
-            xcb_xim_open_check_server_phase subphase;
+            xcb_xim_open_check_server_phase_t subphase;
             xcb_window_t window;
             xcb_window_t requestor_window;
         } check_server;
 
         struct {
-            xcb_xim_open_connect_phase subphase;
+            xcb_xim_open_connect_phase_t subphase;
         } connect;
     };
 } xcb_xim_open_t;
@@ -62,6 +66,8 @@ struct _xcb_xim_t
     int major_code;
     int minor_code;
     uint32_t accept_win;
+    uint32_t sequence;
+    uint16_t connect_id;
     uint8_t byte_order;
 };
 
@@ -73,6 +79,16 @@ struct _xcb_xim_t
             xcb_destroy_window((IM)->conn, (IM)->open.check_server.requestor_window); \
         } \
     } while(0);
+
+bool _xcb_xim_send_message(xcb_xim_t* im,
+                           uint8_t* data, size_t length)
+{
+    char atomName[64];
+    int len = sprintf(atomName, "_client%u_%u", im->connect_id, im->sequence++);
+    return _xcb_send_xim_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], im->accept_win,
+                                 data, length, atomName, len);
+}
+
 
 bool _xcb_xim_check_server_name(xcb_xim_t* im, char* name, int namelen)
 {
@@ -280,8 +296,7 @@ xcb_xim_open_phase_action_t _xcb_xim_connect_wait(xcb_xim_t* im, xcb_generic_eve
     frame.client_minor_protocol_version = 0;
 
     bool fail;
-    _xcb_send_xim_frame(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], im->accept_win,
-                        frame, false, 0, 0, fail);
+    _xcb_xim_send_frame(im, frame, fail);
     if (fail) {
         return ACTION_FAILED;
     }
@@ -289,7 +304,16 @@ xcb_xim_open_phase_action_t _xcb_xim_connect_wait(xcb_xim_t* im, xcb_generic_eve
     return ACTION_ACCEPT;
 }
 
+bool _xcb_xim_send_open(xcb_xim_t* im)
+{
+    xcb_im_open_fr_t frame;
+    frame.field0.length_of_string = 0;
+    frame.field0.string = 0;
 
+    bool fail;
+    _xcb_xim_send_frame(im, frame, fail);
+    return !fail;
+}
 
 xcb_xim_open_phase_action_t _xcb_xim_connect_wait_reply(xcb_xim_t* im, xcb_generic_event_t* event)
 {
@@ -311,19 +335,24 @@ xcb_xim_open_phase_action_t _xcb_xim_connect_wait_reply(xcb_xim_t* im, xcb_gener
         return ACTION_FAILED;
     }
 
-    if (hdr.major_opcode != XIM_CONNECT) {
+    if (hdr.major_opcode != XIM_CONNECT_REPLY) {
         return ACTION_YIELD;
     }
 
     xcb_xim_open_phase_action_t result = ACTION_FAILED;
     do {
-        xcb_im_connect_reply_fr_t frame;
+        xcb_im_connect_reply_fr_t reply_frame;
         bool fail;
-        _xcb_read_xim_frame(frame, message, XIM_MESSAGE_BYTES(&hdr), false, fail);
+        _xcb_xim_read_frame(reply_frame, message, XIM_MESSAGE_BYTES(&hdr), fail);
         if (fail) {
             break;
         }
-        result = ACTION_ACCEPT;
+
+        if (!_xcb_xim_send_open(im)) {
+            result = ACTION_FAILED;
+        } else {
+            result = ACTION_ACCEPT;
+        }
     } while(0);
 
     free(message);
@@ -390,7 +419,7 @@ bool _xcb_xim_preconnect_im(xcb_xim_t* im, xcb_generic_event_t* event)
                 switch (result) {
                     case ACTION_ACCEPT:
                         event = NULL;
-                        im->open.phase = XIM_OPEN_PHASE_CONNECT_WAIT_REPLY;
+                        im->open.phase = XIM_OPEN_PHASE_DONE;
                         break;
                     case ACTION_FAILED:
                         event = NULL;
@@ -516,9 +545,117 @@ bool xcb_xim_open(xcb_xim_t* im)
     return true;
 }
 
+void _xcb_xim_handle_message(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    switch (hdr->major_opcode) {
+    case XIM_OPEN_REPLY:
+        DebugLog("-- XIM_OPEN_REPLY\n");
+        break;
+    case XIM_REGISTER_TRIGGERKEYS:
+        DebugLog("-- XIM_REGISTER_TRIGGERKEYS\n");
+        break;
+    case XIM_QUERY_EXTENSION_REPLY:
+        DebugLog("-- XIM_QUERY_EXTENSION_REPLY\n");
+        break;
+    case XIM_ENCODING_NEGOTIATION_REPLY:
+        DebugLog("-- XIM_ENCODING_NEGOTIATION_REPLY\n");
+        break;
+    case XIM_GET_IM_VALUES_REPLY:
+        DebugLog("-- XIM_GET_IM_VALUES_REPLY\n");
+        break;
+    case XIM_SET_EVENT_MASK:
+        DebugLog("-- XIM_COMMIT\n");
+        break;
+    case XIM_CREATE_IC_REPLY:
+        DebugLog("-- XIM_CREATE_IC_REPLY\n");
+        break;
+    case XIM_GET_IC_VALUES_REPLY:
+        DebugLog("-- XIM_GET_IC_VALUES_REPLY\n");
+        break;
+    case XIM_SET_IC_VALUES_REPLY:
+        DebugLog("-- XIM_SET_IC_VALUES_REPLY\n");
+        break;
+    case XIM_FORWARD_EVENT:
+        DebugLog("-- XIM_FORWARD_EVENT\n");
+        break;
+    case XIM_SYNC:
+        DebugLog("-- XIM_SYNC\n");
+        break;
+    case XIM_COMMIT:
+        DebugLog("-- XIM_COMMIT\n");
+        break;
+    case XIM_GEOMETRY:
+        DebugLog("-- XIM_GEOMETRY\n");
+        break;
+    case XIM_PREEDIT_START:
+        DebugLog("-- XIM_PREEDIT_START\n");
+        break;
+    case XIM_PREEDIT_DRAW:
+        DebugLog("-- XIM_PREEDIT_DRAW\n");
+        break;
+    case XIM_PREEDIT_CARET:
+        DebugLog("-- XIM_PREEDIT_CARET\n");
+        break;
+    case XIM_PREEDIT_DONE:
+        DebugLog("-- XIM_PREEDIT_DONE\n");
+        break;
+    case XIM_STATUS_START:
+        DebugLog("-- XIM_STATUS_START\n");
+        break;
+    case XIM_STATUS_DRAW:
+        DebugLog("-- XIM_STATUS_DRAW\n");
+        break;
+    case XIM_STATUS_DONE:
+        DebugLog("-- XIM_STATUS_DONE\n");
+        break;
+    case XIM_CLOSE_REPLY:
+        DebugLog("-- XIM_CLOSE_REPLY\n");
+        break;
+    case XIM_DESTROY_IC_REPLY:
+        DebugLog("-- XIM_DESTROY_IC_REPLY\n");
+        break;
+    case XIM_RESET_IC_REPLY:
+        DebugLog("-- XIM_DESTROY_IC_REPLY\n");
+        break;
+
+    }
+}
+
+bool _xcb_xim_filter_event(xcb_xim_t* im, xcb_generic_event_t* event)
+{
+    if (im->open.phase != XIM_OPEN_PHASE_DONE) {
+        return false;
+    }
+
+    do {
+        if ((event->response_type & ~0x80) != XCB_CLIENT_MESSAGE) {
+            break;
+        }
+
+        xcb_client_message_event_t* clientmessage = (xcb_client_message_event_t*) event;
+
+        if (clientmessage->type != im->atoms[XIM_ATOM_XIM_PROTOCOL]) {
+            break;
+        }
+
+        xcb_im_packet_header_fr_t hdr;
+        uint8_t* message = _xcb_read_xim_message(im->conn, im->client_window, clientmessage, &hdr, false);
+        if (message) {
+            _xcb_xim_handle_message(im, &hdr, message);
+            free(message);
+        }
+
+        return true;
+
+    } while(0);
+
+    return false;
+}
+
+
 bool xcb_xim_filter_event(xcb_xim_t* im, xcb_generic_event_t* event)
 {
-    return _xcb_xim_preconnect_im(im, event);
+    return _xcb_xim_preconnect_im(im, event) || _xcb_xim_filter_event(im, event);
 }
 
 void xcb_xim_close(xcb_xim_t* im)

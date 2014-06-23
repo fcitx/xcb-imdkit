@@ -943,6 +943,7 @@ uint8_t* xcb_im_open_fr_write(xcb_im_open_fr_t *frame, uint8_t *data, bool swap)
 size_t xcb_im_open_fr_size(xcb_im_open_fr_t *frame)
 {
     size_t size = 0;
+    size += xcb_im_str_fr_size(&frame->field0);
     size = align_to_4(size, size, NULL);
     return size;
 }

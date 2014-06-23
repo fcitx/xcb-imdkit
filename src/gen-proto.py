@@ -314,6 +314,8 @@ else:
                     continue
                 if "_FRAME(BIT" in attr or "_BYTE_COUNTER" in attr:
                     print("    size += {0};".format(getsize(attr, name)))
+                elif "_PTR" in attr:
+                    print("    size += {1}_size(&frame->{0});".format(name, gettypename(attr)))
                 elif "_FRAME(BARRAY" in attr:
                     (lenattr, lenname) = search_barray_length(attrs, i)
                     print("    size += frame->{0};".format(lenname))
