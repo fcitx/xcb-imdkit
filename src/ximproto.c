@@ -180,15 +180,6 @@ uint8_t* xcb_im_ximtriggerkey_fr_write(xcb_im_ximtriggerkey_fr_t *frame, uint8_t
     return data;
 }
 
-size_t xcb_im_ximtriggerkey_fr_size(xcb_im_ximtriggerkey_fr_t *frame)
-{
-    size_t size = 0;
-    size += 4;
-    size += 4;
-    size += 4;
-    return size;
-}
-
 void xcb_im_ximtriggerkey_fr_free(xcb_im_ximtriggerkey_fr_t *frame)
 {
 }
@@ -344,13 +335,6 @@ uint8_t* xcb_im_inputstyle_fr_write(xcb_im_inputstyle_fr_t *frame, uint8_t *data
     return data;
 }
 
-size_t xcb_im_inputstyle_fr_size(xcb_im_inputstyle_fr_t *frame)
-{
-    size_t size = 0;
-    size += 4;
-    return size;
-}
-
 void xcb_im_inputstyle_fr_free(xcb_im_inputstyle_fr_t *frame)
 {
 }
@@ -371,14 +355,6 @@ uint8_t* xcb_im_attr_head_fr_write(xcb_im_attr_head_fr_t *frame, uint8_t *data, 
     return data;
 }
 
-size_t xcb_im_attr_head_fr_size(xcb_im_attr_head_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
-}
-
 void xcb_im_attr_head_fr_free(xcb_im_attr_head_fr_t *frame)
 {
 }
@@ -396,13 +372,6 @@ uint8_t* xcb_im_short_fr_write(xcb_im_short_fr_t *frame, uint8_t *data, bool swa
     return data;
 }
 
-size_t xcb_im_short_fr_size(xcb_im_short_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    return size;
-}
-
 void xcb_im_short_fr_free(xcb_im_short_fr_t *frame)
 {
 }
@@ -418,13 +387,6 @@ uint8_t* xcb_im_long_fr_write(xcb_im_long_fr_t *frame, uint8_t *data, bool swap)
 {
     data = uint32_t_write(&frame->value, data, swap);
     return data;
-}
-
-size_t xcb_im_long_fr_size(xcb_im_long_fr_t *frame)
-{
-    size_t size = 0;
-    size += 4;
-    return size;
 }
 
 void xcb_im_long_fr_free(xcb_im_long_fr_t *frame)
@@ -453,16 +415,6 @@ uint8_t* xcb_im_xrectangle_fr_write(xcb_im_xrectangle_fr_t *frame, uint8_t *data
     return data;
 }
 
-size_t xcb_im_xrectangle_fr_size(xcb_im_xrectangle_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    size += 2;
-    size += 2;
-    return size;
-}
-
 void xcb_im_xrectangle_fr_free(xcb_im_xrectangle_fr_t *frame)
 {
 }
@@ -481,14 +433,6 @@ uint8_t* xcb_im_xpoint_fr_write(xcb_im_xpoint_fr_t *frame, uint8_t *data, bool s
     data = uint16_t_write(&frame->x, data, swap);
     data = uint16_t_write(&frame->y, data, swap);
     return data;
-}
-
-size_t xcb_im_xpoint_fr_size(xcb_im_xpoint_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
 }
 
 void xcb_im_xpoint_fr_free(xcb_im_xpoint_fr_t *frame)
@@ -610,15 +554,6 @@ uint8_t* xcb_im_packet_header_fr_write(xcb_im_packet_header_fr_t *frame, uint8_t
     data = uint8_t_write(&frame->minor_opcode, data, swap);
     data = uint16_t_write(&frame->length, data, swap);
     return data;
-}
-
-size_t xcb_im_packet_header_fr_size(xcb_im_packet_header_fr_t *frame)
-{
-    size_t size = 0;
-    size += 1;
-    size += 1;
-    size += 2;
-    return size;
 }
 
 void xcb_im_packet_header_fr_free(xcb_im_packet_header_fr_t *frame)
@@ -769,14 +704,6 @@ uint8_t* xcb_im_connect_reply_fr_write(xcb_im_connect_reply_fr_t *frame, uint8_t
     data = uint16_t_write(&frame->server_major_protocol_version, data, swap);
     data = uint16_t_write(&frame->server_minor_protocol_version, data, swap);
     return data;
-}
-
-size_t xcb_im_connect_reply_fr_size(xcb_im_connect_reply_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
 }
 
 void xcb_im_connect_reply_fr_free(xcb_im_connect_reply_fr_t *frame)
@@ -963,12 +890,6 @@ uint8_t* xcb_im_auth_ng_fr_write(xcb_im_auth_ng_fr_t *frame, uint8_t *data, bool
     return data;
 }
 
-size_t xcb_im_auth_ng_fr_size(xcb_im_auth_ng_fr_t *frame)
-{
-    size_t size = 0;
-    return size;
-}
-
 void xcb_im_auth_ng_fr_free(xcb_im_auth_ng_fr_t *frame)
 {
 }
@@ -983,12 +904,6 @@ uint8_t* xcb_im_disconnect_fr_write(xcb_im_disconnect_fr_t *frame, uint8_t *data
     return data;
 }
 
-size_t xcb_im_disconnect_fr_size(xcb_im_disconnect_fr_t *frame)
-{
-    size_t size = 0;
-    return size;
-}
-
 void xcb_im_disconnect_fr_free(xcb_im_disconnect_fr_t *frame)
 {
 }
@@ -1001,12 +916,6 @@ void xcb_im_disconnect_reply_fr_read(xcb_im_disconnect_reply_fr_t *frame, uint8_
 uint8_t* xcb_im_disconnect_reply_fr_write(xcb_im_disconnect_reply_fr_t *frame, uint8_t *data, bool swap)
 {
     return data;
-}
-
-size_t xcb_im_disconnect_reply_fr_size(xcb_im_disconnect_reply_fr_t *frame)
-{
-    size_t size = 0;
-    return size;
 }
 
 void xcb_im_disconnect_reply_fr_free(xcb_im_disconnect_reply_fr_t *frame)
@@ -1164,14 +1073,6 @@ uint8_t* xcb_im_close_fr_write(xcb_im_close_fr_t *frame, uint8_t *data, bool swa
     return data;
 }
 
-size_t xcb_im_close_fr_size(xcb_im_close_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size = align_to_4(size, size, NULL);
-    return size;
-}
-
 void xcb_im_close_fr_free(xcb_im_close_fr_t *frame)
 {
 }
@@ -1192,14 +1093,6 @@ uint8_t* xcb_im_close_reply_fr_write(xcb_im_close_reply_fr_t *frame, uint8_t *da
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
-}
-
-size_t xcb_im_close_reply_fr_size(xcb_im_close_reply_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size = align_to_4(size, size, NULL);
-    return size;
 }
 
 void xcb_im_close_reply_fr_free(xcb_im_close_reply_fr_t *frame)
@@ -1334,17 +1227,6 @@ uint8_t* xcb_im_trigger_notify_fr_write(xcb_im_trigger_notify_fr_t *frame, uint8
     return data;
 }
 
-size_t xcb_im_trigger_notify_fr_size(xcb_im_trigger_notify_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    size += 4;
-    size += 4;
-    size += 4;
-    return size;
-}
-
 void xcb_im_trigger_notify_fr_free(xcb_im_trigger_notify_fr_t *frame)
 {
 }
@@ -1363,14 +1245,6 @@ uint8_t* xcb_im_trigger_notify_reply_fr_write(xcb_im_trigger_notify_reply_fr_t *
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     return data;
-}
-
-size_t xcb_im_trigger_notify_reply_fr_size(xcb_im_trigger_notify_reply_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
 }
 
 void xcb_im_trigger_notify_reply_fr_free(xcb_im_trigger_notify_reply_fr_t *frame)
@@ -1397,16 +1271,6 @@ uint8_t* xcb_im_set_event_mask_fr_write(xcb_im_set_event_mask_fr_t *frame, uint8
     data = uint32_t_write(&frame->forward_event_mask, data, swap);
     data = uint32_t_write(&frame->synchronous_event_mask, data, swap);
     return data;
-}
-
-size_t xcb_im_set_event_mask_fr_size(xcb_im_set_event_mask_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    size += 4;
-    size += 4;
-    return size;
 }
 
 void xcb_im_set_event_mask_fr_free(xcb_im_set_event_mask_fr_t *frame)
@@ -1542,16 +1406,6 @@ uint8_t* xcb_im_encoding_negotiation_reply_fr_write(xcb_im_encoding_negotiation_
     data = uint16_t_write(&frame->index_of_the_encoding_dterminated, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
-}
-
-size_t xcb_im_encoding_negotiation_reply_fr_size(xcb_im_encoding_negotiation_reply_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    size += 2;
-    size = align_to_4(size, size, NULL);
-    return size;
 }
 
 void xcb_im_encoding_negotiation_reply_fr_free(xcb_im_encoding_negotiation_reply_fr_t *frame)
@@ -1886,14 +1740,6 @@ uint8_t* xcb_im_create_ic_reply_fr_write(xcb_im_create_ic_reply_fr_t *frame, uin
     return data;
 }
 
-size_t xcb_im_create_ic_reply_fr_size(xcb_im_create_ic_reply_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
-}
-
 void xcb_im_create_ic_reply_fr_free(xcb_im_create_ic_reply_fr_t *frame)
 {
 }
@@ -1914,14 +1760,6 @@ uint8_t* xcb_im_destroy_ic_fr_write(xcb_im_destroy_ic_fr_t *frame, uint8_t *data
     return data;
 }
 
-size_t xcb_im_destroy_ic_fr_size(xcb_im_destroy_ic_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
-}
-
 void xcb_im_destroy_ic_fr_free(xcb_im_destroy_ic_fr_t *frame)
 {
 }
@@ -1940,14 +1778,6 @@ uint8_t* xcb_im_destroy_ic_reply_fr_write(xcb_im_destroy_ic_reply_fr_t *frame, u
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     return data;
-}
-
-size_t xcb_im_destroy_ic_reply_fr_size(xcb_im_destroy_ic_reply_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
 }
 
 void xcb_im_destroy_ic_reply_fr_free(xcb_im_destroy_ic_reply_fr_t *frame)
@@ -2040,14 +1870,6 @@ uint8_t* xcb_im_set_ic_values_reply_fr_write(xcb_im_set_ic_values_reply_fr_t *fr
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     return data;
-}
-
-size_t xcb_im_set_ic_values_reply_fr_size(xcb_im_set_ic_values_reply_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
 }
 
 void xcb_im_set_ic_values_reply_fr_free(xcb_im_set_ic_values_reply_fr_t *frame)
@@ -2204,14 +2026,6 @@ uint8_t* xcb_im_set_ic_focus_fr_write(xcb_im_set_ic_focus_fr_t *frame, uint8_t *
     return data;
 }
 
-size_t xcb_im_set_ic_focus_fr_size(xcb_im_set_ic_focus_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
-}
-
 void xcb_im_set_ic_focus_fr_free(xcb_im_set_ic_focus_fr_t *frame)
 {
 }
@@ -2230,14 +2044,6 @@ uint8_t* xcb_im_unset_ic_focus_fr_write(xcb_im_unset_ic_focus_fr_t *frame, uint8
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     return data;
-}
-
-size_t xcb_im_unset_ic_focus_fr_size(xcb_im_unset_ic_focus_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
 }
 
 void xcb_im_unset_ic_focus_fr_free(xcb_im_unset_ic_focus_fr_t *frame)
@@ -2266,16 +2072,6 @@ uint8_t* xcb_im_forward_event_fr_write(xcb_im_forward_event_fr_t *frame, uint8_t
     return data;
 }
 
-size_t xcb_im_forward_event_fr_size(xcb_im_forward_event_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    size += 2;
-    size += 2;
-    return size;
-}
-
 void xcb_im_forward_event_fr_free(xcb_im_forward_event_fr_t *frame)
 {
 }
@@ -2296,14 +2092,6 @@ uint8_t* xcb_im_sync_fr_write(xcb_im_sync_fr_t *frame, uint8_t *data, bool swap)
     return data;
 }
 
-size_t xcb_im_sync_fr_size(xcb_im_sync_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
-}
-
 void xcb_im_sync_fr_free(xcb_im_sync_fr_t *frame)
 {
 }
@@ -2322,14 +2110,6 @@ uint8_t* xcb_im_sync_reply_fr_write(xcb_im_sync_reply_fr_t *frame, uint8_t *data
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     return data;
-}
-
-size_t xcb_im_sync_reply_fr_size(xcb_im_sync_reply_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
 }
 
 void xcb_im_sync_reply_fr_free(xcb_im_sync_reply_fr_t *frame)
@@ -2530,14 +2310,6 @@ uint8_t* xcb_im_reset_ic_fr_write(xcb_im_reset_ic_fr_t *frame, uint8_t *data, bo
     return data;
 }
 
-size_t xcb_im_reset_ic_fr_size(xcb_im_reset_ic_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
-}
-
 void xcb_im_reset_ic_fr_free(xcb_im_reset_ic_fr_t *frame)
 {
 }
@@ -2598,14 +2370,6 @@ uint8_t* xcb_im_geometry_fr_write(xcb_im_geometry_fr_t *frame, uint8_t *data, bo
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     return data;
-}
-
-size_t xcb_im_geometry_fr_size(xcb_im_geometry_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
 }
 
 void xcb_im_geometry_fr_free(xcb_im_geometry_fr_t *frame)
@@ -2764,14 +2528,6 @@ uint8_t* xcb_im_preedit_start_fr_write(xcb_im_preedit_start_fr_t *frame, uint8_t
     return data;
 }
 
-size_t xcb_im_preedit_start_fr_size(xcb_im_preedit_start_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
-}
-
 void xcb_im_preedit_start_fr_free(xcb_im_preedit_start_fr_t *frame)
 {
 }
@@ -2793,15 +2549,6 @@ uint8_t* xcb_im_preedit_start_reply_fr_write(xcb_im_preedit_start_reply_fr_t *fr
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     data = uint32_t_write(&frame->return_value, data, swap);
     return data;
-}
-
-size_t xcb_im_preedit_start_reply_fr_size(xcb_im_preedit_start_reply_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    size += 4;
-    return size;
 }
 
 void xcb_im_preedit_start_reply_fr_free(xcb_im_preedit_start_reply_fr_t *frame)
@@ -2923,17 +2670,6 @@ uint8_t* xcb_im_preedit_caret_fr_write(xcb_im_preedit_caret_fr_t *frame, uint8_t
     return data;
 }
 
-size_t xcb_im_preedit_caret_fr_size(xcb_im_preedit_caret_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    size += 4;
-    size += 4;
-    size += 4;
-    return size;
-}
-
 void xcb_im_preedit_caret_fr_free(xcb_im_preedit_caret_fr_t *frame)
 {
 }
@@ -2957,15 +2693,6 @@ uint8_t* xcb_im_preedit_caret_reply_fr_write(xcb_im_preedit_caret_reply_fr_t *fr
     return data;
 }
 
-size_t xcb_im_preedit_caret_reply_fr_size(xcb_im_preedit_caret_reply_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    size += 4;
-    return size;
-}
-
 void xcb_im_preedit_caret_reply_fr_free(xcb_im_preedit_caret_reply_fr_t *frame)
 {
 }
@@ -2986,14 +2713,6 @@ uint8_t* xcb_im_preedit_done_fr_write(xcb_im_preedit_done_fr_t *frame, uint8_t *
     return data;
 }
 
-size_t xcb_im_preedit_done_fr_size(xcb_im_preedit_done_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
-}
-
 void xcb_im_preedit_done_fr_free(xcb_im_preedit_done_fr_t *frame)
 {
 }
@@ -3012,14 +2731,6 @@ uint8_t* xcb_im_status_start_fr_write(xcb_im_status_start_fr_t *frame, uint8_t *
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     return data;
-}
-
-size_t xcb_im_status_start_fr_size(xcb_im_status_start_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
 }
 
 void xcb_im_status_start_fr_free(xcb_im_status_start_fr_t *frame)
@@ -3130,16 +2841,6 @@ uint8_t* xcb_im_status_draw_bitmap_fr_write(xcb_im_status_draw_bitmap_fr_t *fram
     return data;
 }
 
-size_t xcb_im_status_draw_bitmap_fr_size(xcb_im_status_draw_bitmap_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    size += 4;
-    size += 4;
-    return size;
-}
-
 void xcb_im_status_draw_bitmap_fr_free(xcb_im_status_draw_bitmap_fr_t *frame)
 {
 }
@@ -3158,14 +2859,6 @@ uint8_t* xcb_im_status_done_fr_write(xcb_im_status_done_fr_t *frame, uint8_t *da
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     return data;
-}
-
-size_t xcb_im_status_done_fr_size(xcb_im_status_done_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    return size;
 }
 
 void xcb_im_status_done_fr_free(xcb_im_status_done_fr_t *frame)
@@ -3201,19 +2894,6 @@ uint8_t* xcb_im_ext_set_event_mask_fr_write(xcb_im_ext_set_event_mask_fr_t *fram
     data = uint32_t_write(&frame->forward_event_mask, data, swap);
     data = uint32_t_write(&frame->synchronous_event_mask, data, swap);
     return data;
-}
-
-size_t xcb_im_ext_set_event_mask_fr_size(xcb_im_ext_set_event_mask_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    size += 4;
-    size += 4;
-    size += 4;
-    size += 4;
-    size += 4;
-    return size;
 }
 
 void xcb_im_ext_set_event_mask_fr_free(xcb_im_ext_set_event_mask_fr_t *frame)
@@ -3257,21 +2937,6 @@ uint8_t* xcb_im_ext_forward_keyevent_fr_write(xcb_im_ext_forward_keyevent_fr_t *
     return data;
 }
 
-size_t xcb_im_ext_forward_keyevent_fr_size(xcb_im_ext_forward_keyevent_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    size += 2;
-    size += 2;
-    size += 1;
-    size += 1;
-    size += 2;
-    size += 4;
-    size += 4;
-    return size;
-}
-
 void xcb_im_ext_forward_keyevent_fr_free(xcb_im_ext_forward_keyevent_fr_t *frame)
 {
 }
@@ -3296,16 +2961,6 @@ uint8_t* xcb_im_ext_move_fr_write(xcb_im_ext_move_fr_t *frame, uint8_t *data, bo
     data = uint16_t_write(&frame->X, data, swap);
     data = uint16_t_write(&frame->Y, data, swap);
     return data;
-}
-
-size_t xcb_im_ext_move_fr_size(xcb_im_ext_move_fr_t *frame)
-{
-    size_t size = 0;
-    size += 2;
-    size += 2;
-    size += 2;
-    size += 2;
-    return size;
 }
 
 void xcb_im_ext_move_fr_free(xcb_im_ext_move_fr_t *frame)

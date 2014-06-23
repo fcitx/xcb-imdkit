@@ -7,6 +7,10 @@
 
 #define XCB_IM_HEADER_SIZE 4
 
+/*
+ * Client Message data size
+ */
+#define XIM_CM_DATA_SIZE    20
 
 /*
  * Xim implementation revision
@@ -80,5 +84,36 @@
 #define XimLookupChars        0x0002
 #define XimLookupKeySym       0x0004
 #define XimLookupBoth         0x0006
+
+
+
+#define frame_opcode(FRAME) _Generic((FRAME), \
+    xcb_im_connect_reply_fr_t: XIM_CONNECT_REPLY, \
+    xcb_im_open_reply_fr_t: XIM_OPEN_REPLY, \
+    xcb_im_close_reply_fr_t: XIM_CLOSE_REPLY, \
+    xcb_im_query_extension_reply_fr_t: XIM_QUERY_EXTENSION_REPLY, \
+    xcb_im_encoding_negotiation_reply_fr_t: XIM_ENCODING_NEGOTIATION_REPLY, \
+    xcb_im_get_im_values_reply_fr_t: XIM_GET_IM_VALUES_REPLY, \
+    xcb_im_set_event_mask_fr_t: XIM_SET_EVENT_MASK, \
+    xcb_im_create_ic_reply_fr_t: XIM_CREATE_IC_REPLY, \
+    xcb_im_set_ic_values_reply_fr_t: XIM_SET_IC_VALUES_REPLY, \
+    xcb_im_get_ic_values_reply_fr_t: XIM_GET_IC_VALUES_REPLY, \
+    xcb_im_register_triggerkeys_fr_t: XIM_REGISTER_TRIGGERKEYS, \
+    xcb_im_destroy_ic_reply_fr_t: XIM_DESTROY_IC_REPLY, \
+    xcb_im_reset_ic_reply_fr_t: XIM_RESET_IC_REPLY, \
+    xcb_im_trigger_notify_reply_fr_t: XIM_TRIGGER_NOTIFY_REPLY, \
+    xcb_im_preedit_start_fr_t: XIM_PREEDIT_START, \
+    xcb_im_preedit_draw_fr_t: XIM_PREEDIT_DRAW, \
+    xcb_im_preedit_caret_fr_t: XIM_PREEDIT_CARET, \
+    xcb_im_preedit_done_fr_t: XIM_PREEDIT_DONE, \
+    xcb_im_status_start_fr_t: XIM_STATUS_START, \
+    xcb_im_status_draw_text_fr_t: XIM_STATUS_DRAW, \
+    xcb_im_status_draw_bitmap_fr_t: XIM_STATUS_DRAW, \
+    xcb_im_status_done_fr_t: XIM_STATUS_DONE, \
+    xcb_im_commit_chars_fr_t: XIM_COMMIT, \
+    xcb_im_commit_both_fr_t: XIM_COMMIT, \
+    xcb_im_connect_fr_t: XIM_CONNECT, \
+    xcb_im_geometry_fr_t: XIM_GEOMETRY \
+    )
 
 #endif // XIMPROTO_H

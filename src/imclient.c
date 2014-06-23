@@ -1,6 +1,7 @@
 #include "imclient.h"
 #include "common.h"
 #include "ximproto.h"
+#include "message.h"
 #include <xcb/xcb_aux.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +24,7 @@ typedef enum _xcb_xim_open_check_server_phase {
 typedef enum _xcb_xim_open_connect_phase {
     XIM_OPEN_PHASE_CONNECT_PREPARE,
     XIM_OPEN_PHASE_CONNECT_WAIT,
+    XIM_OPEN_PHASE_CONNECT_WAIT_REPLY,
 } xcb_xim_open_connect_phase;
 
 typedef struct _xcb_xim_open_t
@@ -244,7 +246,7 @@ bool _xcb_xim_preconnect_im(xcb_xim_t* im, xcb_generic_event_t* event)
                 im->client_window = w;
 
                 xcb_client_message_event_t ev;
-                ev.type = XCB_CLIENT_MESSAGE;
+                ev.response_type = XCB_CLIENT_MESSAGE;
                 ev.format = 32;
                 ev.sequence = 0;
                 ev.type = im->atoms[XIM_ATOM_XIM_CONNECT];
@@ -255,7 +257,7 @@ bool _xcb_xim_preconnect_im(xcb_xim_t* im, xcb_generic_event_t* event)
                 ev.data.data32[3] = 0;
                 ev.data.data32[4] = 0;
                 xcb_send_event(im->conn, false, im->im_window, XCB_EVENT_MASK_NO_EVENT, (char*) &ev);
-
+                xcb_flush(im->conn);
                 im->open.connect.subphase = XIM_OPEN_PHASE_CONNECT_WAIT;
             } else if (im->open.connect.subphase == XIM_OPEN_PHASE_CONNECT_WAIT) {
                 if (!event) {
@@ -281,7 +283,21 @@ bool _xcb_xim_preconnect_im(xcb_xim_t* im, xcb_generic_event_t* event)
                 frame.client_major_protocol_version = 0;
                 frame.client_minor_protocol_version = 0;
 
-                // WIP
+                _xcb_send_xim_frame(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], im->accept_win,
+                                    frame, false, false, 0, 0);
+                im->open.connect.subphase = XIM_OPEN_PHASE_CONNECT_WAIT_REPLY;
+            } else if (im->open.connect.subphase == XIM_OPEN_PHASE_CONNECT_WAIT_REPLY) {
+                if (!event) {
+                    return false;
+                }
+                if ((event->response_type & ~0x80) != XCB_CLIENT_MESSAGE) {
+                    return false;
+                }
+                xcb_client_message_event_t* client_message = (xcb_client_message_event_t*) event;
+                if (client_message->type != im->atoms[XIM_ATOM_XIM_PROTOCOL]) {
+                    return false;
+                }
+
             }
         }
     }

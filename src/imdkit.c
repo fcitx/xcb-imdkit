@@ -412,7 +412,7 @@ bool _xcb_im_filter_xconnect_message(xcb_im_t* im, xcb_generic_event_t* event)
         ev.data.data32[0] = client->c.accept_win;
         ev.data.data32[1] = major_version;
         ev.data.data32[2] = minor_version;
-        ev.data.data32[3] = XCM_DATA_LIMIT;
+        ev.data.data32[3] = XIM_CM_DATA_SIZE;
         xcb_send_event(im->conn, false, client_window, XCB_EVENT_MASK_NO_EVENT, (char*) &ev);
         xcb_flush(im->conn);
 
@@ -552,7 +552,7 @@ static uint8_t* _xcb_im_read_message(xcb_im_t* im,
         }
         free(reply);
     }
-    return (unsigned char *) p;
+    return p;
 }
 
 void _xcb_im_handle_message(xcb_im_t* im,
@@ -842,7 +842,7 @@ void xcb_im_forward_event(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_key_pres
 
     const size_t length = 8 /* xcb_im_forward_event_fr_size(&frame) */ + sizeof(xcb_key_press_event_t);
     uint8_t data[XCB_IM_HEADER_SIZE + length];
-    _xcb_im_write_message_header(im, client, data, XIM_FORWARD_EVENT, 0, length);
+    _xcb_write_xim_message_header(data, XIM_FORWARD_EVENT, 0, length, client->c.byte_order != im->byte_order);
     uint8_t* p = xcb_im_forward_event_fr_write(&frame, data + XCB_IM_HEADER_SIZE, client->c.byte_order != im->byte_order);
     memcpy(p, event, sizeof(xcb_key_press_event_t));
 
@@ -899,7 +899,7 @@ void xcb_im_sync_xlib(xcb_im_t* im, xcb_im_input_context_t* ic)
 
     // use stack to avoid alloc fails
     uint8_t message[XCB_IM_HEADER_SIZE + 4];
-    _xcb_im_write_message_header(im, (xcb_im_client_table_t*) ic->client, message, XIM_SYNC, 0, 4);
+    _xcb_write_xim_message_header(message, XIM_SYNC, 0, 4, ic->client->byte_order != im->byte_order);
     xcb_im_sync_fr_write(&frame, message + XCB_IM_HEADER_SIZE, ic->client->byte_order != im->byte_order);
     _xcb_im_send_message(im, (xcb_im_client_table_t*) ic->client, message, 4);
 }
@@ -1115,4 +1115,21 @@ void xcb_im_status_draw_bitmap_callback(xcb_im_t* im, xcb_im_input_context_t* ic
     frame->input_context_ID = ic->id;
 
     _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, *frame, false);
+}
+
+// length is the body without header size in byte
+bool _xcb_im_send_message(xcb_im_t* im,
+                          xcb_im_client_table_t* client,
+                          uint8_t* data, size_t length)
+{
+    char atomName[64];
+    int len = sprintf(atomName, "_server%u_%u", client->c.connect_id, im->sequence++);
+    return _xcb_send_xim_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], client->c.client_win,
+                                 data, length, atomName, len);
+}
+
+void _xcb_im_send_error_message(xcb_im_t* im,
+                                xcb_im_client_table_t* client)
+{
+    _xcb_send_xim_error_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], client->c.client_win, im->byte_order != client->c.byte_order);
 }

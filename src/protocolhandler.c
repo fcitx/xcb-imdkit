@@ -886,7 +886,7 @@ void _xcb_im_handle_trigger_notify(xcb_im_t* im, xcb_im_client_table_t* client, 
         // use stack to avoid alloc fails
         const size_t length = 4 /* xcb_im_trigger_notify_reply_fr_size(&reply_frame) */;
         uint8_t message[XCB_IM_HEADER_SIZE + length];
-        _xcb_im_write_message_header(im, client, message, frame_opcode(reply_frame), 0, length);
+        _xcb_write_xim_message_header(message, frame_opcode(reply_frame), 0, length, im->byte_order != ic->ic.client->byte_order);
         xcb_im_trigger_notify_reply_fr_write(&reply_frame, message + XCB_IM_HEADER_SIZE, im->byte_order != ic->ic.client->byte_order);
 
         /* NOTE:

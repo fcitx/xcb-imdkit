@@ -8,6 +8,7 @@ import fileinput
 import collections
 import sys
 funcs = collections.OrderedDict()
+static_size = dict()
 
 funcname = None
 for line in fileinput.input(sys.argv[1]):
@@ -54,6 +55,31 @@ def gettypename(attr):
     else:
         print(attr)
         assert(False)
+
+for funcname, attrs in funcs.items():
+    size = 0
+    for attr, name in attrs:
+        if "BIT8" in attr:
+            size += 1
+        elif "BIT16" in attr:
+            size += 2
+        elif "BIT32" in attr:
+            size += 4
+        elif "PAD" in attr:
+            pad = int(attr[4])
+            size += 0 if size % pad == 0 else (pad - size % pad)
+        elif "PTR" in attr:
+            if static_size[gettypename(attr)] < 0:
+                size = -1
+                break
+            else:
+                size += static_size[gettypename(attr)]
+        else:
+            size = -1
+            break
+    static_size[funcname] = size
+
+
 
 def getsize(attr, name):
     if "BIT8" in attr:
@@ -111,22 +137,42 @@ if len(sys.argv) > 2:
                 first=False
             else:
                 print(",\\")
-            print("    {0}_t : {0}_{1}".format(funcname, cat), end='')
+            if cat == "size":
+                if static_size[funcname] >= 0:
+                    print("    {0}_t : {1}".format(funcname, static_size[funcname]), end='')
+                else:
+                    print("    {0}_t : {0}_{1}(({0}_t*) &(FRAME))".format(funcname, cat), end='')
+            else:
+                print("    {0}_t : {0}_{1}".format(funcname, cat), end='')
         print(")")
         print("")
     for cat in ["read", "write", "size", "free"]:
         print_generic(cat)
+    def print_generic_size():
+        print("#define frame_has_static_size(FRAME) _Generic((FRAME), \\".format(cat))
+        first = True
+        for funcname, attrs in funcs.items():
+            if first:
+                first=False
+            else:
+                print(",\\")
+            print("    {0}_t : {1}".format(funcname, "true" if static_size[funcname] >= 0 else "false"), end='')
+        print(")")
+        print("")
+    print_generic_size()
 
     for funcname, attrs in funcs.items():
         usecounter = any("_BYTE_COUNTER" in attr for attr, name in attrs)
         usecounter8 = any("_BYTE_COUNTER(BIT8" in attr for attr, name in attrs)
         usecounter16 = any("_BYTE_COUNTER(BIT16" in attr for attr, name in attrs)
         usecounter32 = any("_BYTE_COUNTER(BIT32" in attr for attr, name in attrs)
-        usepad = any("_PAD" in attr for attr, name in attrs)
         print(("""void {0}_read({0}_t *frame, uint8_t **data, size_t *len, bool swap);\n"""
                """uint8_t* {0}_write({0}_t *frame, uint8_t *data, bool swap);\n"""
-               """size_t {0}_size({0}_t *frame);\n"""
                """void {0}_free({0}_t *frame);""").format(funcname))
+        if static_size[funcname] >= 0:
+            print("""#define {0}_size(ARG...) (((void)(ARG)), ({1}))""".format(funcname, static_size[funcname]))
+        else:
+            print("""size_t {0}_size({0}_t *frame);""".format(funcname))
         print("")
 else:
     print("#include <string.h>")
@@ -256,36 +302,38 @@ else:
 
         print("}")
         print("")
-        print("size_t {0}_size({0}_t *frame)".format(funcname))
-        print("{")
-        print("    size_t size = 0;")
-        skip = False
-        for i, (attr, name) in enumerate(attrs):
-            if skip:
-                skip = False
-                continue
-            if "_FRAME(BIT" in attr or "_BYTE_COUNTER" in attr:
-                print("    size += {0};".format(getsize(attr, name)))
-            elif "_FRAME(BARRAY" in attr:
-                (lenattr, lenname) = search_barray_length(attrs, i)
-                print("    size += frame->{0};".format(lenname))
-            elif "_PAD" in attr:
-                print("    size = align_to_{0}(size, size, NULL);".format(attr[4]))
-            elif attr == "_FRAME(ITER)":
-                (iterattr, itername) = attrs[i + 1]
-                if "_PTR" in iterattr:
-                    print("    for (uint32_t i = 0; i < frame->{0}.size; i++) {{".format(name))
-                    print("        size += {1}_size(&frame->{0}.items[i]);".format(name, gettypename(iterattr)))
-                    print("    }")
 
-                else:
-                    print("    size += frame->{0}.size * {1};".format(name, getsize(iterattr, itername)))
-                skip = True
-        print("    return size;")
+        if static_size[funcname] < 0:
+            print("size_t {0}_size({0}_t *frame)".format(funcname))
+            print("{")
+            print("    size_t size = 0;")
+            skip = False
+            for i, (attr, name) in enumerate(attrs):
+                if skip:
+                    skip = False
+                    continue
+                if "_FRAME(BIT" in attr or "_BYTE_COUNTER" in attr:
+                    print("    size += {0};".format(getsize(attr, name)))
+                elif "_FRAME(BARRAY" in attr:
+                    (lenattr, lenname) = search_barray_length(attrs, i)
+                    print("    size += frame->{0};".format(lenname))
+                elif "_PAD" in attr:
+                    print("    size = align_to_{0}(size, size, NULL);".format(attr[4]))
+                elif attr == "_FRAME(ITER)":
+                    (iterattr, itername) = attrs[i + 1]
+                    if "_PTR" in iterattr:
+                        print("    for (uint32_t i = 0; i < frame->{0}.size; i++) {{".format(name))
+                        print("        size += {1}_size(&frame->{0}.items[i]);".format(name, gettypename(iterattr)))
+                        print("    }")
+
+                    else:
+                        print("    size += frame->{0}.size * {1};".format(name, getsize(iterattr, itername)))
+                    skip = True
+            print("    return size;")
 
 
-        print("}")
-        print("")
+            print("}")
+            print("")
 
         print("void {0}_free({0}_t *frame)".format(funcname))
         print("{")

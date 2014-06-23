@@ -750,82 +750,82 @@ typedef struct _xcb_im_ext_move_fr_t
     xcb_im_ext_move_fr_t : xcb_im_ext_move_fr_write)
 
 #define frame_size_func(FRAME) _Generic((FRAME), \
-    xcb_im_ximattr_fr_t : xcb_im_ximattr_fr_size,\
-    xcb_im_xicattr_fr_t : xcb_im_xicattr_fr_size,\
-    xcb_im_ximattribute_fr_t : xcb_im_ximattribute_fr_size,\
-    xcb_im_xicattribute_fr_t : xcb_im_xicattribute_fr_size,\
-    xcb_im_ximtriggerkey_fr_t : xcb_im_ximtriggerkey_fr_size,\
-    xcb_im_encodinginfo_fr_t : xcb_im_encodinginfo_fr_size,\
-    xcb_im_str_fr_t : xcb_im_str_fr_size,\
-    xcb_im_xpcs_fr_t : xcb_im_xpcs_fr_size,\
-    xcb_im_ext_fr_t : xcb_im_ext_fr_size,\
-    xcb_im_inputstyle_fr_t : xcb_im_inputstyle_fr_size,\
-    xcb_im_attr_head_fr_t : xcb_im_attr_head_fr_size,\
-    xcb_im_short_fr_t : xcb_im_short_fr_size,\
-    xcb_im_long_fr_t : xcb_im_long_fr_size,\
-    xcb_im_xrectangle_fr_t : xcb_im_xrectangle_fr_size,\
-    xcb_im_xpoint_fr_t : xcb_im_xpoint_fr_size,\
-    xcb_im_fontset_fr_t : xcb_im_fontset_fr_size,\
-    xcb_im_input_styles_fr_t : xcb_im_input_styles_fr_size,\
-    xcb_im_packet_header_fr_t : xcb_im_packet_header_fr_size,\
-    xcb_im_error_fr_t : xcb_im_error_fr_size,\
-    xcb_im_connect_fr_t : xcb_im_connect_fr_size,\
-    xcb_im_connect_reply_fr_t : xcb_im_connect_reply_fr_size,\
-    xcb_im_auth_required_fr_t : xcb_im_auth_required_fr_size,\
-    xcb_im_auth_reply_fr_t : xcb_im_auth_reply_fr_size,\
-    xcb_im_auth_next_fr_t : xcb_im_auth_next_fr_size,\
-    xcb_im_auth_setup_fr_t : xcb_im_auth_setup_fr_size,\
-    xcb_im_auth_ng_fr_t : xcb_im_auth_ng_fr_size,\
-    xcb_im_disconnect_fr_t : xcb_im_disconnect_fr_size,\
-    xcb_im_disconnect_reply_fr_t : xcb_im_disconnect_reply_fr_size,\
-    xcb_im_open_fr_t : xcb_im_open_fr_size,\
-    xcb_im_open_reply_fr_t : xcb_im_open_reply_fr_size,\
-    xcb_im_close_fr_t : xcb_im_close_fr_size,\
-    xcb_im_close_reply_fr_t : xcb_im_close_reply_fr_size,\
-    xcb_im_register_triggerkeys_fr_t : xcb_im_register_triggerkeys_fr_size,\
-    xcb_im_trigger_notify_fr_t : xcb_im_trigger_notify_fr_size,\
-    xcb_im_trigger_notify_reply_fr_t : xcb_im_trigger_notify_reply_fr_size,\
-    xcb_im_set_event_mask_fr_t : xcb_im_set_event_mask_fr_size,\
-    xcb_im_encoding_negotiation_fr_t : xcb_im_encoding_negotiation_fr_size,\
-    xcb_im_encoding_negotiation_reply_fr_t : xcb_im_encoding_negotiation_reply_fr_size,\
-    xcb_im_query_extension_fr_t : xcb_im_query_extension_fr_size,\
-    xcb_im_query_extension_reply_fr_t : xcb_im_query_extension_reply_fr_size,\
-    xcb_im_get_im_values_fr_t : xcb_im_get_im_values_fr_size,\
-    xcb_im_get_im_values_reply_fr_t : xcb_im_get_im_values_reply_fr_size,\
-    xcb_im_create_ic_fr_t : xcb_im_create_ic_fr_size,\
-    xcb_im_create_ic_reply_fr_t : xcb_im_create_ic_reply_fr_size,\
-    xcb_im_destroy_ic_fr_t : xcb_im_destroy_ic_fr_size,\
-    xcb_im_destroy_ic_reply_fr_t : xcb_im_destroy_ic_reply_fr_size,\
-    xcb_im_set_ic_values_fr_t : xcb_im_set_ic_values_fr_size,\
-    xcb_im_set_ic_values_reply_fr_t : xcb_im_set_ic_values_reply_fr_size,\
-    xcb_im_get_ic_values_fr_t : xcb_im_get_ic_values_fr_size,\
-    xcb_im_get_ic_values_reply_fr_t : xcb_im_get_ic_values_reply_fr_size,\
-    xcb_im_set_ic_focus_fr_t : xcb_im_set_ic_focus_fr_size,\
-    xcb_im_unset_ic_focus_fr_t : xcb_im_unset_ic_focus_fr_size,\
-    xcb_im_forward_event_fr_t : xcb_im_forward_event_fr_size,\
-    xcb_im_sync_fr_t : xcb_im_sync_fr_size,\
-    xcb_im_sync_reply_fr_t : xcb_im_sync_reply_fr_size,\
-    xcb_im_commit_fr_t : xcb_im_commit_fr_size,\
-    xcb_im_commit_chars_fr_t : xcb_im_commit_chars_fr_size,\
-    xcb_im_commit_both_fr_t : xcb_im_commit_both_fr_size,\
-    xcb_im_reset_ic_fr_t : xcb_im_reset_ic_fr_size,\
-    xcb_im_reset_ic_reply_fr_t : xcb_im_reset_ic_reply_fr_size,\
-    xcb_im_geometry_fr_t : xcb_im_geometry_fr_size,\
-    xcb_im_str_conversion_fr_t : xcb_im_str_conversion_fr_size,\
-    xcb_im_str_conversion_reply_fr_t : xcb_im_str_conversion_reply_fr_size,\
-    xcb_im_preedit_start_fr_t : xcb_im_preedit_start_fr_size,\
-    xcb_im_preedit_start_reply_fr_t : xcb_im_preedit_start_reply_fr_size,\
-    xcb_im_preedit_draw_fr_t : xcb_im_preedit_draw_fr_size,\
-    xcb_im_preedit_caret_fr_t : xcb_im_preedit_caret_fr_size,\
-    xcb_im_preedit_caret_reply_fr_t : xcb_im_preedit_caret_reply_fr_size,\
-    xcb_im_preedit_done_fr_t : xcb_im_preedit_done_fr_size,\
-    xcb_im_status_start_fr_t : xcb_im_status_start_fr_size,\
-    xcb_im_status_draw_text_fr_t : xcb_im_status_draw_text_fr_size,\
-    xcb_im_status_draw_bitmap_fr_t : xcb_im_status_draw_bitmap_fr_size,\
-    xcb_im_status_done_fr_t : xcb_im_status_done_fr_size,\
-    xcb_im_ext_set_event_mask_fr_t : xcb_im_ext_set_event_mask_fr_size,\
-    xcb_im_ext_forward_keyevent_fr_t : xcb_im_ext_forward_keyevent_fr_size,\
-    xcb_im_ext_move_fr_t : xcb_im_ext_move_fr_size)
+    xcb_im_ximattr_fr_t : xcb_im_ximattr_fr_size((xcb_im_ximattr_fr_t*) &(FRAME)),\
+    xcb_im_xicattr_fr_t : xcb_im_xicattr_fr_size((xcb_im_xicattr_fr_t*) &(FRAME)),\
+    xcb_im_ximattribute_fr_t : xcb_im_ximattribute_fr_size((xcb_im_ximattribute_fr_t*) &(FRAME)),\
+    xcb_im_xicattribute_fr_t : xcb_im_xicattribute_fr_size((xcb_im_xicattribute_fr_t*) &(FRAME)),\
+    xcb_im_ximtriggerkey_fr_t : 12,\
+    xcb_im_encodinginfo_fr_t : xcb_im_encodinginfo_fr_size((xcb_im_encodinginfo_fr_t*) &(FRAME)),\
+    xcb_im_str_fr_t : xcb_im_str_fr_size((xcb_im_str_fr_t*) &(FRAME)),\
+    xcb_im_xpcs_fr_t : xcb_im_xpcs_fr_size((xcb_im_xpcs_fr_t*) &(FRAME)),\
+    xcb_im_ext_fr_t : xcb_im_ext_fr_size((xcb_im_ext_fr_t*) &(FRAME)),\
+    xcb_im_inputstyle_fr_t : 4,\
+    xcb_im_attr_head_fr_t : 4,\
+    xcb_im_short_fr_t : 2,\
+    xcb_im_long_fr_t : 4,\
+    xcb_im_xrectangle_fr_t : 8,\
+    xcb_im_xpoint_fr_t : 4,\
+    xcb_im_fontset_fr_t : xcb_im_fontset_fr_size((xcb_im_fontset_fr_t*) &(FRAME)),\
+    xcb_im_input_styles_fr_t : xcb_im_input_styles_fr_size((xcb_im_input_styles_fr_t*) &(FRAME)),\
+    xcb_im_packet_header_fr_t : 4,\
+    xcb_im_error_fr_t : xcb_im_error_fr_size((xcb_im_error_fr_t*) &(FRAME)),\
+    xcb_im_connect_fr_t : xcb_im_connect_fr_size((xcb_im_connect_fr_t*) &(FRAME)),\
+    xcb_im_connect_reply_fr_t : 4,\
+    xcb_im_auth_required_fr_t : xcb_im_auth_required_fr_size((xcb_im_auth_required_fr_t*) &(FRAME)),\
+    xcb_im_auth_reply_fr_t : xcb_im_auth_reply_fr_size((xcb_im_auth_reply_fr_t*) &(FRAME)),\
+    xcb_im_auth_next_fr_t : xcb_im_auth_next_fr_size((xcb_im_auth_next_fr_t*) &(FRAME)),\
+    xcb_im_auth_setup_fr_t : xcb_im_auth_setup_fr_size((xcb_im_auth_setup_fr_t*) &(FRAME)),\
+    xcb_im_auth_ng_fr_t : 0,\
+    xcb_im_disconnect_fr_t : 0,\
+    xcb_im_disconnect_reply_fr_t : 0,\
+    xcb_im_open_fr_t : xcb_im_open_fr_size((xcb_im_open_fr_t*) &(FRAME)),\
+    xcb_im_open_reply_fr_t : xcb_im_open_reply_fr_size((xcb_im_open_reply_fr_t*) &(FRAME)),\
+    xcb_im_close_fr_t : 4,\
+    xcb_im_close_reply_fr_t : 4,\
+    xcb_im_register_triggerkeys_fr_t : xcb_im_register_triggerkeys_fr_size((xcb_im_register_triggerkeys_fr_t*) &(FRAME)),\
+    xcb_im_trigger_notify_fr_t : 16,\
+    xcb_im_trigger_notify_reply_fr_t : 4,\
+    xcb_im_set_event_mask_fr_t : 12,\
+    xcb_im_encoding_negotiation_fr_t : xcb_im_encoding_negotiation_fr_size((xcb_im_encoding_negotiation_fr_t*) &(FRAME)),\
+    xcb_im_encoding_negotiation_reply_fr_t : 8,\
+    xcb_im_query_extension_fr_t : xcb_im_query_extension_fr_size((xcb_im_query_extension_fr_t*) &(FRAME)),\
+    xcb_im_query_extension_reply_fr_t : xcb_im_query_extension_reply_fr_size((xcb_im_query_extension_reply_fr_t*) &(FRAME)),\
+    xcb_im_get_im_values_fr_t : xcb_im_get_im_values_fr_size((xcb_im_get_im_values_fr_t*) &(FRAME)),\
+    xcb_im_get_im_values_reply_fr_t : xcb_im_get_im_values_reply_fr_size((xcb_im_get_im_values_reply_fr_t*) &(FRAME)),\
+    xcb_im_create_ic_fr_t : xcb_im_create_ic_fr_size((xcb_im_create_ic_fr_t*) &(FRAME)),\
+    xcb_im_create_ic_reply_fr_t : 4,\
+    xcb_im_destroy_ic_fr_t : 4,\
+    xcb_im_destroy_ic_reply_fr_t : 4,\
+    xcb_im_set_ic_values_fr_t : xcb_im_set_ic_values_fr_size((xcb_im_set_ic_values_fr_t*) &(FRAME)),\
+    xcb_im_set_ic_values_reply_fr_t : 4,\
+    xcb_im_get_ic_values_fr_t : xcb_im_get_ic_values_fr_size((xcb_im_get_ic_values_fr_t*) &(FRAME)),\
+    xcb_im_get_ic_values_reply_fr_t : xcb_im_get_ic_values_reply_fr_size((xcb_im_get_ic_values_reply_fr_t*) &(FRAME)),\
+    xcb_im_set_ic_focus_fr_t : 4,\
+    xcb_im_unset_ic_focus_fr_t : 4,\
+    xcb_im_forward_event_fr_t : 8,\
+    xcb_im_sync_fr_t : 4,\
+    xcb_im_sync_reply_fr_t : 4,\
+    xcb_im_commit_fr_t : xcb_im_commit_fr_size((xcb_im_commit_fr_t*) &(FRAME)),\
+    xcb_im_commit_chars_fr_t : xcb_im_commit_chars_fr_size((xcb_im_commit_chars_fr_t*) &(FRAME)),\
+    xcb_im_commit_both_fr_t : xcb_im_commit_both_fr_size((xcb_im_commit_both_fr_t*) &(FRAME)),\
+    xcb_im_reset_ic_fr_t : 4,\
+    xcb_im_reset_ic_reply_fr_t : xcb_im_reset_ic_reply_fr_size((xcb_im_reset_ic_reply_fr_t*) &(FRAME)),\
+    xcb_im_geometry_fr_t : 4,\
+    xcb_im_str_conversion_fr_t : xcb_im_str_conversion_fr_size((xcb_im_str_conversion_fr_t*) &(FRAME)),\
+    xcb_im_str_conversion_reply_fr_t : xcb_im_str_conversion_reply_fr_size((xcb_im_str_conversion_reply_fr_t*) &(FRAME)),\
+    xcb_im_preedit_start_fr_t : 4,\
+    xcb_im_preedit_start_reply_fr_t : 8,\
+    xcb_im_preedit_draw_fr_t : xcb_im_preedit_draw_fr_size((xcb_im_preedit_draw_fr_t*) &(FRAME)),\
+    xcb_im_preedit_caret_fr_t : 16,\
+    xcb_im_preedit_caret_reply_fr_t : 8,\
+    xcb_im_preedit_done_fr_t : 4,\
+    xcb_im_status_start_fr_t : 4,\
+    xcb_im_status_draw_text_fr_t : xcb_im_status_draw_text_fr_size((xcb_im_status_draw_text_fr_t*) &(FRAME)),\
+    xcb_im_status_draw_bitmap_fr_t : 12,\
+    xcb_im_status_done_fr_t : 4,\
+    xcb_im_ext_set_event_mask_fr_t : 24,\
+    xcb_im_ext_forward_keyevent_fr_t : 20,\
+    xcb_im_ext_move_fr_t : 8)
 
 #define frame_free_func(FRAME) _Generic((FRAME), \
     xcb_im_ximattr_fr_t : xcb_im_ximattr_fr_free,\
@@ -905,383 +905,461 @@ typedef struct _xcb_im_ext_move_fr_t
     xcb_im_ext_forward_keyevent_fr_t : xcb_im_ext_forward_keyevent_fr_free,\
     xcb_im_ext_move_fr_t : xcb_im_ext_move_fr_free)
 
+#define frame_has_static_size(FRAME) _Generic((FRAME), \
+    xcb_im_ximattr_fr_t : false,\
+    xcb_im_xicattr_fr_t : false,\
+    xcb_im_ximattribute_fr_t : false,\
+    xcb_im_xicattribute_fr_t : false,\
+    xcb_im_ximtriggerkey_fr_t : true,\
+    xcb_im_encodinginfo_fr_t : false,\
+    xcb_im_str_fr_t : false,\
+    xcb_im_xpcs_fr_t : false,\
+    xcb_im_ext_fr_t : false,\
+    xcb_im_inputstyle_fr_t : true,\
+    xcb_im_attr_head_fr_t : true,\
+    xcb_im_short_fr_t : true,\
+    xcb_im_long_fr_t : true,\
+    xcb_im_xrectangle_fr_t : true,\
+    xcb_im_xpoint_fr_t : true,\
+    xcb_im_fontset_fr_t : false,\
+    xcb_im_input_styles_fr_t : false,\
+    xcb_im_packet_header_fr_t : true,\
+    xcb_im_error_fr_t : false,\
+    xcb_im_connect_fr_t : false,\
+    xcb_im_connect_reply_fr_t : true,\
+    xcb_im_auth_required_fr_t : false,\
+    xcb_im_auth_reply_fr_t : false,\
+    xcb_im_auth_next_fr_t : false,\
+    xcb_im_auth_setup_fr_t : false,\
+    xcb_im_auth_ng_fr_t : true,\
+    xcb_im_disconnect_fr_t : true,\
+    xcb_im_disconnect_reply_fr_t : true,\
+    xcb_im_open_fr_t : false,\
+    xcb_im_open_reply_fr_t : false,\
+    xcb_im_close_fr_t : true,\
+    xcb_im_close_reply_fr_t : true,\
+    xcb_im_register_triggerkeys_fr_t : false,\
+    xcb_im_trigger_notify_fr_t : true,\
+    xcb_im_trigger_notify_reply_fr_t : true,\
+    xcb_im_set_event_mask_fr_t : true,\
+    xcb_im_encoding_negotiation_fr_t : false,\
+    xcb_im_encoding_negotiation_reply_fr_t : true,\
+    xcb_im_query_extension_fr_t : false,\
+    xcb_im_query_extension_reply_fr_t : false,\
+    xcb_im_get_im_values_fr_t : false,\
+    xcb_im_get_im_values_reply_fr_t : false,\
+    xcb_im_create_ic_fr_t : false,\
+    xcb_im_create_ic_reply_fr_t : true,\
+    xcb_im_destroy_ic_fr_t : true,\
+    xcb_im_destroy_ic_reply_fr_t : true,\
+    xcb_im_set_ic_values_fr_t : false,\
+    xcb_im_set_ic_values_reply_fr_t : true,\
+    xcb_im_get_ic_values_fr_t : false,\
+    xcb_im_get_ic_values_reply_fr_t : false,\
+    xcb_im_set_ic_focus_fr_t : true,\
+    xcb_im_unset_ic_focus_fr_t : true,\
+    xcb_im_forward_event_fr_t : true,\
+    xcb_im_sync_fr_t : true,\
+    xcb_im_sync_reply_fr_t : true,\
+    xcb_im_commit_fr_t : false,\
+    xcb_im_commit_chars_fr_t : false,\
+    xcb_im_commit_both_fr_t : false,\
+    xcb_im_reset_ic_fr_t : true,\
+    xcb_im_reset_ic_reply_fr_t : false,\
+    xcb_im_geometry_fr_t : true,\
+    xcb_im_str_conversion_fr_t : false,\
+    xcb_im_str_conversion_reply_fr_t : false,\
+    xcb_im_preedit_start_fr_t : true,\
+    xcb_im_preedit_start_reply_fr_t : true,\
+    xcb_im_preedit_draw_fr_t : false,\
+    xcb_im_preedit_caret_fr_t : true,\
+    xcb_im_preedit_caret_reply_fr_t : true,\
+    xcb_im_preedit_done_fr_t : true,\
+    xcb_im_status_start_fr_t : true,\
+    xcb_im_status_draw_text_fr_t : false,\
+    xcb_im_status_draw_bitmap_fr_t : true,\
+    xcb_im_status_done_fr_t : true,\
+    xcb_im_ext_set_event_mask_fr_t : true,\
+    xcb_im_ext_forward_keyevent_fr_t : true,\
+    xcb_im_ext_move_fr_t : true)
+
 void xcb_im_ximattr_fr_read(xcb_im_ximattr_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_ximattr_fr_write(xcb_im_ximattr_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_ximattr_fr_size(xcb_im_ximattr_fr_t *frame);
 void xcb_im_ximattr_fr_free(xcb_im_ximattr_fr_t *frame);
+size_t xcb_im_ximattr_fr_size(xcb_im_ximattr_fr_t *frame);
 
 void xcb_im_xicattr_fr_read(xcb_im_xicattr_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_xicattr_fr_write(xcb_im_xicattr_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_xicattr_fr_size(xcb_im_xicattr_fr_t *frame);
 void xcb_im_xicattr_fr_free(xcb_im_xicattr_fr_t *frame);
+size_t xcb_im_xicattr_fr_size(xcb_im_xicattr_fr_t *frame);
 
 void xcb_im_ximattribute_fr_read(xcb_im_ximattribute_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_ximattribute_fr_write(xcb_im_ximattribute_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_ximattribute_fr_size(xcb_im_ximattribute_fr_t *frame);
 void xcb_im_ximattribute_fr_free(xcb_im_ximattribute_fr_t *frame);
+size_t xcb_im_ximattribute_fr_size(xcb_im_ximattribute_fr_t *frame);
 
 void xcb_im_xicattribute_fr_read(xcb_im_xicattribute_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_xicattribute_fr_write(xcb_im_xicattribute_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_xicattribute_fr_size(xcb_im_xicattribute_fr_t *frame);
 void xcb_im_xicattribute_fr_free(xcb_im_xicattribute_fr_t *frame);
+size_t xcb_im_xicattribute_fr_size(xcb_im_xicattribute_fr_t *frame);
 
 void xcb_im_ximtriggerkey_fr_read(xcb_im_ximtriggerkey_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_ximtriggerkey_fr_write(xcb_im_ximtriggerkey_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_ximtriggerkey_fr_size(xcb_im_ximtriggerkey_fr_t *frame);
 void xcb_im_ximtriggerkey_fr_free(xcb_im_ximtriggerkey_fr_t *frame);
+#define xcb_im_ximtriggerkey_fr_size(ARG...) (((void)(ARG)), (12))
 
 void xcb_im_encodinginfo_fr_read(xcb_im_encodinginfo_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_encodinginfo_fr_write(xcb_im_encodinginfo_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_encodinginfo_fr_size(xcb_im_encodinginfo_fr_t *frame);
 void xcb_im_encodinginfo_fr_free(xcb_im_encodinginfo_fr_t *frame);
+size_t xcb_im_encodinginfo_fr_size(xcb_im_encodinginfo_fr_t *frame);
 
 void xcb_im_str_fr_read(xcb_im_str_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_str_fr_write(xcb_im_str_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_str_fr_size(xcb_im_str_fr_t *frame);
 void xcb_im_str_fr_free(xcb_im_str_fr_t *frame);
+size_t xcb_im_str_fr_size(xcb_im_str_fr_t *frame);
 
 void xcb_im_xpcs_fr_read(xcb_im_xpcs_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_xpcs_fr_write(xcb_im_xpcs_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_xpcs_fr_size(xcb_im_xpcs_fr_t *frame);
 void xcb_im_xpcs_fr_free(xcb_im_xpcs_fr_t *frame);
+size_t xcb_im_xpcs_fr_size(xcb_im_xpcs_fr_t *frame);
 
 void xcb_im_ext_fr_read(xcb_im_ext_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_ext_fr_write(xcb_im_ext_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_ext_fr_size(xcb_im_ext_fr_t *frame);
 void xcb_im_ext_fr_free(xcb_im_ext_fr_t *frame);
+size_t xcb_im_ext_fr_size(xcb_im_ext_fr_t *frame);
 
 void xcb_im_inputstyle_fr_read(xcb_im_inputstyle_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_inputstyle_fr_write(xcb_im_inputstyle_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_inputstyle_fr_size(xcb_im_inputstyle_fr_t *frame);
 void xcb_im_inputstyle_fr_free(xcb_im_inputstyle_fr_t *frame);
+#define xcb_im_inputstyle_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_attr_head_fr_read(xcb_im_attr_head_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_attr_head_fr_write(xcb_im_attr_head_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_attr_head_fr_size(xcb_im_attr_head_fr_t *frame);
 void xcb_im_attr_head_fr_free(xcb_im_attr_head_fr_t *frame);
+#define xcb_im_attr_head_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_short_fr_read(xcb_im_short_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_short_fr_write(xcb_im_short_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_short_fr_size(xcb_im_short_fr_t *frame);
 void xcb_im_short_fr_free(xcb_im_short_fr_t *frame);
+#define xcb_im_short_fr_size(ARG...) (((void)(ARG)), (2))
 
 void xcb_im_long_fr_read(xcb_im_long_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_long_fr_write(xcb_im_long_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_long_fr_size(xcb_im_long_fr_t *frame);
 void xcb_im_long_fr_free(xcb_im_long_fr_t *frame);
+#define xcb_im_long_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_xrectangle_fr_read(xcb_im_xrectangle_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_xrectangle_fr_write(xcb_im_xrectangle_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_xrectangle_fr_size(xcb_im_xrectangle_fr_t *frame);
 void xcb_im_xrectangle_fr_free(xcb_im_xrectangle_fr_t *frame);
+#define xcb_im_xrectangle_fr_size(ARG...) (((void)(ARG)), (8))
 
 void xcb_im_xpoint_fr_read(xcb_im_xpoint_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_xpoint_fr_write(xcb_im_xpoint_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_xpoint_fr_size(xcb_im_xpoint_fr_t *frame);
 void xcb_im_xpoint_fr_free(xcb_im_xpoint_fr_t *frame);
+#define xcb_im_xpoint_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_fontset_fr_read(xcb_im_fontset_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_fontset_fr_write(xcb_im_fontset_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_fontset_fr_size(xcb_im_fontset_fr_t *frame);
 void xcb_im_fontset_fr_free(xcb_im_fontset_fr_t *frame);
+size_t xcb_im_fontset_fr_size(xcb_im_fontset_fr_t *frame);
 
 void xcb_im_input_styles_fr_read(xcb_im_input_styles_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_input_styles_fr_write(xcb_im_input_styles_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_input_styles_fr_size(xcb_im_input_styles_fr_t *frame);
 void xcb_im_input_styles_fr_free(xcb_im_input_styles_fr_t *frame);
+size_t xcb_im_input_styles_fr_size(xcb_im_input_styles_fr_t *frame);
 
 void xcb_im_packet_header_fr_read(xcb_im_packet_header_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_packet_header_fr_write(xcb_im_packet_header_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_packet_header_fr_size(xcb_im_packet_header_fr_t *frame);
 void xcb_im_packet_header_fr_free(xcb_im_packet_header_fr_t *frame);
+#define xcb_im_packet_header_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_error_fr_read(xcb_im_error_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_error_fr_write(xcb_im_error_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_error_fr_size(xcb_im_error_fr_t *frame);
 void xcb_im_error_fr_free(xcb_im_error_fr_t *frame);
+size_t xcb_im_error_fr_size(xcb_im_error_fr_t *frame);
 
 void xcb_im_connect_fr_read(xcb_im_connect_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_connect_fr_write(xcb_im_connect_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_connect_fr_size(xcb_im_connect_fr_t *frame);
 void xcb_im_connect_fr_free(xcb_im_connect_fr_t *frame);
+size_t xcb_im_connect_fr_size(xcb_im_connect_fr_t *frame);
 
 void xcb_im_connect_reply_fr_read(xcb_im_connect_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_connect_reply_fr_write(xcb_im_connect_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_connect_reply_fr_size(xcb_im_connect_reply_fr_t *frame);
 void xcb_im_connect_reply_fr_free(xcb_im_connect_reply_fr_t *frame);
+#define xcb_im_connect_reply_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_auth_required_fr_read(xcb_im_auth_required_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_auth_required_fr_write(xcb_im_auth_required_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_auth_required_fr_size(xcb_im_auth_required_fr_t *frame);
 void xcb_im_auth_required_fr_free(xcb_im_auth_required_fr_t *frame);
+size_t xcb_im_auth_required_fr_size(xcb_im_auth_required_fr_t *frame);
 
 void xcb_im_auth_reply_fr_read(xcb_im_auth_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_auth_reply_fr_write(xcb_im_auth_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_auth_reply_fr_size(xcb_im_auth_reply_fr_t *frame);
 void xcb_im_auth_reply_fr_free(xcb_im_auth_reply_fr_t *frame);
+size_t xcb_im_auth_reply_fr_size(xcb_im_auth_reply_fr_t *frame);
 
 void xcb_im_auth_next_fr_read(xcb_im_auth_next_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_auth_next_fr_write(xcb_im_auth_next_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_auth_next_fr_size(xcb_im_auth_next_fr_t *frame);
 void xcb_im_auth_next_fr_free(xcb_im_auth_next_fr_t *frame);
+size_t xcb_im_auth_next_fr_size(xcb_im_auth_next_fr_t *frame);
 
 void xcb_im_auth_setup_fr_read(xcb_im_auth_setup_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_auth_setup_fr_write(xcb_im_auth_setup_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_auth_setup_fr_size(xcb_im_auth_setup_fr_t *frame);
 void xcb_im_auth_setup_fr_free(xcb_im_auth_setup_fr_t *frame);
+size_t xcb_im_auth_setup_fr_size(xcb_im_auth_setup_fr_t *frame);
 
 void xcb_im_auth_ng_fr_read(xcb_im_auth_ng_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_auth_ng_fr_write(xcb_im_auth_ng_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_auth_ng_fr_size(xcb_im_auth_ng_fr_t *frame);
 void xcb_im_auth_ng_fr_free(xcb_im_auth_ng_fr_t *frame);
+#define xcb_im_auth_ng_fr_size(ARG...) (((void)(ARG)), (0))
 
 void xcb_im_disconnect_fr_read(xcb_im_disconnect_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_disconnect_fr_write(xcb_im_disconnect_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_disconnect_fr_size(xcb_im_disconnect_fr_t *frame);
 void xcb_im_disconnect_fr_free(xcb_im_disconnect_fr_t *frame);
+#define xcb_im_disconnect_fr_size(ARG...) (((void)(ARG)), (0))
 
 void xcb_im_disconnect_reply_fr_read(xcb_im_disconnect_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_disconnect_reply_fr_write(xcb_im_disconnect_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_disconnect_reply_fr_size(xcb_im_disconnect_reply_fr_t *frame);
 void xcb_im_disconnect_reply_fr_free(xcb_im_disconnect_reply_fr_t *frame);
+#define xcb_im_disconnect_reply_fr_size(ARG...) (((void)(ARG)), (0))
 
 void xcb_im_open_fr_read(xcb_im_open_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_open_fr_write(xcb_im_open_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_open_fr_size(xcb_im_open_fr_t *frame);
 void xcb_im_open_fr_free(xcb_im_open_fr_t *frame);
+size_t xcb_im_open_fr_size(xcb_im_open_fr_t *frame);
 
 void xcb_im_open_reply_fr_read(xcb_im_open_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_open_reply_fr_write(xcb_im_open_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_open_reply_fr_size(xcb_im_open_reply_fr_t *frame);
 void xcb_im_open_reply_fr_free(xcb_im_open_reply_fr_t *frame);
+size_t xcb_im_open_reply_fr_size(xcb_im_open_reply_fr_t *frame);
 
 void xcb_im_close_fr_read(xcb_im_close_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_close_fr_write(xcb_im_close_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_close_fr_size(xcb_im_close_fr_t *frame);
 void xcb_im_close_fr_free(xcb_im_close_fr_t *frame);
+#define xcb_im_close_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_close_reply_fr_read(xcb_im_close_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_close_reply_fr_write(xcb_im_close_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_close_reply_fr_size(xcb_im_close_reply_fr_t *frame);
 void xcb_im_close_reply_fr_free(xcb_im_close_reply_fr_t *frame);
+#define xcb_im_close_reply_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_register_triggerkeys_fr_read(xcb_im_register_triggerkeys_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_register_triggerkeys_fr_write(xcb_im_register_triggerkeys_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_register_triggerkeys_fr_size(xcb_im_register_triggerkeys_fr_t *frame);
 void xcb_im_register_triggerkeys_fr_free(xcb_im_register_triggerkeys_fr_t *frame);
+size_t xcb_im_register_triggerkeys_fr_size(xcb_im_register_triggerkeys_fr_t *frame);
 
 void xcb_im_trigger_notify_fr_read(xcb_im_trigger_notify_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_trigger_notify_fr_write(xcb_im_trigger_notify_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_trigger_notify_fr_size(xcb_im_trigger_notify_fr_t *frame);
 void xcb_im_trigger_notify_fr_free(xcb_im_trigger_notify_fr_t *frame);
+#define xcb_im_trigger_notify_fr_size(ARG...) (((void)(ARG)), (16))
 
 void xcb_im_trigger_notify_reply_fr_read(xcb_im_trigger_notify_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_trigger_notify_reply_fr_write(xcb_im_trigger_notify_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_trigger_notify_reply_fr_size(xcb_im_trigger_notify_reply_fr_t *frame);
 void xcb_im_trigger_notify_reply_fr_free(xcb_im_trigger_notify_reply_fr_t *frame);
+#define xcb_im_trigger_notify_reply_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_set_event_mask_fr_read(xcb_im_set_event_mask_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_set_event_mask_fr_write(xcb_im_set_event_mask_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_set_event_mask_fr_size(xcb_im_set_event_mask_fr_t *frame);
 void xcb_im_set_event_mask_fr_free(xcb_im_set_event_mask_fr_t *frame);
+#define xcb_im_set_event_mask_fr_size(ARG...) (((void)(ARG)), (12))
 
 void xcb_im_encoding_negotiation_fr_read(xcb_im_encoding_negotiation_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_encoding_negotiation_fr_write(xcb_im_encoding_negotiation_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_encoding_negotiation_fr_size(xcb_im_encoding_negotiation_fr_t *frame);
 void xcb_im_encoding_negotiation_fr_free(xcb_im_encoding_negotiation_fr_t *frame);
+size_t xcb_im_encoding_negotiation_fr_size(xcb_im_encoding_negotiation_fr_t *frame);
 
 void xcb_im_encoding_negotiation_reply_fr_read(xcb_im_encoding_negotiation_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_encoding_negotiation_reply_fr_write(xcb_im_encoding_negotiation_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_encoding_negotiation_reply_fr_size(xcb_im_encoding_negotiation_reply_fr_t *frame);
 void xcb_im_encoding_negotiation_reply_fr_free(xcb_im_encoding_negotiation_reply_fr_t *frame);
+#define xcb_im_encoding_negotiation_reply_fr_size(ARG...) (((void)(ARG)), (8))
 
 void xcb_im_query_extension_fr_read(xcb_im_query_extension_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_query_extension_fr_write(xcb_im_query_extension_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_query_extension_fr_size(xcb_im_query_extension_fr_t *frame);
 void xcb_im_query_extension_fr_free(xcb_im_query_extension_fr_t *frame);
+size_t xcb_im_query_extension_fr_size(xcb_im_query_extension_fr_t *frame);
 
 void xcb_im_query_extension_reply_fr_read(xcb_im_query_extension_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_query_extension_reply_fr_write(xcb_im_query_extension_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_query_extension_reply_fr_size(xcb_im_query_extension_reply_fr_t *frame);
 void xcb_im_query_extension_reply_fr_free(xcb_im_query_extension_reply_fr_t *frame);
+size_t xcb_im_query_extension_reply_fr_size(xcb_im_query_extension_reply_fr_t *frame);
 
 void xcb_im_get_im_values_fr_read(xcb_im_get_im_values_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_get_im_values_fr_write(xcb_im_get_im_values_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_get_im_values_fr_size(xcb_im_get_im_values_fr_t *frame);
 void xcb_im_get_im_values_fr_free(xcb_im_get_im_values_fr_t *frame);
+size_t xcb_im_get_im_values_fr_size(xcb_im_get_im_values_fr_t *frame);
 
 void xcb_im_get_im_values_reply_fr_read(xcb_im_get_im_values_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_get_im_values_reply_fr_write(xcb_im_get_im_values_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_get_im_values_reply_fr_size(xcb_im_get_im_values_reply_fr_t *frame);
 void xcb_im_get_im_values_reply_fr_free(xcb_im_get_im_values_reply_fr_t *frame);
+size_t xcb_im_get_im_values_reply_fr_size(xcb_im_get_im_values_reply_fr_t *frame);
 
 void xcb_im_create_ic_fr_read(xcb_im_create_ic_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_create_ic_fr_write(xcb_im_create_ic_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_create_ic_fr_size(xcb_im_create_ic_fr_t *frame);
 void xcb_im_create_ic_fr_free(xcb_im_create_ic_fr_t *frame);
+size_t xcb_im_create_ic_fr_size(xcb_im_create_ic_fr_t *frame);
 
 void xcb_im_create_ic_reply_fr_read(xcb_im_create_ic_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_create_ic_reply_fr_write(xcb_im_create_ic_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_create_ic_reply_fr_size(xcb_im_create_ic_reply_fr_t *frame);
 void xcb_im_create_ic_reply_fr_free(xcb_im_create_ic_reply_fr_t *frame);
+#define xcb_im_create_ic_reply_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_destroy_ic_fr_read(xcb_im_destroy_ic_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_destroy_ic_fr_write(xcb_im_destroy_ic_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_destroy_ic_fr_size(xcb_im_destroy_ic_fr_t *frame);
 void xcb_im_destroy_ic_fr_free(xcb_im_destroy_ic_fr_t *frame);
+#define xcb_im_destroy_ic_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_destroy_ic_reply_fr_read(xcb_im_destroy_ic_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_destroy_ic_reply_fr_write(xcb_im_destroy_ic_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_destroy_ic_reply_fr_size(xcb_im_destroy_ic_reply_fr_t *frame);
 void xcb_im_destroy_ic_reply_fr_free(xcb_im_destroy_ic_reply_fr_t *frame);
+#define xcb_im_destroy_ic_reply_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_set_ic_values_fr_read(xcb_im_set_ic_values_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_set_ic_values_fr_write(xcb_im_set_ic_values_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_set_ic_values_fr_size(xcb_im_set_ic_values_fr_t *frame);
 void xcb_im_set_ic_values_fr_free(xcb_im_set_ic_values_fr_t *frame);
+size_t xcb_im_set_ic_values_fr_size(xcb_im_set_ic_values_fr_t *frame);
 
 void xcb_im_set_ic_values_reply_fr_read(xcb_im_set_ic_values_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_set_ic_values_reply_fr_write(xcb_im_set_ic_values_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_set_ic_values_reply_fr_size(xcb_im_set_ic_values_reply_fr_t *frame);
 void xcb_im_set_ic_values_reply_fr_free(xcb_im_set_ic_values_reply_fr_t *frame);
+#define xcb_im_set_ic_values_reply_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_get_ic_values_fr_read(xcb_im_get_ic_values_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_get_ic_values_fr_write(xcb_im_get_ic_values_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_get_ic_values_fr_size(xcb_im_get_ic_values_fr_t *frame);
 void xcb_im_get_ic_values_fr_free(xcb_im_get_ic_values_fr_t *frame);
+size_t xcb_im_get_ic_values_fr_size(xcb_im_get_ic_values_fr_t *frame);
 
 void xcb_im_get_ic_values_reply_fr_read(xcb_im_get_ic_values_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_get_ic_values_reply_fr_write(xcb_im_get_ic_values_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_get_ic_values_reply_fr_size(xcb_im_get_ic_values_reply_fr_t *frame);
 void xcb_im_get_ic_values_reply_fr_free(xcb_im_get_ic_values_reply_fr_t *frame);
+size_t xcb_im_get_ic_values_reply_fr_size(xcb_im_get_ic_values_reply_fr_t *frame);
 
 void xcb_im_set_ic_focus_fr_read(xcb_im_set_ic_focus_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_set_ic_focus_fr_write(xcb_im_set_ic_focus_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_set_ic_focus_fr_size(xcb_im_set_ic_focus_fr_t *frame);
 void xcb_im_set_ic_focus_fr_free(xcb_im_set_ic_focus_fr_t *frame);
+#define xcb_im_set_ic_focus_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_unset_ic_focus_fr_read(xcb_im_unset_ic_focus_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_unset_ic_focus_fr_write(xcb_im_unset_ic_focus_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_unset_ic_focus_fr_size(xcb_im_unset_ic_focus_fr_t *frame);
 void xcb_im_unset_ic_focus_fr_free(xcb_im_unset_ic_focus_fr_t *frame);
+#define xcb_im_unset_ic_focus_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_forward_event_fr_read(xcb_im_forward_event_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_forward_event_fr_write(xcb_im_forward_event_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_forward_event_fr_size(xcb_im_forward_event_fr_t *frame);
 void xcb_im_forward_event_fr_free(xcb_im_forward_event_fr_t *frame);
+#define xcb_im_forward_event_fr_size(ARG...) (((void)(ARG)), (8))
 
 void xcb_im_sync_fr_read(xcb_im_sync_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_sync_fr_write(xcb_im_sync_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_sync_fr_size(xcb_im_sync_fr_t *frame);
 void xcb_im_sync_fr_free(xcb_im_sync_fr_t *frame);
+#define xcb_im_sync_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_sync_reply_fr_read(xcb_im_sync_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_sync_reply_fr_write(xcb_im_sync_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_sync_reply_fr_size(xcb_im_sync_reply_fr_t *frame);
 void xcb_im_sync_reply_fr_free(xcb_im_sync_reply_fr_t *frame);
+#define xcb_im_sync_reply_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_commit_fr_read(xcb_im_commit_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_commit_fr_write(xcb_im_commit_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_commit_fr_size(xcb_im_commit_fr_t *frame);
 void xcb_im_commit_fr_free(xcb_im_commit_fr_t *frame);
+size_t xcb_im_commit_fr_size(xcb_im_commit_fr_t *frame);
 
 void xcb_im_commit_chars_fr_read(xcb_im_commit_chars_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_commit_chars_fr_write(xcb_im_commit_chars_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_commit_chars_fr_size(xcb_im_commit_chars_fr_t *frame);
 void xcb_im_commit_chars_fr_free(xcb_im_commit_chars_fr_t *frame);
+size_t xcb_im_commit_chars_fr_size(xcb_im_commit_chars_fr_t *frame);
 
 void xcb_im_commit_both_fr_read(xcb_im_commit_both_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_commit_both_fr_write(xcb_im_commit_both_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_commit_both_fr_size(xcb_im_commit_both_fr_t *frame);
 void xcb_im_commit_both_fr_free(xcb_im_commit_both_fr_t *frame);
+size_t xcb_im_commit_both_fr_size(xcb_im_commit_both_fr_t *frame);
 
 void xcb_im_reset_ic_fr_read(xcb_im_reset_ic_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_reset_ic_fr_write(xcb_im_reset_ic_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_reset_ic_fr_size(xcb_im_reset_ic_fr_t *frame);
 void xcb_im_reset_ic_fr_free(xcb_im_reset_ic_fr_t *frame);
+#define xcb_im_reset_ic_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_reset_ic_reply_fr_read(xcb_im_reset_ic_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_reset_ic_reply_fr_write(xcb_im_reset_ic_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_reset_ic_reply_fr_size(xcb_im_reset_ic_reply_fr_t *frame);
 void xcb_im_reset_ic_reply_fr_free(xcb_im_reset_ic_reply_fr_t *frame);
+size_t xcb_im_reset_ic_reply_fr_size(xcb_im_reset_ic_reply_fr_t *frame);
 
 void xcb_im_geometry_fr_read(xcb_im_geometry_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_geometry_fr_write(xcb_im_geometry_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_geometry_fr_size(xcb_im_geometry_fr_t *frame);
 void xcb_im_geometry_fr_free(xcb_im_geometry_fr_t *frame);
+#define xcb_im_geometry_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_str_conversion_fr_read(xcb_im_str_conversion_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_str_conversion_fr_write(xcb_im_str_conversion_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_str_conversion_fr_size(xcb_im_str_conversion_fr_t *frame);
 void xcb_im_str_conversion_fr_free(xcb_im_str_conversion_fr_t *frame);
+size_t xcb_im_str_conversion_fr_size(xcb_im_str_conversion_fr_t *frame);
 
 void xcb_im_str_conversion_reply_fr_read(xcb_im_str_conversion_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_str_conversion_reply_fr_write(xcb_im_str_conversion_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_str_conversion_reply_fr_size(xcb_im_str_conversion_reply_fr_t *frame);
 void xcb_im_str_conversion_reply_fr_free(xcb_im_str_conversion_reply_fr_t *frame);
+size_t xcb_im_str_conversion_reply_fr_size(xcb_im_str_conversion_reply_fr_t *frame);
 
 void xcb_im_preedit_start_fr_read(xcb_im_preedit_start_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_preedit_start_fr_write(xcb_im_preedit_start_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_preedit_start_fr_size(xcb_im_preedit_start_fr_t *frame);
 void xcb_im_preedit_start_fr_free(xcb_im_preedit_start_fr_t *frame);
+#define xcb_im_preedit_start_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_preedit_start_reply_fr_read(xcb_im_preedit_start_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_preedit_start_reply_fr_write(xcb_im_preedit_start_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_preedit_start_reply_fr_size(xcb_im_preedit_start_reply_fr_t *frame);
 void xcb_im_preedit_start_reply_fr_free(xcb_im_preedit_start_reply_fr_t *frame);
+#define xcb_im_preedit_start_reply_fr_size(ARG...) (((void)(ARG)), (8))
 
 void xcb_im_preedit_draw_fr_read(xcb_im_preedit_draw_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_preedit_draw_fr_write(xcb_im_preedit_draw_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_preedit_draw_fr_size(xcb_im_preedit_draw_fr_t *frame);
 void xcb_im_preedit_draw_fr_free(xcb_im_preedit_draw_fr_t *frame);
+size_t xcb_im_preedit_draw_fr_size(xcb_im_preedit_draw_fr_t *frame);
 
 void xcb_im_preedit_caret_fr_read(xcb_im_preedit_caret_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_preedit_caret_fr_write(xcb_im_preedit_caret_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_preedit_caret_fr_size(xcb_im_preedit_caret_fr_t *frame);
 void xcb_im_preedit_caret_fr_free(xcb_im_preedit_caret_fr_t *frame);
+#define xcb_im_preedit_caret_fr_size(ARG...) (((void)(ARG)), (16))
 
 void xcb_im_preedit_caret_reply_fr_read(xcb_im_preedit_caret_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_preedit_caret_reply_fr_write(xcb_im_preedit_caret_reply_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_preedit_caret_reply_fr_size(xcb_im_preedit_caret_reply_fr_t *frame);
 void xcb_im_preedit_caret_reply_fr_free(xcb_im_preedit_caret_reply_fr_t *frame);
+#define xcb_im_preedit_caret_reply_fr_size(ARG...) (((void)(ARG)), (8))
 
 void xcb_im_preedit_done_fr_read(xcb_im_preedit_done_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_preedit_done_fr_write(xcb_im_preedit_done_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_preedit_done_fr_size(xcb_im_preedit_done_fr_t *frame);
 void xcb_im_preedit_done_fr_free(xcb_im_preedit_done_fr_t *frame);
+#define xcb_im_preedit_done_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_status_start_fr_read(xcb_im_status_start_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_status_start_fr_write(xcb_im_status_start_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_status_start_fr_size(xcb_im_status_start_fr_t *frame);
 void xcb_im_status_start_fr_free(xcb_im_status_start_fr_t *frame);
+#define xcb_im_status_start_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_status_draw_text_fr_read(xcb_im_status_draw_text_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_status_draw_text_fr_write(xcb_im_status_draw_text_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_status_draw_text_fr_size(xcb_im_status_draw_text_fr_t *frame);
 void xcb_im_status_draw_text_fr_free(xcb_im_status_draw_text_fr_t *frame);
+size_t xcb_im_status_draw_text_fr_size(xcb_im_status_draw_text_fr_t *frame);
 
 void xcb_im_status_draw_bitmap_fr_read(xcb_im_status_draw_bitmap_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_status_draw_bitmap_fr_write(xcb_im_status_draw_bitmap_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_status_draw_bitmap_fr_size(xcb_im_status_draw_bitmap_fr_t *frame);
 void xcb_im_status_draw_bitmap_fr_free(xcb_im_status_draw_bitmap_fr_t *frame);
+#define xcb_im_status_draw_bitmap_fr_size(ARG...) (((void)(ARG)), (12))
 
 void xcb_im_status_done_fr_read(xcb_im_status_done_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_status_done_fr_write(xcb_im_status_done_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_status_done_fr_size(xcb_im_status_done_fr_t *frame);
 void xcb_im_status_done_fr_free(xcb_im_status_done_fr_t *frame);
+#define xcb_im_status_done_fr_size(ARG...) (((void)(ARG)), (4))
 
 void xcb_im_ext_set_event_mask_fr_read(xcb_im_ext_set_event_mask_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_ext_set_event_mask_fr_write(xcb_im_ext_set_event_mask_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_ext_set_event_mask_fr_size(xcb_im_ext_set_event_mask_fr_t *frame);
 void xcb_im_ext_set_event_mask_fr_free(xcb_im_ext_set_event_mask_fr_t *frame);
+#define xcb_im_ext_set_event_mask_fr_size(ARG...) (((void)(ARG)), (24))
 
 void xcb_im_ext_forward_keyevent_fr_read(xcb_im_ext_forward_keyevent_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_ext_forward_keyevent_fr_write(xcb_im_ext_forward_keyevent_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_ext_forward_keyevent_fr_size(xcb_im_ext_forward_keyevent_fr_t *frame);
 void xcb_im_ext_forward_keyevent_fr_free(xcb_im_ext_forward_keyevent_fr_t *frame);
+#define xcb_im_ext_forward_keyevent_fr_size(ARG...) (((void)(ARG)), (20))
 
 void xcb_im_ext_move_fr_read(xcb_im_ext_move_fr_t *frame, uint8_t **data, size_t *len, bool swap);
 uint8_t* xcb_im_ext_move_fr_write(xcb_im_ext_move_fr_t *frame, uint8_t *data, bool swap);
-size_t xcb_im_ext_move_fr_size(xcb_im_ext_move_fr_t *frame);
 void xcb_im_ext_move_fr_free(xcb_im_ext_move_fr_t *frame);
+#define xcb_im_ext_move_fr_size(ARG...) (((void)(ARG)), (8))
 

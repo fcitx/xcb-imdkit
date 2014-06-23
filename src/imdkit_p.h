@@ -5,6 +5,7 @@
 #include "uthash.h"
 #include "list.h"
 #include "common.h"
+#include "message.h"
 
 #define LOCALES_BUFSIZE (sizeof(XCB_IM_ALL_LOCALES) + 32)
 
@@ -77,13 +78,6 @@
  */
 #define XimSYNCHRONUS         0x0001
 
-
-/*
- * Client Message data size
- */
-#define XIM_CM_DATA_SIZE    20
-
-#define XCM_DATA_LIMIT      20
 
 #define XNVaNestedList "XNVaNestedList"
 #define XNQueryInputStyle "queryInputStyle"
@@ -167,50 +161,31 @@
         } \
     } while(0)
 
-#define frame_opcode(FRAME) _Generic((FRAME), \
-    xcb_im_connect_reply_fr_t: XIM_CONNECT_REPLY, \
-    xcb_im_open_reply_fr_t: XIM_OPEN_REPLY, \
-    xcb_im_close_reply_fr_t: XIM_CLOSE_REPLY, \
-    xcb_im_query_extension_reply_fr_t: XIM_QUERY_EXTENSION_REPLY, \
-    xcb_im_encoding_negotiation_reply_fr_t: XIM_ENCODING_NEGOTIATION_REPLY, \
-    xcb_im_get_im_values_reply_fr_t: XIM_GET_IM_VALUES_REPLY, \
-    xcb_im_set_event_mask_fr_t: XIM_SET_EVENT_MASK, \
-    xcb_im_create_ic_reply_fr_t: XIM_CREATE_IC_REPLY, \
-    xcb_im_set_ic_values_reply_fr_t: XIM_SET_IC_VALUES_REPLY, \
-    xcb_im_get_ic_values_reply_fr_t: XIM_GET_IC_VALUES_REPLY, \
-    xcb_im_register_triggerkeys_fr_t: XIM_REGISTER_TRIGGERKEYS, \
-    xcb_im_destroy_ic_reply_fr_t: XIM_DESTROY_IC_REPLY, \
-    xcb_im_reset_ic_reply_fr_t: XIM_RESET_IC_REPLY, \
-    xcb_im_trigger_notify_reply_fr_t: XIM_TRIGGER_NOTIFY_REPLY, \
-    xcb_im_preedit_start_fr_t: XIM_PREEDIT_START, \
-    xcb_im_preedit_draw_fr_t: XIM_PREEDIT_DRAW, \
-    xcb_im_preedit_caret_fr_t: XIM_PREEDIT_CARET, \
-    xcb_im_preedit_done_fr_t: XIM_PREEDIT_DONE, \
-    xcb_im_status_start_fr_t: XIM_STATUS_START, \
-    xcb_im_status_draw_text_fr_t: XIM_STATUS_DRAW, \
-    xcb_im_status_draw_bitmap_fr_t: XIM_STATUS_DRAW, \
-    xcb_im_status_done_fr_t: XIM_STATUS_DONE, \
-    xcb_im_commit_chars_fr_t: XIM_COMMIT, \
-    xcb_im_commit_both_fr_t: XIM_COMMIT, \
-    xcb_im_geometry_fr_t: XIM_GEOMETRY \
-    )
-
 #define _xcb_im_send_frame(IM, CLIENT, FRAME, SEND_ERROR) \
     do { \
         bool fail = true; \
-        size_t length = frame_size_func(FRAME)(&(FRAME)); \
-        uint8_t* reply = _xcb_im_new_message((IM), (CLIENT), frame_opcode(FRAME), 0, length); \
+        bool swap = (CLIENT)->c.byte_order != (IM)->byte_order; \
+        size_t length = frame_size_func(FRAME); \
+        uint8_t* reply; \
+        uint8_t* alloc_reply = NULL; \
+        uint8_t static_reply[frame_has_static_size(FRAME) ? frame_size_func(FRAME) : 1]; \
+        if (frame_has_static_size(FRAME)) { \
+            reply = static_reply; \
+        } else { \
+            reply = _xcb_new_xim_message(frame_opcode(FRAME), 0, length, swap); \
+            alloc_reply = reply; \
+        } \
         do { \
             if (!reply) { \
                 break; \
             } \
-            frame_write_func(FRAME)(&(FRAME), reply + XCB_IM_HEADER_SIZE, (CLIENT)->c.byte_order != (IM)->byte_order); \
+            frame_write_func(FRAME)(&(FRAME), reply + XCB_IM_HEADER_SIZE, swap); \
             if (!_xcb_im_send_message((IM), (CLIENT), reply, length)) { \
                 break; \
             } \
             fail = false; \
         } while(0); \
-        free(reply); \
+        free(alloc_reply); \
         if ((SEND_ERROR) && fail) { \
             _xcb_im_send_error_message((IM), (CLIENT)); \
         } \
@@ -354,6 +329,14 @@ xcb_im_input_context_table_t* _xcb_im_new_input_context(xcb_im_t* im,
                                                         xcb_im_client_table_t* client);
 const xcb_im_default_ic_attr_t* _xcb_im_default_ic_attr_entry(xcb_im_t* im,
                                                               uint32_t id);
+
+bool _xcb_im_send_message(xcb_im_t* im,
+                          xcb_im_client_table_t* client,
+                          uint8_t* data, size_t length);
+
+
+void _xcb_im_send_error_message(xcb_im_t* im,
+                                xcb_im_client_table_t* client);
 
 void _xcb_im_destroy_client(xcb_im_t* im,
                             xcb_im_client_table_t* client);
