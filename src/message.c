@@ -114,3 +114,79 @@ void _xcb_send_xim_error_message(xcb_connection_t* conn,
     _xcb_write_xim_message_header(message, XIM_ERROR, 0, 0, swap);
     _xcb_send_xim_message(conn, protocol_atom, window, message, 0, NULL, 0);
 }
+
+
+uint8_t* _xcb_read_xim_message(xcb_connection_t* conn,
+                               xcb_window_t window,
+                               xcb_client_message_event_t *ev,
+                               xcb_im_packet_header_fr_t* hdr,
+                               bool swap)
+{
+    uint8_t *p = NULL;
+
+    if (ev->format == 8) {
+        /* ClientMessage only */
+        uint8_t* rec = ev->data.data8;
+        size_t len  = sizeof(ev->data.data8);
+        uint8_t_read(&hdr->major_opcode, &rec, &len, false);
+        uint8_t_read(&hdr->minor_opcode, &rec, &len, false);
+        uint16_t_read(&hdr->length, &rec, &len, false);
+
+        // check message is well formed
+        if (len >= hdr->length * 4) {
+            p = malloc(hdr->length * 4);
+        }
+        if (p) {
+            memcpy(p, rec, hdr->length * 4);
+        }
+    } else if (ev->format == 32) {
+        /* ClientMessage and WindowProperty */
+        size_t length = ev->data.data32[0];
+        xcb_atom_t atom = ev->data.data32[1];
+
+        xcb_get_property_cookie_t cookie = xcb_get_property(conn,
+                                                           true,
+                                                           window,
+                                                           atom,
+                                                           XCB_ATOM_ANY,
+                                                           0L,
+                                                           length);
+
+        xcb_get_property_reply_t* reply = xcb_get_property_reply(conn, cookie, NULL);
+        uint8_t* rec;
+
+        do {
+            if (!reply || reply->format == 0 || reply->length == 0) {
+                free(reply);
+                return (unsigned char *) NULL;
+            }
+
+            rec = xcb_get_property_value(reply);
+
+            if (length != reply->value_len)
+                length = reply->value_len;
+
+            // make length into byte
+            if (reply->format == 16)
+                length *= 2;
+            else if (reply->format == 32)
+                length *= 4;
+
+            uint8_t_read(&hdr->major_opcode, &rec, &length, swap);
+            uint8_t_read(&hdr->minor_opcode, &rec, &length, swap);
+            uint16_t_read(&hdr->length, &rec, &length, swap);
+
+            // check message is well formed
+            if (hdr->length * 4 <= length) {
+                /* if hit, it might be an error */
+                p = malloc(hdr->length * 4);
+            }
+        } while(0);
+
+        if (p) {
+            memcpy(p, rec, hdr->length * 4);
+        }
+        free(reply);
+    }
+    return p;
+}

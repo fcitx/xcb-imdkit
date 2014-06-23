@@ -8,11 +8,11 @@
 bool end = false;
 
 bool callback(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
-              const xcb_im_proto_header_t* hdr,
+              const xcb_im_packet_header_fr_t* hdr,
               void* frame, void* arg, void* user_data)
 {
     if (hdr->major_opcode == XIM_DISCONNECT) {
-        end = true;
+        // end = true;
     }
 
     if (hdr->major_opcode != XIM_FORWARD_EVENT) {
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
                        screen->root_visual,
                        0, NULL);
     xcb_im_trigger_keys_t keys;
-    xcb_im_trigger_key_t key;
+    xcb_im_ximtriggerkey_fr_t key;
     key.keysym = ' ';
     key.modifier = 1 << 2;
     key.modifier_mask = 1 << 2;

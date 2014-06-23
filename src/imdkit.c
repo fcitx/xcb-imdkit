@@ -43,7 +43,7 @@ void _free_##NAME(ARRAY_TYPE* to) \
 
 SIMPLE_ARRAY_FUNC(trigger_keys,
                     xcb_im_trigger_keys_t,
-                    xcb_im_trigger_key_t,
+                    xcb_im_ximtriggerkey_fr_t,
                     nKeys,
                     keys)
 
@@ -321,13 +321,14 @@ xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_wind
     int new_connect_id;
     if (im->free_list) {
         client = im->free_list;
+        memset(&client->hh1, 0, sizeof(UT_hash_handle));
+        memset(&client->hh2, 0, sizeof(UT_hash_handle));
         im->free_list = im->free_list->hh1.next;
         new_connect_id = client->c.connect_id;
     } else {
         client = calloc(1, sizeof(xcb_im_client_table_t));
         new_connect_id = ++im->connect_id;
         client->c.connect_id = new_connect_id;
-        HASH_ADD(hh1, im->clients_by_id, c.connect_id, sizeof(int), client);
     }
 
     list_init(&client->queue);
@@ -342,6 +343,7 @@ xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_wind
     client->c.client_win = client_window;
     client->c.accept_win = w;
     client->c.byte_order = '?'; // initial value
+    HASH_ADD(hh1, im->clients_by_id, c.connect_id, sizeof(int), client);
     HASH_ADD(hh2, im->clients_by_win, c.accept_win, sizeof(xcb_window_t), client);
 
 
@@ -365,15 +367,16 @@ xcb_im_input_context_table_t* _xcb_im_new_input_context(xcb_im_t* im,
     if (client->ic_free_list) {
         ic = client->ic_free_list;
         client->ic_free_list = client->ic_free_list->hh.next;
+        memset(&ic->hh, 0, sizeof(UT_hash_handle));
         icid = ic->ic.id;
     } else {
         ic = calloc(1, sizeof(xcb_im_input_context_table_t));
         icid = ++client->icid;
         ic->ic.id = icid;
-        HASH_ADD(hh, client->input_contexts, ic.id, sizeof(uint16_t), ic);
     }
 
     ic->ic.client = &client->c;
+    HASH_ADD(hh, client->input_contexts, ic.id, sizeof(uint16_t), ic);
     return ic;
 }
 
@@ -477,87 +480,23 @@ bool _xcb_im_filter_selection_request(xcb_im_t* im, xcb_generic_event_t* event)
 static uint8_t* _xcb_im_read_message(xcb_im_t* im,
                                      xcb_client_message_event_t *ev,
                                      xcb_im_client_table_t* client,
-                                     xcb_im_proto_header_t* hdr)
+                                     xcb_im_packet_header_fr_t* hdr)
 {
-    uint8_t *p = NULL;
-
     if (ev->format == 8) {
         if (client->c.byte_order == '?') {
             // major_opcode
             if (ev->data.data8[0] != XIM_CONNECT) {
-                return (unsigned char *) NULL;  /* can do nothing */
+                return NULL;  /* can do nothing */
             }
             client->c.byte_order = ev->data.data8[XCB_IM_HEADER_SIZE];
         }
-        /* ClientMessage only */
-        uint8_t* rec = ev->data.data8;
-        size_t len  = sizeof(ev->data.data8);
-        uint8_t_read(&hdr->major_opcode, &rec, &len, client->c.byte_order != im->byte_order);
-        uint8_t_read(&hdr->minor_opcode, &rec, &len, client->c.byte_order != im->byte_order);
-        uint16_t_read(&hdr->length, &rec, &len, client->c.byte_order != im->byte_order);
-
-        // check message is well formed
-        if (len >= hdr->length * 4) {
-            p = malloc(hdr->length * 4);
-        }
-        if (p) {
-            memcpy(p, rec, hdr->length * 4);
-        }
-    } else if (ev->format == 32) {
-        /* ClientMessage and WindowProperty */
-        size_t length = ev->data.data32[0];
-        xcb_atom_t atom = ev->data.data32[1];
-
-        xcb_get_property_cookie_t cookie = xcb_get_property(im->conn,
-                                                           true,
-                                                           client->c.accept_win,
-                                                           atom,
-                                                           XCB_ATOM_ANY,
-                                                           0L,
-                                                           length);
-
-        xcb_get_property_reply_t* reply = xcb_get_property_reply(im->conn, cookie, NULL);
-        uint8_t* rec;
-
-        do {
-            if (!reply || reply->format == 0 || reply->length == 0) {
-                free(reply);
-                return (unsigned char *) NULL;
-            }
-
-            rec = xcb_get_property_value(reply);
-
-            if (length != reply->value_len)
-                length = reply->value_len;
-
-            // make length into byte
-            if (reply->format == 16)
-                length *= 2;
-            else if (reply->format == 32)
-                length *= 4;
-
-            uint8_t_read(&hdr->major_opcode, &rec, &length, client->c.byte_order != im->byte_order);
-            uint8_t_read(&hdr->minor_opcode, &rec, &length, client->c.byte_order != im->byte_order);
-            uint16_t_read(&hdr->length, &rec, &length, client->c.byte_order != im->byte_order);
-
-            // check message is well formed
-            if (hdr->length * 4 <= length) {
-                /* if hit, it might be an error */
-                p = malloc(hdr->length * 4);
-            }
-        } while(0);
-
-        if (p) {
-            memcpy(p, rec, hdr->length * 4);
-        }
-        free(reply);
     }
-    return p;
+    return _xcb_read_xim_message(im->conn, client->c.accept_win, ev, hdr, client->c.byte_order != im->byte_order);
 }
 
 void _xcb_im_handle_message(xcb_im_t* im,
                             xcb_im_client_table_t* client,
-                            const xcb_im_proto_header_t* hdr,
+                            const xcb_im_packet_header_fr_t* hdr,
                             uint8_t* data,
                             bool *del)
 {
@@ -695,7 +634,7 @@ bool _xcb_im_filter_client(xcb_im_t* im, xcb_generic_event_t* event)
         }
 
         bool del = true;
-        xcb_im_proto_header_t hdr;
+        xcb_im_packet_header_fr_t hdr;
         uint8_t* message = _xcb_im_read_message(im, clientmessage, client, &hdr);
         if (message) {
             _xcb_im_handle_message(im, client, &hdr, message, &del);
@@ -947,7 +886,7 @@ void _xcb_im_destroy_ic(xcb_im_t* im,
     xcb_im_client_table_t* client = (xcb_im_client_table_t*) ic->ic.client;
 
     if (im->callback) {
-        xcb_im_proto_header_t hdr;
+        xcb_im_packet_header_fr_t hdr;
         hdr.length = 0;
         hdr.major_opcode = XIM_DESTROY_IC;
         hdr.minor_opcode = 0;
@@ -963,7 +902,7 @@ void _xcb_im_destroy_ic(xcb_im_t* im,
 void _xcb_im_destroy_client(xcb_im_t* im,
                             xcb_im_client_table_t* client)
 {
-    xcb_im_proto_header_t hdr;
+    xcb_im_packet_header_fr_t hdr;
     hdr.length = 0;
     hdr.major_opcode = XIM_DISCONNECT;
     hdr.minor_opcode = 0;
@@ -1006,7 +945,7 @@ void _xcb_im_set_event_mask(xcb_im_t* im, xcb_im_client_table_t* client, uint32_
     _xcb_im_send_frame(im, client, frame, false);
 }
 
-void _xcb_im_add_queue(xcb_im_t* im, xcb_im_client_table_t* client, uint16_t icid, const xcb_im_proto_header_t* hdr, xcb_im_forward_event_fr_t* frame, uint8_t* data)
+void _xcb_im_add_queue(xcb_im_t* im, xcb_im_client_table_t* client, uint16_t icid, const xcb_im_packet_header_fr_t* hdr, xcb_im_forward_event_fr_t* frame, uint8_t* data)
 {
     xcb_im_queue_t* item = malloc(sizeof(xcb_im_queue_t));
     if (!item) {
@@ -1015,7 +954,7 @@ void _xcb_im_add_queue(xcb_im_t* im, xcb_im_client_table_t* client, uint16_t ici
 
     item->icid = icid;
     memcpy(&item->event, data, sizeof(xcb_key_press_event_t));
-    memcpy(&item->hdr, hdr, sizeof(xcb_im_proto_header_t));
+    memcpy(&item->hdr, hdr, sizeof(xcb_im_packet_header_fr_t));
     memcpy(&item->frame, frame, sizeof(xcb_im_forward_event_fr_t));
 
 

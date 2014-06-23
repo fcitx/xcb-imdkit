@@ -42,12 +42,9 @@ typedef struct _xcb_im_styles_t
     uint32_t* styles;
 } xcb_im_styles_t;
 
-typedef xcb_im_packet_header_fr_t xcb_im_proto_header_t;
-typedef xcb_im_ximtriggerkey_fr_t xcb_im_trigger_key_t;
-
 typedef struct _xcb_im_trigger_keys_t{
     uint16_t nKeys;
-    xcb_im_trigger_key_t *keys;
+    xcb_im_ximtriggerkey_fr_t *keys;
 } xcb_im_trigger_keys_t;
 
 typedef char *xcb_im_encoding_t;
@@ -103,7 +100,7 @@ typedef struct _xcb_im_input_context_t
 } xcb_im_input_context_t;
 
 typedef bool (*xcb_im_callback)(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
-                                const xcb_im_proto_header_t* hdr,
+                                const xcb_im_packet_header_fr_t* hdr,
                                 void* frame, void* arg, void* user_data);
 
 XCB_IMDKIT_EXPORT xcb_im_t* xcb_im_create(xcb_connection_t* conn,

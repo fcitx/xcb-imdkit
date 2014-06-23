@@ -124,6 +124,212 @@ bool _xcb_xim_check_transport(xcb_xim_t* im, char* address, int addresslen, char
     return true;
 }
 
+bool _xcb_xim_check_server_prepare(xcb_xim_t* im)
+{
+    xcb_atom_t server_atom = im->server_atoms[im->open.check_server.index];
+    xcb_get_selection_owner_reply_t* owner_reply =
+        xcb_get_selection_owner_reply(im->conn,
+                                        xcb_get_selection_owner(im->conn, server_atom),
+                                        NULL);
+    if (!owner_reply) {
+        return false;
+    }
+    im->open.check_server.window = owner_reply->owner;
+    free(owner_reply);
+
+    xcb_get_atom_name_reply_t* reply = xcb_get_atom_name_reply(im->conn,
+                                                                xcb_get_atom_name(im->conn, server_atom),
+                                                                NULL);
+    if (!reply) {
+        return false;
+    }
+
+    bool result = _xcb_xim_check_server_name(im, xcb_get_atom_name_name(reply), xcb_get_atom_name_name_length(reply));
+    free(reply);
+
+    if (!result) {
+        return false;
+    }
+
+    xcb_window_t w = xcb_generate_id(im->conn);
+
+    xcb_create_window (im->conn, XCB_COPY_FROM_PARENT, w, im->screen->root,
+                        0, 0, 1, 1, 1,
+                        XCB_WINDOW_CLASS_INPUT_OUTPUT,
+                        im->screen->root_visual,
+                        0, NULL);
+    im->open.check_server.requestor_window = w;
+    return true;
+}
+
+void _xcb_xim_check_server_transport(xcb_xim_t* im)
+{
+    xcb_atom_t server_atom = im->server_atoms[im->open.check_server.index];
+    xcb_convert_selection(im->conn,
+                            im->open.check_server.requestor_window,
+                            server_atom, im->atoms[XIM_ATOM_TRANSPORT], im->atoms[XIM_ATOM_TRANSPORT],
+                            XCB_CURRENT_TIME);
+
+    xcb_flush(im->conn);
+}
+
+typedef enum _xcb_xim_open_phase_action_t
+{
+    ACTION_ACCEPT,
+    ACTION_FAILED,
+    ACTION_YIELD,
+} xcb_xim_open_phase_action_t;
+
+xcb_xim_open_phase_action_t _xcb_xim_check_server_transport_wait(xcb_xim_t* im, xcb_generic_event_t* event)
+{
+    xcb_atom_t server_atom = im->server_atoms[im->open.check_server.index];
+    if (!event) {
+        return ACTION_YIELD;
+    }
+
+    if ((event->response_type & ~0x80) != XCB_SELECTION_NOTIFY) {
+        return ACTION_YIELD;
+    }
+
+    xcb_selection_notify_event_t* selection_notify = (xcb_selection_notify_event_t*) event;
+    if (selection_notify->requestor != im->open.check_server.requestor_window) {
+        return ACTION_YIELD;
+    }
+
+    if (selection_notify->property == XCB_ATOM_NONE) {
+        return ACTION_FAILED;
+    }
+
+    xcb_get_property_cookie_t cookie = xcb_get_property(im->conn,
+                                                        true,
+                                                        im->open.check_server.requestor_window,
+                                                        im->atoms[XIM_ATOM_TRANSPORT],
+                                                        im->atoms[XIM_ATOM_TRANSPORT],
+                                                        0L,
+                                                        100000L);
+    xcb_get_property_reply_t* reply = xcb_get_property_reply(im->conn, cookie, NULL);
+    if (!reply) {
+        return ACTION_FAILED;
+    }
+
+    char* value = xcb_get_property_value(reply);
+    int length = xcb_get_property_value_length(reply);
+    char* trans_addr;
+    if (_xcb_xim_check_transport(im, value, length, &trans_addr)) {
+        im->trans_addr = strdup(trans_addr);
+        if (!im->trans_addr) {
+            return ACTION_FAILED;
+        }
+        xcb_destroy_window(im->conn, im->open.check_server.requestor_window);
+        im->im_window = im->open.check_server.window;
+        im->atoms[XIM_ATOM_SERVER_NAME] = server_atom;
+        return ACTION_ACCEPT;
+    }
+
+    return ACTION_FAILED;
+}
+
+void _xcb_xim_connect_prepare(xcb_xim_t* im) {
+    xcb_window_t w = xcb_generate_id(im->conn);
+
+    xcb_create_window (im->conn, XCB_COPY_FROM_PARENT, w, im->screen->root,
+                        0, 0, 1, 1, 1,
+                        XCB_WINDOW_CLASS_INPUT_OUTPUT,
+                        im->screen->root_visual,
+                        0, NULL);
+    im->client_window = w;
+
+    xcb_client_message_event_t ev;
+    ev.response_type = XCB_CLIENT_MESSAGE;
+    ev.format = 32;
+    ev.sequence = 0;
+    ev.type = im->atoms[XIM_ATOM_XIM_CONNECT];
+    ev.window = im->im_window;
+    ev.data.data32[0] = im->client_window;
+    ev.data.data32[1] = 0; // major
+    ev.data.data32[2] = 0; // minor
+    ev.data.data32[3] = 0;
+    ev.data.data32[4] = 0;
+    xcb_send_event(im->conn, false, im->im_window, XCB_EVENT_MASK_NO_EVENT, (char*) &ev);
+    xcb_flush(im->conn);
+}
+
+xcb_xim_open_phase_action_t _xcb_xim_connect_wait(xcb_xim_t* im, xcb_generic_event_t* event)
+{
+    if (!event) {
+        return ACTION_YIELD;
+    }
+    if ((event->response_type & ~0x80) != XCB_CLIENT_MESSAGE) {
+        return ACTION_YIELD;
+    }
+
+    xcb_client_message_event_t* client_message = (xcb_client_message_event_t*) event;
+    if (client_message->type != im->atoms[XIM_ATOM_XIM_CONNECT]) {
+        return ACTION_YIELD;
+    }
+    event = NULL;
+    im->major_code = 0;
+    im->minor_code = 0;
+    im->accept_win = client_message->data.data32[0];
+
+    xcb_im_connect_fr_t frame;
+    frame.byte_order = im->byte_order;
+    frame.client_auth_protocol_names.size = 0;
+    frame.client_auth_protocol_names.items = NULL;
+    frame.client_major_protocol_version = 0;
+    frame.client_minor_protocol_version = 0;
+
+    bool fail;
+    _xcb_send_xim_frame(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], im->accept_win,
+                        frame, false, 0, 0, fail);
+    if (fail) {
+        return ACTION_FAILED;
+    }
+
+    return ACTION_ACCEPT;
+}
+
+
+
+xcb_xim_open_phase_action_t _xcb_xim_connect_wait_reply(xcb_xim_t* im, xcb_generic_event_t* event)
+{
+    if (!event) {
+        return ACTION_YIELD;
+    }
+    if ((event->response_type & ~0x80) != XCB_CLIENT_MESSAGE) {
+        return ACTION_YIELD;
+    }
+    xcb_client_message_event_t* client_message = (xcb_client_message_event_t*) event;
+    if (client_message->type != im->atoms[XIM_ATOM_XIM_PROTOCOL]) {
+        return ACTION_YIELD;
+    }
+
+    xcb_im_packet_header_fr_t hdr;
+    uint8_t* message = _xcb_read_xim_message(im->conn, im->accept_win, client_message, &hdr, false);
+
+    if (!message) {
+        return ACTION_FAILED;
+    }
+
+    if (hdr.major_opcode != XIM_CONNECT) {
+        return ACTION_YIELD;
+    }
+
+    xcb_xim_open_phase_action_t result = ACTION_FAILED;
+    do {
+        xcb_im_connect_reply_fr_t frame;
+        bool fail;
+        _xcb_read_xim_frame(frame, message, XIM_MESSAGE_BYTES(&hdr), false, fail);
+        if (fail) {
+            break;
+        }
+        result = ACTION_ACCEPT;
+    } while(0);
+
+    free(message);
+    return result;
+}
+
 bool _xcb_xim_preconnect_im(xcb_xim_t* im, xcb_generic_event_t* event)
 {
     while (im->open.phase != XIM_OPEN_PHASE_DONE && im->open.phase != XIM_OPEN_PHASE_FAIL) {
@@ -132,170 +338,66 @@ bool _xcb_xim_preconnect_im(xcb_xim_t* im, xcb_generic_event_t* event)
                 im->open.phase = XIM_OPEN_PHASE_FAIL;
                 continue;
             }
-            xcb_atom_t server_atom = im->server_atoms[im->open.check_server.index];
             if (im->open.check_server.subphase == XIM_OPEN_PHASE_CHECK_SERVER_PREPARE) {
-                xcb_get_selection_owner_reply_t* owner_reply =
-                    xcb_get_selection_owner_reply(im->conn,
-                                                  xcb_get_selection_owner(im->conn, server_atom),
-                                                  NULL);
-                if (!owner_reply) {
-                    CHECK_NEXT_SERVER(im);
-                    continue;
-                }
-                im->open.check_server.window = owner_reply->owner;
-                free(owner_reply);
-
-                xcb_get_atom_name_reply_t* reply = xcb_get_atom_name_reply(im->conn,
-                                                                           xcb_get_atom_name(im->conn, server_atom),
-                                                                           NULL);
-                if (!reply) {
-                    CHECK_NEXT_SERVER(im);
-                    continue;
-                }
-
-                bool result = _xcb_xim_check_server_name(im, xcb_get_atom_name_name(reply), xcb_get_atom_name_name_length(reply));
-                free(reply);
-
-                if (!result) {
-                    CHECK_NEXT_SERVER(im);
-                    continue;
-                }
-
-                xcb_window_t w = xcb_generate_id(im->conn);
-
-                xcb_create_window (im->conn, XCB_COPY_FROM_PARENT, w, im->screen->root,
-                                   0, 0, 1, 1, 1,
-                                   XCB_WINDOW_CLASS_INPUT_OUTPUT,
-                                   im->screen->root_visual,
-                                   0, NULL);
-                im->open.check_server.requestor_window = w;
-
-
-                im->open.check_server.subphase = XIM_OPEN_PHASE_CHECK_SERVER_LOCALE;
-            } else if (im->open.check_server.subphase == XIM_OPEN_PHASE_CHECK_SERVER_LOCALE) {
-                // TODO
-                im->open.check_server.subphase = XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT;
-            } else if (im->open.check_server.subphase == XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT) {
-
-                xcb_convert_selection(im->conn,
-                                      im->open.check_server.requestor_window,
-                                      server_atom, im->atoms[XIM_ATOM_TRANSPORT], im->atoms[XIM_ATOM_TRANSPORT],
-                                      XCB_CURRENT_TIME);
-
-                xcb_flush(im->conn);
-                im->open.check_server.subphase = XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT_WAIT;
-            } else if (im->open.check_server.subphase == XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT_WAIT) {
-                if (!event) {
-                    return false;
-                }
-
-                if ((event->response_type & ~0x80) != XCB_SELECTION_NOTIFY) {
-                    return false;
-                }
-
-                xcb_selection_notify_event_t* selection_notify = (xcb_selection_notify_event_t*) event;
-                if (selection_notify->requestor != im->open.check_server.requestor_window) {
-                    return false;
-                }
-                event = NULL;
-
-                if (selection_notify->property == XCB_ATOM_NONE) {
-                    CHECK_NEXT_SERVER(im);
-                    continue;
-                }
-
-                xcb_get_property_cookie_t cookie = xcb_get_property(im->conn,
-                                                                    true,
-                                                                    im->open.check_server.requestor_window,
-                                                                    im->atoms[XIM_ATOM_TRANSPORT],
-                                                                    im->atoms[XIM_ATOM_TRANSPORT],
-                                                                    0L,
-                                                                    100000L);
-                xcb_get_property_reply_t* reply = xcb_get_property_reply(im->conn, cookie, NULL);
-                if (!reply) {
-                    CHECK_NEXT_SERVER(im);
-                    continue;
-                }
-
-                char* value = xcb_get_property_value(reply);
-                int length = xcb_get_property_value_length(reply);
-                char* trans_addr;
-                if (_xcb_xim_check_transport(im, value, length, &trans_addr)) {
-                    im->trans_addr = strdup(trans_addr);
-                    im->im_window = im->open.check_server.window;
-                    im->atoms[XIM_ATOM_SERVER_NAME] = server_atom;
-                    im->open.phase = XIM_OPEN_PHASE_CONNECT;
-                    // stop read open here.
-                    im->open.connect.subphase = XIM_OPEN_PHASE_CONNECT_PREPARE;
-                    xcb_destroy_window(im->conn, im->open.check_server.requestor_window);
-                    continue;
+                if (_xcb_xim_check_server_prepare(im)) {
+                    im->open.check_server.subphase = XIM_OPEN_PHASE_CHECK_SERVER_LOCALE;
                 } else {
                     CHECK_NEXT_SERVER(im);
                     continue;
                 }
+            } else if (im->open.check_server.subphase == XIM_OPEN_PHASE_CHECK_SERVER_LOCALE) {
+                // TODO
+                im->open.check_server.subphase = XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT;
+            } else if (im->open.check_server.subphase == XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT) {
+                _xcb_xim_check_server_transport(im);
+                im->open.check_server.subphase = XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT_WAIT;
+            } else if (im->open.check_server.subphase == XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT_WAIT) {
+                xcb_xim_open_phase_action_t result = _xcb_xim_check_server_transport_wait(im, event);
+                switch (result) {
+                    case ACTION_ACCEPT:
+                        event = NULL;
+                        im->open.phase = XIM_OPEN_PHASE_CONNECT;
+                        im->open.connect.subphase = XIM_OPEN_PHASE_CONNECT_PREPARE;
+                        break;
+                    case ACTION_FAILED:
+                        event = NULL;
+                        CHECK_NEXT_SERVER(im);
+                        break;
+                    case ACTION_YIELD:
+                        return false;
+                }
             }
         } else if (im->open.phase == XIM_OPEN_PHASE_CONNECT) {
             if (im->open.connect.subphase == XIM_OPEN_PHASE_CONNECT_PREPARE) {
-                xcb_window_t w = xcb_generate_id(im->conn);
-
-                xcb_create_window (im->conn, XCB_COPY_FROM_PARENT, w, im->screen->root,
-                                   0, 0, 1, 1, 1,
-                                   XCB_WINDOW_CLASS_INPUT_OUTPUT,
-                                   im->screen->root_visual,
-                                   0, NULL);
-                im->client_window = w;
-
-                xcb_client_message_event_t ev;
-                ev.response_type = XCB_CLIENT_MESSAGE;
-                ev.format = 32;
-                ev.sequence = 0;
-                ev.type = im->atoms[XIM_ATOM_XIM_CONNECT];
-                ev.window = im->im_window;
-                ev.data.data32[0] = im->client_window;
-                ev.data.data32[1] = 0; // major
-                ev.data.data32[2] = 0; // minor
-                ev.data.data32[3] = 0;
-                ev.data.data32[4] = 0;
-                xcb_send_event(im->conn, false, im->im_window, XCB_EVENT_MASK_NO_EVENT, (char*) &ev);
-                xcb_flush(im->conn);
+                _xcb_xim_connect_prepare(im);
                 im->open.connect.subphase = XIM_OPEN_PHASE_CONNECT_WAIT;
             } else if (im->open.connect.subphase == XIM_OPEN_PHASE_CONNECT_WAIT) {
-                if (!event) {
-                    return false;
+                xcb_xim_open_phase_action_t result = _xcb_xim_connect_wait(im, event);
+                switch (result) {
+                    case ACTION_ACCEPT:
+                        event = NULL;
+                        im->open.connect.subphase = XIM_OPEN_PHASE_CONNECT_WAIT_REPLY;
+                        break;
+                    case ACTION_FAILED:
+                        event = NULL;
+                        im->open.phase = XIM_OPEN_PHASE_FAIL;
+                        break;
+                    case ACTION_YIELD:
+                        return false;
                 }
-                if ((event->response_type & ~0x80) != XCB_CLIENT_MESSAGE) {
-                    return false;
-                }
-
-                xcb_client_message_event_t* client_message = (xcb_client_message_event_t*) event;
-                if (client_message->type != im->atoms[XIM_ATOM_XIM_CONNECT]) {
-                    return false;
-                }
-                event = NULL;
-                im->major_code = 0;
-                im->minor_code = 0;
-                im->accept_win = client_message->data.data32[0];
-
-                xcb_im_connect_fr_t frame;
-                frame.byte_order = im->byte_order;
-                frame.client_auth_protocol_names.size = 0;
-                frame.client_auth_protocol_names.items = NULL;
-                frame.client_major_protocol_version = 0;
-                frame.client_minor_protocol_version = 0;
-
-                _xcb_send_xim_frame(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], im->accept_win,
-                                    frame, false, false, 0, 0);
-                im->open.connect.subphase = XIM_OPEN_PHASE_CONNECT_WAIT_REPLY;
             } else if (im->open.connect.subphase == XIM_OPEN_PHASE_CONNECT_WAIT_REPLY) {
-                if (!event) {
-                    return false;
-                }
-                if ((event->response_type & ~0x80) != XCB_CLIENT_MESSAGE) {
-                    return false;
-                }
-                xcb_client_message_event_t* client_message = (xcb_client_message_event_t*) event;
-                if (client_message->type != im->atoms[XIM_ATOM_XIM_PROTOCOL]) {
-                    return false;
+                xcb_xim_open_phase_action_t result = _xcb_xim_connect_wait_reply(im, event);
+                switch (result) {
+                    case ACTION_ACCEPT:
+                        event = NULL;
+                        im->open.phase = XIM_OPEN_PHASE_CONNECT_WAIT_REPLY;
+                        break;
+                    case ACTION_FAILED:
+                        event = NULL;
+                        im->open.phase = XIM_OPEN_PHASE_FAIL;
+                        break;
+                    case ACTION_YIELD:
+                        return false;
                 }
 
             }
