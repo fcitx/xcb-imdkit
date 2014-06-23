@@ -85,14 +85,14 @@
 #define XimLookupKeySym       0x0004
 #define XimLookupBoth         0x0006
 
-
-
 #define frame_opcode(FRAME) _Generic((FRAME), \
     xcb_im_connect_reply_fr_t: XIM_CONNECT_REPLY, \
     xcb_im_open_fr_t: XIM_OPEN, \
     xcb_im_open_reply_fr_t: XIM_OPEN_REPLY, \
     xcb_im_close_reply_fr_t: XIM_CLOSE_REPLY, \
+    xcb_im_query_extension_fr_t: XIM_QUERY_EXTENSION, \
     xcb_im_query_extension_reply_fr_t: XIM_QUERY_EXTENSION_REPLY, \
+    xcb_im_encoding_negotiation_fr_t: XIM_ENCODING_NEGOTIATION, \
     xcb_im_encoding_negotiation_reply_fr_t: XIM_ENCODING_NEGOTIATION_REPLY, \
     xcb_im_get_im_values_reply_fr_t: XIM_GET_IM_VALUES_REPLY, \
     xcb_im_set_event_mask_fr_t: XIM_SET_EVENT_MASK, \
@@ -116,5 +116,26 @@
     xcb_im_connect_fr_t: XIM_CONNECT, \
     xcb_im_geometry_fr_t: XIM_GEOMETRY \
     )
+
+
+typedef struct _xcb_im_ext_list{
+    char *name;
+    uint8_t major_opcode;
+    uint8_t minor_opcode;
+} xcb_im_ext_list;
+
+/*
+ * Minor Protocol Number for Extension Protocol
+ */
+#define XIM_EXTENSION               128
+#define XIM_EXT_SET_EVENT_MASK          (0x30)
+#define XIM_EXT_FORWARD_KEYEVENT        (0x32)
+#define XIM_EXT_MOVE                (0x33)
+
+static const xcb_im_ext_list Default_Extension[] = {
+    {"XIM_EXT_MOVE", XIM_EXTENSION, XIM_EXT_MOVE},
+    {"XIM_EXT_SET_EVENT_MASK", XIM_EXTENSION, XIM_EXT_SET_EVENT_MASK},
+    {"XIM_EXT_FORWARD_KEYEVENT", XIM_EXTENSION, XIM_EXT_FORWARD_KEYEVENT},
+};
 
 #endif // XIMPROTO_H

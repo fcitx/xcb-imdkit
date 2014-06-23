@@ -321,19 +321,40 @@ xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_wind
     int new_connect_id;
     if (im->free_list) {
         client = im->free_list;
+        new_connect_id = client->c.connect_id;
+        xcb_im_client_table_t* dup = NULL;
+        HASH_FIND(hh1, im->clients_by_id, &new_connect_id, sizeof(uint16_t), dup);
+        if (dup) {
+            DebugLog("Bug in implementation");
+            return NULL;
+        }
         memset(&client->hh1, 0, sizeof(UT_hash_handle));
         memset(&client->hh2, 0, sizeof(UT_hash_handle));
         im->free_list = im->free_list->hh1.next;
-        new_connect_id = client->c.connect_id;
     } else {
-        client = calloc(1, sizeof(xcb_im_client_table_t));
         new_connect_id = ++im->connect_id;
+        xcb_im_client_table_t* dup = NULL;
+        HASH_FIND(hh1, im->clients_by_id, &new_connect_id, sizeof(uint16_t), dup);
+        if (dup) {
+            DebugLog("overflow! too many clients");
+            return NULL;
+        }
+        client = calloc(1, sizeof(xcb_im_client_table_t));
         client->c.connect_id = new_connect_id;
     }
 
     list_init(&client->queue);
 
     xcb_window_t w = xcb_generate_id (im->conn);
+    xcb_im_client_table_t* dup = NULL;
+    HASH_FIND(hh2, im->clients_by_win, &w, sizeof(xcb_window_t), dup);
+    if (dup) {
+        DebugLog("duplicate XID, Bug in XCB?");
+        client->hh1.next = im->free_list;
+        im->free_list = client;
+        return NULL;
+    }
+
     xcb_create_window (im->conn, XCB_COPY_FROM_PARENT, w, im->root,
                        0, 0, 1, 1, 1,
                        XCB_WINDOW_CLASS_INPUT_OUTPUT,
@@ -366,12 +387,29 @@ xcb_im_input_context_table_t* _xcb_im_new_input_context(xcb_im_t* im,
     xcb_im_input_context_table_t* ic = NULL;
     if (client->ic_free_list) {
         ic = client->ic_free_list;
+        icid = ic->ic.id;
+        xcb_im_input_context_table_t* dup = NULL;
+        HASH_FIND(hh, client->input_contexts, &icid, sizeof(uint16_t), dup);
+        if (dup) {
+            DebugLog("Bug in implementation");
+            return NULL;
+        }
+
         client->ic_free_list = client->ic_free_list->hh.next;
         memset(&ic->hh, 0, sizeof(UT_hash_handle));
-        icid = ic->ic.id;
     } else {
-        ic = calloc(1, sizeof(xcb_im_input_context_table_t));
         icid = ++client->icid;
+        xcb_im_input_context_table_t* dup = NULL;
+        HASH_FIND(hh, client->input_contexts, &icid, sizeof(uint16_t), dup);
+        if (dup) {
+            DebugLog("overflow! too many clients");
+            return NULL;
+        }
+
+        ic = calloc(1, sizeof(xcb_im_input_context_table_t));
+        if (!ic) {
+            return NULL;
+        }
         ic->ic.id = icid;
     }
 
@@ -401,6 +439,9 @@ bool _xcb_im_filter_xconnect_message(xcb_im_t* im, xcb_generic_event_t* event)
         uint32_t minor_version = clientmessage->data.data32[2];
 
         xcb_im_client_table_t *client = _xcb_im_new_client(im, client_window);
+        if (!client) {
+            break;
+        }
         if (major_version != 0  ||  minor_version != 0) {
             major_version = minor_version = 0;
             /* Only supporting only-CM & Property-with-CM method */
@@ -745,7 +786,7 @@ void xcb_im_close_im(xcb_im_t* im)
 
     while (im->free_list) {
         xcb_im_client_table_t* p = im->free_list;
-        // TODO: mind need to free more?
+        // TODO: might need to free more?
         im->free_list = im->free_list->hh1.next;
         free(p);
     }
@@ -755,7 +796,6 @@ void xcb_im_close_im(xcb_im_t* im)
 
 void xcb_im_destroy(xcb_im_t* im)
 {
-    // TODO
     free(im->locale);
     free(im->serverName);
     _free_encodings(&im->encodings);

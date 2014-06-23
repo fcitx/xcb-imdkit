@@ -249,26 +249,6 @@ static const xcb_im_default_ic_attr_t Default_ICattr[] = {
     {XNSeparatorofNestedList,   XimType_SeparatorOfNestedList, false},
 };
 
-typedef struct _xcb_im_ext_list{
-    char *name;
-    uint8_t major_opcode;
-    uint8_t minor_opcode;
-} xcb_im_ext_list;
-
-/*
- * Minor Protocol Number for Extension Protocol
- */
-#define XIM_EXTENSION               128
-#define XIM_EXT_SET_EVENT_MASK          (0x30)
-#define XIM_EXT_FORWARD_KEYEVENT        (0x32)
-#define XIM_EXT_MOVE                (0x33)
-
-static const xcb_im_ext_list Default_Extension[] = {
-    {"XIM_EXT_MOVE", XIM_EXTENSION, XIM_EXT_MOVE},
-    {"XIM_EXT_SET_EVENT_MASK", XIM_EXTENSION, XIM_EXT_SET_EVENT_MASK},
-    {"XIM_EXT_FORWARD_KEYEVENT", XIM_EXTENSION, XIM_EXT_FORWARD_KEYEVENT},
-};
-
 struct _xcb_im_t
 {
     xcb_connection_t* conn;

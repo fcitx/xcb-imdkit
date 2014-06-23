@@ -318,6 +318,9 @@ void _xcb_im_handle_create_ic(xcb_im_t* im,
         }
 
         xcb_im_input_context_table_t* ic = _xcb_im_new_input_context(im, client);
+        if (!ic) {
+            break;
+        }
 
         _xcb_im_parse_ic_values(im, ic, frame.ic_attributes.size, frame.ic_attributes.items);
 

@@ -3,73 +3,10 @@
 #include "common.h"
 #include "ximproto.h"
 #include "message.h"
+#include "clientprotocolhandler.h"
 #include <xcb/xcb_aux.h>
 #include <stdlib.h>
 #include <string.h>
-
-// this phase is basically a directly mapping from _XimSOMETHING function in Xlib
-// state machine is more suitable for xcb asynchronous nature.
-typedef enum _xcb_xim_open_phase_t {
-    XIM_OPEN_PHASE_DONE,
-    XIM_OPEN_PHASE_FAIL,
-    XIM_OPEN_PHASE_CHECK_SERVER,
-    XIM_OPEN_PHASE_CONNECT,
-} xcb_xim_open_phase_t;
-
-typedef enum _xcb_xim_open_check_server_phase_t {
-    XIM_OPEN_PHASE_CHECK_SERVER_PREPARE,
-    XIM_OPEN_PHASE_CHECK_SERVER_LOCALE,
-    XIM_OPEN_PHASE_CHECK_SERVER_LOCALE_WAIT,
-    XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT,
-    XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT_WAIT,
-} xcb_xim_open_check_server_phase_t;
-
-typedef enum _xcb_xim_open_connect_phase_t {
-    XIM_OPEN_PHASE_CONNECT_PREPARE,
-    XIM_OPEN_PHASE_CONNECT_WAIT,
-    XIM_OPEN_PHASE_CONNECT_WAIT_REPLY,
-    XIM_OPEN_PHASE_CONNECT_WAIT_OPEN_REPLY
-} xcb_xim_open_connect_phase_t;
-
-typedef struct _xcb_xim_open_t
-{
-    xcb_xim_open_phase_t phase;
-    union {
-        struct {
-            int index;
-            xcb_xim_open_check_server_phase_t subphase;
-            xcb_window_t window;
-            xcb_window_t requestor_window;
-        } check_server;
-
-        struct {
-            xcb_xim_open_connect_phase_t subphase;
-        } connect;
-    };
-} xcb_xim_open_t;
-
-struct _xcb_xim_t
-{
-    char* server_name;
-    int screen_id;
-    xcb_connection_t* conn;
-    xcb_atom_t atoms[XIM_ATOM_LAST]; // add one for SERVER_NAME
-    bool init;
-    xcb_screen_t* screen;
-    xcb_atom_t* server_atoms;
-    int n_server_atoms;
-    bool connected;
-    xcb_xim_open_t open;
-    char* trans_addr;
-    xcb_window_t im_window;
-    xcb_window_t client_window;
-    int major_code;
-    int minor_code;
-    uint32_t accept_win;
-    uint32_t sequence;
-    uint16_t connect_id;
-    uint8_t byte_order;
-};
 
 #define CHECK_NEXT_SERVER(IM) \
     do { \
@@ -237,6 +174,7 @@ xcb_xim_open_phase_action_t _xcb_xim_check_server_transport_wait(xcb_xim_t* im, 
             return ACTION_FAILED;
         }
         xcb_destroy_window(im->conn, im->open.check_server.requestor_window);
+        im->open.check_server.requestor_window = XCB_NONE;
         im->im_window = im->open.check_server.window;
         im->atoms[XIM_ATOM_SERVER_NAME] = server_atom;
         return ACTION_ACCEPT;
@@ -550,15 +488,19 @@ void _xcb_xim_handle_message(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr
     switch (hdr->major_opcode) {
     case XIM_OPEN_REPLY:
         DebugLog("-- XIM_OPEN_REPLY\n");
+        _xcb_xim_handle_open_reply(im, hdr, data);
         break;
     case XIM_REGISTER_TRIGGERKEYS:
         DebugLog("-- XIM_REGISTER_TRIGGERKEYS\n");
+        _xcb_xim_handle_register_triggerkeys(im, hdr, data);
         break;
     case XIM_QUERY_EXTENSION_REPLY:
         DebugLog("-- XIM_QUERY_EXTENSION_REPLY\n");
+        _xcb_xim_handle_query_extension_reply(im, hdr, data);
         break;
     case XIM_ENCODING_NEGOTIATION_REPLY:
         DebugLog("-- XIM_ENCODING_NEGOTIATION_REPLY\n");
+        _xcb_xim_handle_encoding_negotiation_reply(im, hdr, data);
         break;
     case XIM_GET_IM_VALUES_REPLY:
         DebugLog("-- XIM_GET_IM_VALUES_REPLY\n");
