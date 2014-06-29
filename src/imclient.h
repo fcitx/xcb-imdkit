@@ -21,7 +21,7 @@ typedef void (*xcb_xim_get_im_values_callback)(xcb_xim_t* im, xcb_im_get_im_valu
 typedef void (*xcb_xim_get_ic_values_callback)(xcb_xim_t* im, xcb_xic_t ic, xcb_im_get_ic_values_reply_fr_t* reply, void* user_data);
 typedef void (*xcb_xim_set_ic_values_callback)(xcb_xim_t* im, xcb_xic_t ic, void* user_data);
 typedef void (*xcb_xim_destroy_ic_callback)(xcb_xim_t* im, xcb_xic_t ic, void* user_data);
-typedef void (*xcb_xim_reset_ic_callback)(xcb_xim_t* im, xcb_xic_t ic, void* user_data);
+typedef void (*xcb_xim_reset_ic_callback)(xcb_xim_t* im, xcb_xic_t ic, xcb_im_reset_ic_reply_fr_t* reply, void* user_data);
 
 XCB_XIM_EXPORT xcb_xim_t* xcb_xim_create(xcb_connection_t* conn,
                                          int screen_id,
@@ -36,10 +36,10 @@ XCB_XIM_EXPORT xcb_xim_nested_list xcb_xim_create_nested_list(xcb_xim_t* im, ...
 XCB_XIM_EXPORT bool xcb_xim_create_ic(xcb_xim_t* im, xcb_xim_create_ic_callback callback, void* user_data, ...);
 XCB_XIM_EXPORT bool xcb_xim_get_ic_values(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_get_ic_values_callback callback, void* user_data, ...);
 XCB_XIM_EXPORT bool xcb_xim_set_ic_values(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_set_ic_values_callback callback, void* user_data, ...);
-XCB_XIM_EXPORT void xcb_xim_set_ic_focus(xcb_xim_t* im, xcb_xic_t ic);
-XCB_XIM_EXPORT void xcb_xim_unset_ic_focus(xcb_xim_t* im, xcb_xic_t ic);
+XCB_XIM_EXPORT bool xcb_xim_set_ic_focus(xcb_xim_t* im, xcb_xic_t ic);
+XCB_XIM_EXPORT bool xcb_xim_unset_ic_focus(xcb_xim_t* im, xcb_xic_t ic);
 XCB_XIM_EXPORT bool xcb_xim_forward_event(xcb_xim_t* im, xcb_xic_t ic, xcb_key_press_event_t* event);
-XCB_XIM_EXPORT void xcb_xim_reset_ic(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_reset_ic_callback callback, void* user_data);
+XCB_XIM_EXPORT bool xcb_xim_reset_ic(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_reset_ic_callback callback, void* user_data);
 XCB_XIM_EXPORT bool xcb_xim_destroy_ic(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_destroy_ic_callback callback, void* user_data);
 XCB_XIM_EXPORT void xcb_xim_close(xcb_xim_t* im);
 #endif // IMCLIENT_H

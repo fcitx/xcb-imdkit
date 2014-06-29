@@ -574,6 +574,7 @@ void _xcb_xim_handle_message(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr
         break;
     case XIM_RESET_IC_REPLY:
         DebugLog("-- XIM_DESTROY_IC_REPLY\n");
+        _xcb_xim_handle_reset_ic_reply(im, hdr, data);
         break;
 
     }
@@ -610,8 +611,12 @@ bool _xcb_xim_filter_event(xcb_xim_t* im, xcb_generic_event_t* event)
     return false;
 }
 
-void _xcb_xim_disconnect(xcb_xim_t* im)
+bool _xcb_xim_disconnect(xcb_xim_t* im)
 {
+    xcb_im_disconnect_fr_t frame;
+    bool fail;
+    _xcb_xim_send_frame(im, frame, fail);
+    return !fail;
 }
 
 bool _xcb_xim_filter_destroy_window(xcb_xim_t* im, xcb_generic_event_t* event)
@@ -654,11 +659,14 @@ void xcb_xim_destroy(xcb_xim_t* im)
 
 void xcb_xim_close(xcb_xim_t* im)
 {
-    if (im->open.phase == XIM_OPEN_PHASE_CHECK_SERVER) {
+    if (im->open.phase == XIM_OPEN_PHASE_DONE) {
+        _xcb_xim_disconnect(im);
+    } else if (im->open.phase == XIM_OPEN_PHASE_CHECK_SERVER) {
         if (im->open.check_server.requestor_window) {
             xcb_destroy_window(im->conn, im->open.check_server.requestor_window);
         }
     }
+    im->opened = false;
 
     free(im->server_atoms);
     im->server_atoms = NULL;
@@ -671,7 +679,6 @@ void xcb_xim_close(xcb_xim_t* im)
         im->client_window = XCB_NONE;
         xcb_flush(im->conn);
     }
-    im->opened = false;
 
     while (im->imattr) {
         xcb_xim_imattr_table_t* imattr = im->imattr;
@@ -710,8 +717,6 @@ void _xcb_xim_request_free(xcb_xim_request_queue_t* request)
             free(items);
             break;
         }
-        case XIM_DESTROY_IC:
-            break;
         case XIM_GET_IM_VALUES:
             free(request->frame.get_im_values.im_attribute_id.items);
             break;
@@ -728,6 +733,10 @@ void _xcb_xim_request_free(xcb_xim_request_queue_t* request)
             free(items);
             break;
         }
+        case XIM_DESTROY_IC:
+        case XIM_FORWARD_EVENT:
+        case XIM_RESET_IC:
+            break;
     }
     free(request);
 }
@@ -751,6 +760,12 @@ bool _xcb_xim_send_request_frame(xcb_xim_t* im, xcb_xim_request_queue_t* request
         break;
     case XIM_SET_IC_VALUES:
         _xcb_xim_send_frame(im, request->frame.set_ic_values, fail);
+        break;
+    case XIM_FORWARD_EVENT:
+        _xcb_xim_send_message(im, request->frame.forward_event, sizeof(request->frame.forward_event));
+        break;
+    case XIM_RESET_IC:
+        _xcb_xim_send_frame(im, request->frame.reset_ic, fail);
         break;
     default:
         break;
@@ -779,6 +794,11 @@ void _xcb_xim_process_fail_callback(xcb_xim_t* im, xcb_xim_request_queue_t* requ
         break;
     case XIM_SET_IC_VALUES:
         request->callback.set_ic_values(im, request->frame.set_ic_values.input_context_ID, request->user_data);
+        break;
+    case XIM_RESET_IC:
+        request->callback.reset_ic(im, request->frame.reset_ic.input_context_ID, NULL, request->user_data);
+        break;
+    case XIM_FORWARD_EVENT:
         break;
     default:
         break;
@@ -1127,3 +1147,65 @@ bool xcb_xim_set_ic_values(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_set_ic_values_ca
 
     return true;
 }
+
+bool xcb_xim_set_ic_focus(xcb_xim_t* im, xcb_xic_t ic)
+{
+    xcb_im_set_ic_focus_fr_t frame;
+    frame.input_method_ID = im->connect_id;
+    frame.input_context_ID = ic;
+
+    bool fail;
+    _xcb_xim_send_frame(im, frame, fail);
+    return !fail;
+}
+
+bool xcb_xim_unset_ic_focus(xcb_xim_t* im, xcb_xic_t ic)
+{
+    xcb_im_unset_ic_focus_fr_t frame;
+    frame.input_method_ID = im->connect_id;
+    frame.input_context_ID = ic;
+
+    bool fail;
+    _xcb_xim_send_frame(im, frame, fail);
+    return !fail;
+}
+
+bool xcb_xim_forward_event(xcb_xim_t* im, xcb_xic_t ic, xcb_key_press_event_t* event)
+{
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_FORWARD_EVENT, 0, NULL, NULL);
+    if (!queue) {
+        return false;
+    }
+    xcb_im_forward_event_fr_t frame;
+    frame.input_method_ID = im->connect_id;
+    frame.input_context_ID = ic;
+    frame.flag = XimSYNCHRONUS;
+    frame.sequence_number = event->sequence;
+
+    const size_t length = xcb_im_forward_event_fr_size(&frame) + sizeof(xcb_key_press_event_t);
+    _xcb_write_xim_message_header(queue->frame.forward_event, XIM_FORWARD_EVENT, 0, length, false);
+    uint8_t* p = xcb_im_forward_event_fr_write(&frame, queue->frame.forward_event + XCB_IM_HEADER_SIZE, false);
+    memcpy(p, event, sizeof(xcb_key_press_event_t));
+
+    list_append(&queue->list, &im->queue);
+
+    _xcb_xim_process_queue(im);
+    return true;
+}
+
+bool xcb_xim_reset_ic(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_reset_ic_callback callback, void* user_data)
+{
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_RESET_IC, 0, NULL, NULL);
+    if (!queue) {
+        return false;
+    }
+
+    queue->frame.reset_ic.input_method_ID = im->connect_id;
+    queue->frame.reset_ic.input_context_ID = ic;
+
+    list_append(&queue->list, &im->queue);
+
+    _xcb_xim_process_queue(im);
+    return true;
+}
+

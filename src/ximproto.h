@@ -106,6 +106,7 @@
     xcb_im_register_triggerkeys_fr_t: XIM_REGISTER_TRIGGERKEYS, \
     xcb_im_destroy_ic_fr_t: XIM_DESTROY_IC, \
     xcb_im_destroy_ic_reply_fr_t: XIM_DESTROY_IC_REPLY, \
+    xcb_im_reset_ic_fr_t: XIM_RESET_IC, \
     xcb_im_reset_ic_reply_fr_t: XIM_RESET_IC_REPLY, \
     xcb_im_trigger_notify_reply_fr_t: XIM_TRIGGER_NOTIFY_REPLY, \
     xcb_im_preedit_start_fr_t: XIM_PREEDIT_START, \
@@ -119,6 +120,9 @@
     xcb_im_commit_chars_fr_t: XIM_COMMIT, \
     xcb_im_commit_both_fr_t: XIM_COMMIT, \
     xcb_im_connect_fr_t: XIM_CONNECT, \
+    xcb_im_disconnect_fr_t: XIM_DISCONNECT, \
+    xcb_im_set_ic_focus_fr_t: XIM_SET_IC_FOCUS, \
+    xcb_im_unset_ic_focus_fr_t: XIM_UNSET_IC_FOCUS, \
     xcb_im_geometry_fr_t: XIM_GEOMETRY \
     )
 
@@ -181,6 +185,11 @@ typedef struct _xcb_im_ext_list{
 #define XNHotKeyState "hotKeyState"
 #define XNPreeditState "preeditState"
 #define XNSeparatorofNestedList "separatorofNestedList"
+
+/*
+ * value for the flag of XIM_FORWARD_EVENT, XIM_COMMIT
+ */
+#define XimSYNCHRONUS         0x0001
 
 
 typedef enum _xcb_im_style_t

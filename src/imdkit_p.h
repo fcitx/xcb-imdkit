@@ -53,27 +53,6 @@
  */
 #define XIM_Default_Encoding_IDX    -1
 
-/*
- * value for the flag of XIM_FORWARD_EVENT, XIM_COMMIT
- */
-#define XimSYNCHRONUS         0x0001
-
-#define XimType_SeparatorOfNestedList   0
-#define XimType_CARD8           1
-#define XimType_CARD16          2
-#define XimType_CARD32          3
-#define XimType_STRING8         4
-#define XimType_Window          5
-#define XimType_XIMStyles       10
-#define XimType_XRectangle      11
-#define XimType_XPoint          12
-#define XimType_XFontSet        13
-#define XimType_XIMOptions      14
-#define XimType_XIMHotKeyTriggers   15
-#define XimType_XIMHotKeyState      16
-#define XimType_XIMStringConversion 17
-#define XimType_XIMValuesList       18
-#define XimType_NEST            0x7FFF
 
 #define _xcb_im_read_frame_with_error(IM, CLIENT, FRAME, DATA, LEN) \
     do { \

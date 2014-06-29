@@ -12,5 +12,6 @@ void _xcb_xim_handle_get_im_values_reply(xcb_xim_t* im, const xcb_im_packet_head
 void _xcb_xim_handle_register_triggerkeys(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data);
 void _xcb_xim_handle_get_ic_values_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data);
 void _xcb_xim_handle_set_ic_values_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data);
+void _xcb_xim_handle_reset_ic_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data);
 
 #endif // CLIENTPROTOCOLHANDLER_H

@@ -73,6 +73,8 @@ typedef struct _xcb_xim_request_queue_t
         xcb_im_get_im_values_fr_t get_im_values;
         xcb_im_get_ic_values_fr_t get_ic_values;
         xcb_im_set_ic_values_fr_t set_ic_values;
+        uint8_t forward_event[8 + sizeof(xcb_key_press_event_t)];
+        xcb_im_reset_ic_fr_t reset_ic;
     } frame;
 
     union {
@@ -82,6 +84,7 @@ typedef struct _xcb_xim_request_queue_t
         xcb_xim_get_im_values_callback get_im_values;
         xcb_xim_get_ic_values_callback get_ic_values;
         xcb_xim_set_ic_values_callback set_ic_values;
+        xcb_xim_reset_ic_callback reset_ic;
     } callback;
     list_head list;
 } xcb_xim_request_queue_t;

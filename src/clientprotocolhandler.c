@@ -324,3 +324,39 @@ void _xcb_xim_handle_set_ic_values_reply(xcb_xim_t* im, const xcb_im_packet_head
     xcb_im_set_ic_values_reply_fr_free(&frame);
 }
 
+void _xcb_xim_handle_reset_ic_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_reset_ic_reply_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (!im->current) {
+            break;
+        }
+
+        if (im->current->major_code != XIM_SET_IC_VALUES) {
+            break;
+        }
+
+        if (im->current->frame.reset_ic.input_context_ID != frame.input_context_ID) {
+            break;
+        }
+
+        xcb_xim_request_queue_t* request = im->current;
+        im->current = NULL;
+
+        if (request->callback.reset_ic) {
+            request->callback.reset_ic(im, frame.input_context_ID, &frame, request->user_data);
+        }
+
+        _xcb_xim_request_free(request);
+    } while(0);
+    xcb_im_reset_ic_reply_fr_free(&frame);
+
+}
+
+
