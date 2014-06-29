@@ -338,7 +338,7 @@ void _xcb_xim_handle_reset_ic_reply(xcb_xim_t* im, const xcb_im_packet_header_fr
             break;
         }
 
-        if (im->current->major_code != XIM_SET_IC_VALUES) {
+        if (im->current->major_code != XIM_RESET_IC) {
             break;
         }
 
