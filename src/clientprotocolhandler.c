@@ -104,6 +104,8 @@ void _xcb_xim_handle_query_extension_reply(xcb_xim_t* im, const xcb_im_packet_he
         }
 
         // TODO, save extensions here
+
+        _xcb_xim_send_encoding_negotiation(im);
     } while(0);
     xcb_im_query_extension_reply_fr_free(&frame);
 }
@@ -128,6 +130,12 @@ void _xcb_xim_handle_encoding_negotiation_reply(xcb_xim_t* im, const xcb_im_pack
         }
 
         im->opened = true;
+
+        if (im->open.callback) {
+            im->open.callback(im, im->open.user_data);
+        }
+
+        _xcb_change_event_mask(im->conn, im->accept_win, XCB_EVENT_MASK_STRUCTURE_NOTIFY, true);
     } while(0);
     xcb_im_encoding_negotiation_reply_fr_free(&frame);
 }
@@ -150,3 +158,169 @@ void _xcb_xim_handle_register_triggerkeys(xcb_xim_t* im, const xcb_im_packet_hea
     xcb_im_register_triggerkeys_fr_free(&frame);
 
 }
+
+void _xcb_xim_handle_create_ic_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_create_ic_reply_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (!im->current) {
+            break;
+        }
+
+        if (im->current->major_code != XIM_CREATE_IC) {
+            break;
+        }
+
+        xcb_xim_request_queue_t* request = im->current;
+        im->current = NULL;
+
+        if (request->callback.create_ic) {
+            request->callback.create_ic(im, true, frame.input_context_ID, request->user_data);
+        }
+
+        _xcb_xim_request_free(request);
+    } while(0);
+    xcb_im_create_ic_reply_fr_free(&frame);
+}
+
+void _xcb_xim_handle_destroy_ic_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_destroy_ic_reply_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (!im->current) {
+            break;
+        }
+
+        if (im->current->major_code != XIM_DESTROY_IC) {
+            break;
+        }
+
+        if (im->current->frame.destroy_ic.input_context_ID != frame.input_context_ID) {
+            break;
+        }
+
+        xcb_xim_request_queue_t* request = im->current;
+        im->current = NULL;
+
+        if (request->callback.destroy_ic) {
+            request->callback.destroy_ic(im, frame.input_context_ID, request->user_data);
+        }
+
+        _xcb_xim_request_free(request);
+    } while(0);
+    xcb_im_destroy_ic_reply_fr_free(&frame);
+}
+
+void _xcb_xim_handle_get_im_values_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_get_im_values_reply_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (!im->current) {
+            break;
+        }
+
+        if (im->current->major_code != XIM_GET_IM_VALUES) {
+            break;
+        }
+
+        xcb_xim_request_queue_t* request = im->current;
+        im->current = NULL;
+
+        if (request->callback.get_im_values) {
+            request->callback.get_im_values(im, &frame, request->user_data);
+        }
+
+        _xcb_xim_request_free(request);
+    } while(0);
+    xcb_im_get_im_values_reply_fr_free(&frame);
+}
+
+
+void _xcb_xim_handle_get_ic_values_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_get_ic_values_reply_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (!im->current) {
+            break;
+        }
+
+        if (im->current->major_code != XIM_GET_IC_VALUES) {
+            break;
+        }
+
+        if (im->current->frame.get_ic_values.input_context_ID != frame.input_context_ID) {
+            break;
+        }
+
+        xcb_xim_request_queue_t* request = im->current;
+        im->current = NULL;
+
+        if (request->callback.get_ic_values) {
+            request->callback.get_ic_values(im, frame.input_context_ID, &frame, request->user_data);
+        }
+
+        _xcb_xim_request_free(request);
+    } while(0);
+    xcb_im_get_ic_values_reply_fr_free(&frame);
+}
+
+
+
+void _xcb_xim_handle_set_ic_values_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_set_ic_values_reply_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (!im->current) {
+            break;
+        }
+
+        if (im->current->major_code != XIM_SET_IC_VALUES) {
+            break;
+        }
+
+        if (im->current->frame.set_ic_values.input_context_ID != frame.input_context_ID) {
+            break;
+        }
+
+        xcb_xim_request_queue_t* request = im->current;
+        im->current = NULL;
+
+        if (request->callback.set_ic_values) {
+            request->callback.set_ic_values(im, frame.input_context_ID, request->user_data);
+        }
+
+        _xcb_xim_request_free(request);
+    } while(0);
+    xcb_im_set_ic_values_reply_fr_free(&frame);
+}
+

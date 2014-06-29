@@ -7,6 +7,7 @@
 #include <xcb/xcb_aux.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #define CHECK_NEXT_SERVER(IM) \
     do { \
@@ -168,7 +169,9 @@ xcb_xim_open_phase_action_t _xcb_xim_check_server_transport_wait(xcb_xim_t* im, 
     char* value = xcb_get_property_value(reply);
     int length = xcb_get_property_value_length(reply);
     char* trans_addr;
-    if (_xcb_xim_check_transport(im, value, length, &trans_addr)) {
+    bool check_transport = _xcb_xim_check_transport(im, value, length, &trans_addr);
+    free(reply);
+    if (check_transport) {
         im->trans_addr = strdup(trans_addr);
         if (!im->trans_addr) {
             return ACTION_FAILED;
@@ -442,7 +445,9 @@ char* _xcb_xim_make_im_name(const char* imname)
     return strdup(imname);
 }
 
-xcb_xim_t* xcb_xim_create(xcb_connection_t* conn, int screen_id, const char* imname)
+xcb_xim_t* xcb_xim_create(xcb_connection_t* conn,
+                          int screen_id,
+                          const char* imname)
 {
     xcb_xim_t* im = calloc(1, sizeof(xcb_xim_t));
 
@@ -453,6 +458,8 @@ xcb_xim_t* xcb_xim_create(xcb_connection_t* conn, int screen_id, const char* imn
     im->conn = conn;
     im->server_name = _xcb_xim_make_im_name(imname);
     im->screen_id = screen_id;
+    im->open.phase = XIM_OPEN_PHASE_FAIL;
+    list_init(&im->queue);
     uint16_t endian = 1;
     if (*(char *) &endian) {
         im->byte_order = 'l';
@@ -462,8 +469,12 @@ xcb_xim_t* xcb_xim_create(xcb_connection_t* conn, int screen_id, const char* imn
     return im;
 }
 
-bool xcb_xim_open(xcb_xim_t* im)
+bool xcb_xim_open(xcb_xim_t* im,
+                  xcb_xim_open_callback callback,
+                  void* user_data)
 {
+    im->open.callback = callback;
+    im->open.user_data = user_data;
     im->open.phase = XIM_OPEN_PHASE_FAIL;
 
     if (!_xcb_xim_init(im)) {
@@ -504,18 +515,22 @@ void _xcb_xim_handle_message(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr
         break;
     case XIM_GET_IM_VALUES_REPLY:
         DebugLog("-- XIM_GET_IM_VALUES_REPLY\n");
+        _xcb_xim_handle_get_im_values_reply(im, hdr, data);
         break;
     case XIM_SET_EVENT_MASK:
-        DebugLog("-- XIM_COMMIT\n");
+        DebugLog("-- XIM_SET_EVENT_MASK\n");
         break;
     case XIM_CREATE_IC_REPLY:
         DebugLog("-- XIM_CREATE_IC_REPLY\n");
+        _xcb_xim_handle_create_ic_reply(im, hdr, data);
         break;
     case XIM_GET_IC_VALUES_REPLY:
         DebugLog("-- XIM_GET_IC_VALUES_REPLY\n");
+        _xcb_xim_handle_get_ic_values_reply(im, hdr, data);
         break;
     case XIM_SET_IC_VALUES_REPLY:
         DebugLog("-- XIM_SET_IC_VALUES_REPLY\n");
+        _xcb_xim_handle_set_ic_values_reply(im, hdr, data);
         break;
     case XIM_FORWARD_EVENT:
         DebugLog("-- XIM_FORWARD_EVENT\n");
@@ -555,6 +570,7 @@ void _xcb_xim_handle_message(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr
         break;
     case XIM_DESTROY_IC_REPLY:
         DebugLog("-- XIM_DESTROY_IC_REPLY\n");
+        _xcb_xim_handle_destroy_ic_reply(im, hdr, data);
         break;
     case XIM_RESET_IC_REPLY:
         DebugLog("-- XIM_DESTROY_IC_REPLY\n");
@@ -594,13 +610,520 @@ bool _xcb_xim_filter_event(xcb_xim_t* im, xcb_generic_event_t* event)
     return false;
 }
 
+void _xcb_xim_disconnect(xcb_xim_t* im)
+{
+}
+
+bool _xcb_xim_filter_destroy_window(xcb_xim_t* im, xcb_generic_event_t* event)
+{
+    do {
+        if (im->opened) {
+            return false;
+        }
+
+        if ((event->response_type & ~0x80) != XCB_DESTROY_NOTIFY) {
+            break;
+        }
+
+        xcb_destroy_notify_event_t* destroy_notify = (xcb_destroy_notify_event_t*) event;
+
+        if (im->accept_win != destroy_notify->window) {
+            break;
+        }
+
+        _xcb_xim_disconnect(im);
+
+        return true;
+    } while(0);
+
+    return false;
+}
 
 bool xcb_xim_filter_event(xcb_xim_t* im, xcb_generic_event_t* event)
 {
-    return _xcb_xim_preconnect_im(im, event) || _xcb_xim_filter_event(im, event);
+    return _xcb_xim_preconnect_im(im, event)
+        || _xcb_xim_filter_event(im, event)
+        || _xcb_xim_filter_destroy_window(im, event);
+}
+
+void xcb_xim_destroy(xcb_xim_t* im)
+{
+    free(im->server_name);
+    free(im);
 }
 
 void xcb_xim_close(xcb_xim_t* im)
 {
+    if (im->open.phase == XIM_OPEN_PHASE_CHECK_SERVER) {
+        if (im->open.check_server.requestor_window) {
+            xcb_destroy_window(im->conn, im->open.check_server.requestor_window);
+        }
+    }
 
+    free(im->server_atoms);
+    im->server_atoms = NULL;
+    im->n_server_atoms = 0;
+    free(im->trans_addr);
+    im->trans_addr = NULL;
+    im->open.phase = XIM_OPEN_PHASE_FAIL;
+    if (im->client_window != XCB_NONE) {
+        xcb_destroy_window(im->conn, im->client_window);
+        im->client_window = XCB_NONE;
+        xcb_flush(im->conn);
+    }
+    im->opened = false;
+
+    while (im->imattr) {
+        xcb_xim_imattr_table_t* imattr = im->imattr;
+        HASH_DEL(im->imattr, im->imattr);
+        free(imattr->attr.im_attribute);
+        free(imattr);
+    }
+
+    while (im->icattr) {
+        xcb_xim_icattr_table_t* icattr = im->icattr;
+        HASH_DEL(im->icattr, im->icattr);
+        free(icattr->attr.ic_attribute);
+        free(icattr);
+    }
+
+    if (im->current) {
+        _xcb_xim_request_free(im->current);
+    }
+
+    list_entry_foreach_safe(item, xcb_xim_request_queue_t, &im->queue, list) {
+        list_remove(&item->list);
+        _xcb_xim_request_free(item);
+    }
+}
+
+void _xcb_xim_request_free(xcb_xim_request_queue_t* request)
+{
+    switch (request->major_code) {
+        case XIM_CREATE_IC:
+        {
+            xcb_im_xicattribute_fr_t* items = request->frame.create_ic.ic_attributes.items;
+            for (uint32_t i = 0; i < request->frame.create_ic.ic_attributes.size; i ++) {
+                free(items[i].value);
+            }
+
+            free(items);
+            break;
+        }
+        case XIM_DESTROY_IC:
+            break;
+        case XIM_GET_IM_VALUES:
+            free(request->frame.get_im_values.im_attribute_id.items);
+            break;
+        case XIM_GET_IC_VALUES:
+            free(request->frame.get_ic_values.ic_attribute.items);
+            break;
+        case XIM_SET_IC_VALUES:
+        {
+            xcb_im_xicattribute_fr_t* items = request->frame.set_ic_values.ic_attribute.items;
+            for (uint32_t i = 0; i < request->frame.set_ic_values.ic_attribute.size; i ++) {
+                free(items[i].value);
+            }
+
+            free(items);
+            break;
+        }
+    }
+    free(request);
+}
+
+bool _xcb_xim_send_request_frame(xcb_xim_t* im, xcb_xim_request_queue_t* request)
+{
+    bool fail = true;
+    switch(request->major_code)
+    {
+    case XIM_CREATE_IC:
+        _xcb_xim_send_frame(im, request->frame.create_ic, fail);
+        break;
+    case XIM_DESTROY_IC:
+        _xcb_xim_send_frame(im, request->frame.destroy_ic, fail);
+        break;
+    case XIM_GET_IM_VALUES:
+        _xcb_xim_send_frame(im, request->frame.get_im_values, fail);
+        break;
+    case XIM_GET_IC_VALUES:
+        _xcb_xim_send_frame(im, request->frame.get_ic_values, fail);
+        break;
+    case XIM_SET_IC_VALUES:
+        _xcb_xim_send_frame(im, request->frame.set_ic_values, fail);
+        break;
+    default:
+        break;
+    }
+    return !fail;
+}
+
+void _xcb_xim_process_fail_callback(xcb_xim_t* im, xcb_xim_request_queue_t* request)
+{
+    if (!request->callback.generic) {
+        return;
+    }
+    switch(request->major_code)
+    {
+    case XIM_CREATE_IC:
+        request->callback.create_ic(im, false, 0, request->user_data);
+        break;
+    case XIM_DESTROY_IC:
+        request->callback.destroy_ic(im, request->frame.destroy_ic.input_context_ID, request->user_data);
+        break;
+    case XIM_GET_IM_VALUES:
+        request->callback.get_im_values(im, NULL, request->user_data);
+        break;
+    case XIM_GET_IC_VALUES:
+        request->callback.get_ic_values(im, request->frame.get_ic_values.input_context_ID, NULL, request->user_data);
+        break;
+    case XIM_SET_IC_VALUES:
+        request->callback.set_ic_values(im, request->frame.set_ic_values.input_context_ID, request->user_data);
+        break;
+    default:
+        break;
+    }
+}
+
+void _xcb_xim_process_queue(xcb_xim_t* im)
+{
+    while (!im->current && !list_is_empty(&im->queue)) {
+        xcb_xim_request_queue_t* request = list_container_of((im->queue).next, xcb_xim_request_queue_t, list);
+        list_remove(&request->list);
+        if (_xcb_xim_send_request_frame(im, request)) {
+            im->current = request;
+        } else {
+            _xcb_xim_process_fail_callback(im, request);
+            _xcb_xim_request_free(request);
+            im->current = NULL;
+        }
+    }
+}
+
+static inline xcb_xim_icattr_table_t* _xcb_xim_find_icattr(xcb_xim_t* im, const char* attr)
+{
+    xcb_xim_icattr_table_t* icattr = NULL;
+    HASH_FIND_STR(im->icattr, attr, icattr);
+    return icattr;
+}
+
+static inline xcb_xim_imattr_table_t* _xcb_xim_find_imattr(xcb_xim_t* im, const char* attr)
+{
+    xcb_xim_imattr_table_t* imattr = NULL;
+    HASH_FIND_STR(im->imattr, attr, imattr);
+    return imattr;
+}
+
+size_t _xcb_xim_check_valist(xcb_xim_t* im, va_list* var)
+{
+    char *attr;
+
+    size_t count = 0;
+
+    for (attr = va_arg(var, char *);  attr;  attr = va_arg(var, char *)) {
+        (void)va_arg(var, void* *);
+
+        xcb_xim_icattr_table_t* icattr = _xcb_xim_find_icattr(im, attr);
+        if (!icattr) {
+            return 0;
+        }
+        ++count;
+    }
+    return count;
+}
+
+xcb_xim_nested_list xcb_xim_create_nested_list(xcb_xim_t* im, ...)
+{
+    xcb_xim_nested_list result;
+    result.data = 0;
+    result.length = 0;
+
+    va_list var;
+    bool flag = false;
+    size_t totalSize = 0;
+    uint8_t* data = NULL;
+    for (int round = 0; round < 2; round++) {
+        va_start(var, im);
+        for (char* attr = va_arg(var, char*);  attr;  attr = va_arg(var, char *)) {
+            if (round == 0) {
+                (void)va_arg(var, void*);
+
+                xcb_xim_icattr_table_t* icattr = _xcb_xim_find_icattr(im, attr);
+                if (!icattr) {
+                    flag = true;
+                    break;
+                }
+
+                xcb_im_xicattribute_fr_t fr;
+                fr.value_length = _xcb_im_ic_attr_size(icattr->attr.type_of_the_value);
+                if (fr.value_length == 0) {
+                    continue;
+                }
+                totalSize += xcb_im_xicattribute_fr_size(&fr);
+            } else {
+                void* p = va_arg(var, void*);
+                xcb_xim_icattr_table_t* icattr = _xcb_xim_find_icattr(im, attr);
+                uint8_t* start = data;
+                uint16_t value_length = _xcb_im_ic_attr_size(icattr->attr.type_of_the_value);
+                data = uint16_t_write(&icattr->attr.attribute_ID, data, false);
+                data = uint16_t_write(&value_length, data, false);
+                data = _xcb_im_get_ic_value(p, icattr->attr.type_of_the_value, data, false);
+                data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
+            }
+        }
+        va_end(var);
+        if (round == 0) {
+            data = malloc(totalSize);
+            if (!data) {
+                flag = true;
+            } else {
+                result.data = data;
+                result.length = totalSize;
+            }
+        }
+        if (flag) {
+            break;
+        }
+    }
+
+    return result;
+}
+
+
+#define _xcb_xim_new_request(im, major_code, minor_code, callback, user_data) __xcb_xim_new_request(im, major_code, minor_code, (xcb_xim_callback) callback, user_data)
+
+xcb_xim_request_queue_t* __xcb_xim_new_request(xcb_xim_t* im,
+                                               uint8_t major_code,
+                                               uint8_t minor_code,
+                                               xcb_xim_callback callback,
+                                               void* user_data)
+{
+    xcb_xim_request_queue_t* queue = calloc(1, sizeof(xcb_xim_request_queue_t));
+    if (!queue) {
+        return NULL;
+    }
+    queue->major_code = major_code;
+    queue->minor_code = minor_code;
+    queue->callback.generic = callback;
+    queue->user_data = user_data;
+
+    return queue;
+}
+
+bool xcb_xim_create_ic(xcb_xim_t* im, xcb_xim_create_ic_callback callback, void* user_data, ...)
+{
+    if (!im->opened) {
+        return false;
+    }
+
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_CREATE_IC, 0, callback, user_data);
+    if (!queue) {
+        return false;
+    }
+
+
+    va_list var;
+    va_start(var, user_data);
+    queue->frame.create_ic.input_method_ID = im->connect_id;
+    queue->frame.create_ic.ic_attributes.size = _xcb_xim_check_valist(im, &var);
+    queue->frame.create_ic.ic_attributes.items = calloc(queue->frame.create_ic.ic_attributes.size, sizeof(xcb_im_xicattribute_fr_t));
+    va_end(var);
+
+    if (!queue->frame.create_ic.ic_attributes.items) {
+        free(queue);
+        return false;
+    }
+
+    xcb_im_xicattribute_fr_t* items = queue->frame.create_ic.ic_attributes.items;
+    uint32_t nItems = queue->frame.create_ic.ic_attributes.size;
+
+    va_start(var, user_data);
+    for (uint32_t i = 0; i < nItems; i++) {
+        char* attr = va_arg(var, char *);
+        void* p = va_arg(var, void*);
+
+        xcb_xim_icattr_table_t* icattr = _xcb_xim_find_icattr(im, attr);
+        items[i].attribute_ID = icattr->attr.attribute_ID;
+        if (icattr->attr.type_of_the_value == XimType_NEST) {
+            xcb_xim_nested_list* nested = p;
+            items[i].value_length = nested->length;
+            items[i].value = malloc(nested->length);
+            memcpy(items[i].value, nested->data, nested->length);
+        } else {
+            items[i].value_length = _xcb_im_ic_attr_size(icattr->attr.type_of_the_value);
+            items[i].value = malloc(items[i].value_length);
+            _xcb_im_get_ic_value(p, icattr->attr.type_of_the_value, items[i].value, false);
+        }
+    }
+    va_end(var);
+
+    list_append(&queue->list, &im->queue);
+
+    _xcb_xim_process_queue(im);
+
+    return true;
+}
+
+bool xcb_xim_destroy_ic(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_destroy_ic_callback callback, void* user_data)
+{
+    if (!im->opened) {
+        return false;
+    }
+
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_DESTROY_IC, 0, callback, user_data);
+    if (!queue) {
+        return false;
+    }
+
+    queue->frame.destroy_ic.input_method_ID = im->connect_id;
+    queue->frame.destroy_ic.input_context_ID = ic;
+
+    list_append(&queue->list, &im->queue);
+
+    _xcb_xim_process_queue(im);
+
+    return true;
+}
+
+void _xcb_xim_send_and_reply_mismatch(xcb_xim_t* im)
+{
+}
+
+bool xcb_xim_get_im_values(xcb_xim_t* im, xcb_xim_get_im_values_callback callback, void* user_data, ...)
+{
+    if (!im->opened) {
+        return false;
+    }
+    va_list var;
+    va_start(var, user_data);
+    uint32_t count = 0;
+    for (char* attr = va_arg(var, char*);  attr;  attr = va_arg(var, char *)) {
+        xcb_xim_imattr_table_t* imattr = _xcb_xim_find_imattr(im, attr);
+        if (imattr) {
+            count++;
+        }
+    }
+    va_end(var);
+
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_GET_IM_VALUES, 0, callback, user_data);
+    if (!queue) {
+        return false;
+    }
+
+    queue->frame.get_im_values.input_method_ID = im->connect_id;
+    queue->frame.get_im_values.im_attribute_id.size = count;
+    queue->frame.get_im_values.im_attribute_id.items = calloc(count, sizeof(uint16_t));
+    va_start(var, user_data);
+    count = 0;
+    for (char* attr = va_arg(var, char*);  attr;  attr = va_arg(var, char *)) {
+        xcb_xim_imattr_table_t* imattr = _xcb_xim_find_imattr(im, attr);
+        if (imattr) {
+            queue->frame.get_im_values.im_attribute_id.items[count] = imattr->attr.attribute_ID;
+            count++;
+        }
+    }
+    va_end(var);
+
+    list_append(&queue->list, &im->queue);
+
+    _xcb_xim_process_queue(im);
+
+    return true;
+}
+
+bool xcb_xim_get_ic_values(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_get_ic_values_callback callback, void* user_data, ...)
+{
+    if (!im->opened) {
+        return false;
+    }
+    va_list var;
+    va_start(var, user_data);
+    uint32_t count = 0;
+    for (char* attr = va_arg(var, char*);  attr;  attr = va_arg(var, char *)) {
+        xcb_xim_icattr_table_t* icattr = _xcb_xim_find_icattr(im, attr);
+        if (icattr) {
+            count++;
+        }
+    }
+    va_end(var);
+
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_GET_IC_VALUES, 0, callback, user_data);
+    if (!queue) {
+        return false;
+    }
+
+    queue->frame.get_ic_values.input_method_ID = im->connect_id;
+    queue->frame.get_ic_values.input_context_ID = im->connect_id;
+    queue->frame.get_ic_values.ic_attribute.size = count;
+    queue->frame.get_ic_values.ic_attribute.items = calloc(count, sizeof(uint16_t));
+    va_start(var, user_data);
+    count = 0;
+    for (char* attr = va_arg(var, char*);  attr;  attr = va_arg(var, char *)) {
+        xcb_xim_icattr_table_t* icattr = _xcb_xim_find_icattr(im, attr);
+        if (icattr) {
+            queue->frame.get_ic_values.ic_attribute.items[count] = icattr->attr.attribute_ID;
+            count++;
+        }
+    }
+    va_end(var);
+
+    list_append(&queue->list, &im->queue);
+
+    _xcb_xim_process_queue(im);
+
+    return true;
+}
+
+bool xcb_xim_set_ic_values(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_set_ic_values_callback callback, void* user_data, ...)
+{
+    if (!im->opened) {
+        return false;
+    }
+
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_SET_IC_VALUES, 0, callback, user_data);
+    if (!queue) {
+        return false;
+    }
+
+    va_list var;
+    va_start(var, user_data);
+    queue->frame.set_ic_values.input_method_ID = im->connect_id;
+    queue->frame.set_ic_values.input_context_ID = ic;
+    queue->frame.set_ic_values.ic_attribute.size = _xcb_xim_check_valist(im, &var);
+    queue->frame.set_ic_values.ic_attribute.items = calloc(queue->frame.set_ic_values.ic_attribute.size, sizeof(xcb_im_xicattribute_fr_t));
+    va_end(var);
+
+    if (!queue->frame.set_ic_values.ic_attribute.items) {
+        free(queue);
+        return false;
+    }
+
+    xcb_im_xicattribute_fr_t* items = queue->frame.set_ic_values.ic_attribute.items;
+    uint32_t nItems = queue->frame.set_ic_values.ic_attribute.size;
+
+    va_start(var, user_data);
+    for (uint32_t i = 0; i < nItems; i++) {
+        char* attr = va_arg(var, char *);
+        void* p = va_arg(var, void*);
+
+        xcb_xim_icattr_table_t* icattr = _xcb_xim_find_icattr(im, attr);
+        items[i].attribute_ID = icattr->attr.attribute_ID;
+        if (icattr->attr.type_of_the_value == XimType_NEST) {
+            xcb_xim_nested_list* nested = p;
+            items[i].value_length = nested->length;
+            items[i].value = malloc(nested->length);
+            memcpy(items[i].value, nested->data, nested->length);
+        } else {
+            items[i].value_length = _xcb_im_ic_attr_size(icattr->attr.type_of_the_value);
+            items[i].value = malloc(items[i].value_length);
+            _xcb_im_get_ic_value(p, icattr->attr.type_of_the_value, items[i].value, false);
+        }
+    }
+    va_end(var);
+
+    list_append(&queue->list, &im->queue);
+
+    _xcb_xim_process_queue(im);
+
+    return true;
 }

@@ -419,78 +419,14 @@ void _xcb_im_handle_set_ic_values(xcb_im_t* im,
     return;
 }
 
-uint8_t* _xcb_im_get_ic_value(xcb_im_t* im,
-                              xcb_im_input_context_table_t* ic,
-                              void* p,
-                              const xcb_im_default_ic_attr_t* icattr,
-                              uint8_t* data)
-{
-    switch (icattr->type) {
-        case XimType_CARD32:
-        case XimType_Window:
-        {
-            uint32_t* result = p;
-            data = uint32_t_write(result, data, im->byte_order != ic->ic.client->byte_order);
-            break;
-        }
-        case XimType_XRectangle:
-        {
-            xcb_rectangle_t* result = p;
-            xcb_im_xrectangle_fr_t fr;
-            fr.x = result->x;
-            fr.y = result->y;
-            fr.width = result->width;
-            fr.height = result->height;
-            data = xcb_im_xrectangle_fr_write(&fr, data, im->byte_order != ic->ic.client->byte_order);
-            break;
-        }
-        case XimType_XPoint:
-        {
-            xcb_point_t* result = p;
-            xcb_im_xpoint_fr_t fr;
-            fr.x = result->x;
-            fr.y = result->y;
-            data = xcb_im_xpoint_fr_write(&fr, data, im->byte_order != ic->ic.client->byte_order);
-            break;
-        }
-        case XimType_XFontSet:
-        {
-            break;
-        }
-    }
-    return data;
-}
-
-size_t _xcb_im_ic_attr_size(uint32_t type)
-{
-    switch (type) {
-        case XimType_CARD32:
-        case XimType_Window:
-        {
-            return sizeof(uint32_t);
-        }
-        case XimType_XRectangle:
-        {
-            xcb_im_xrectangle_fr_t fr;
-            return xcb_im_xrectangle_fr_size(&fr);
-        }
-        case XimType_XPoint:
-        {
-            xcb_im_xpoint_fr_t fr;
-            return xcb_im_xpoint_fr_size(&fr);
-        }
-    }
-    return 0;
-}
-
 uint32_t _xcb_im_get_nested_ic_values(xcb_im_t* im,
-                                        xcb_im_input_context_table_t* ic,
-                                        void* p,
-                                        ssize_t* offsets,
-                                        uint16_t* attrIDs,
-                                        uint32_t i,
-                                        uint32_t size,
-                                        xcb_im_xicattribute_fr_t* attr)
+                                      xcb_im_input_context_table_t* ic,
+                                      void* p,
+                                      ssize_t* offsets,
+                                      uint16_t* attrIDs,
+                                      uint32_t i,
+                                      uint32_t size,
+                                      xcb_im_xicattribute_fr_t* attr)
 {
     size_t totalSize = 0;
     uint8_t* data = NULL;
@@ -503,6 +439,7 @@ uint32_t _xcb_im_get_nested_ic_values(xcb_im_t* im,
                 continue;
             }
 
+            // calculate size
             if (round == 0) {
                 xcb_im_xicattribute_fr_t fr;
                 fr.value_length = _xcb_im_ic_attr_size(entry->type);
@@ -513,7 +450,7 @@ uint32_t _xcb_im_get_nested_ic_values(xcb_im_t* im,
                 bool swap = im->byte_order != ic->ic.client->byte_order;
                 data = uint16_t_write(&attrIDs[i], data, swap);
                 data = uint16_t_write(&value_length, data, swap);
-                data = _xcb_im_get_ic_value(im, ic, (((uint8_t*)p) + offsets[attrIDs[i]]), entry, data);
+                data = _xcb_im_get_ic_value((((uint8_t*)p) + offsets[attrIDs[i]]), entry->type, data, swap);
                 data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
             }
         }

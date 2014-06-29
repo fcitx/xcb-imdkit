@@ -5,8 +5,7 @@
 #include "uthash.h"
 #include "message.h"
 #include "imclient.h"
-
-
+#include "list.h"
 
 // this phase is basically a directly mapping from _XimSOMETHING function in Xlib
 // state machine is more suitable for xcb asynchronous nature.
@@ -35,6 +34,8 @@ typedef enum _xcb_xim_open_connect_phase_t {
 typedef struct _xcb_xim_open_t
 {
     xcb_xim_open_phase_t phase;
+    xcb_xim_open_callback callback;
+    void* user_data;
     union {
         struct {
             int index;
@@ -60,6 +61,30 @@ typedef struct _xcb_xim_icattr_table_t
     xcb_im_xicattr_fr_t attr;
     UT_hash_handle hh;
 } xcb_xim_icattr_table_t;
+
+typedef struct _xcb_xim_request_queue_t
+{
+    uint8_t major_code;
+    uint8_t minor_code;
+    void* user_data;
+    union {
+        xcb_im_create_ic_fr_t create_ic;
+        xcb_im_destroy_ic_fr_t destroy_ic;
+        xcb_im_get_im_values_fr_t get_im_values;
+        xcb_im_get_ic_values_fr_t get_ic_values;
+        xcb_im_set_ic_values_fr_t set_ic_values;
+    } frame;
+
+    union {
+        void (*generic)();
+        xcb_xim_create_ic_callback create_ic;
+        xcb_xim_destroy_ic_callback destroy_ic;
+        xcb_xim_get_im_values_callback get_im_values;
+        xcb_xim_get_ic_values_callback get_ic_values;
+        xcb_xim_set_ic_values_callback set_ic_values;
+    } callback;
+    list_head list;
+} xcb_xim_request_queue_t;
 
 struct _xcb_xim_t
 {
@@ -101,6 +126,10 @@ struct _xcb_xim_t
     uint16_t connect_id;
     xcb_xim_imattr_table_t* imattr;
     xcb_xim_icattr_table_t* icattr;
+
+    // request
+    xcb_xim_request_queue_t* current;
+    list_head queue;
 };
 
 #define _xcb_xim_read_frame(FRAME, DATA, LEN, FAIL) \
@@ -144,5 +173,6 @@ struct _xcb_xim_t
 
 bool _xcb_xim_send_message(xcb_xim_t* im,
                            uint8_t* data, size_t length);
+void _xcb_xim_request_free(xcb_xim_request_queue_t* request);
 
 #endif // IMCLIENT_P_H

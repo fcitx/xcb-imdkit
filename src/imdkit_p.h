@@ -43,26 +43,6 @@
 #define LITTLEENDIAN    (CARD8) 0x6c    /* LSB first */
 
 /*
- * values for the type of XIMATTR & XICATTR
- */
-#define XimType_SeparatorOfNestedList   0
-#define XimType_CARD8           1
-#define XimType_CARD16          2
-#define XimType_CARD32          3
-#define XimType_STRING8         4
-#define XimType_Window          5
-#define XimType_XIMStyles       10
-#define XimType_XRectangle      11
-#define XimType_XPoint          12
-#define XimType_XFontSet        13
-#define XimType_XIMOptions      14
-#define XimType_XIMHotKeyTriggers   15
-#define XimType_XIMHotKeyState      16
-#define XimType_XIMStringConversion 17
-#define XimType_XIMValuesList       18
-#define XimType_NEST            0x7FFF
-
-/*
  * values for the category of XIM_ENCODING_NEGOTIATON_REPLY
  */
 #define XIM_Encoding_NameCategory   0
@@ -77,51 +57,6 @@
  * value for the flag of XIM_FORWARD_EVENT, XIM_COMMIT
  */
 #define XimSYNCHRONUS         0x0001
-
-
-#define XNVaNestedList "XNVaNestedList"
-#define XNQueryInputStyle "queryInputStyle"
-#define XNClientWindow "clientWindow"
-#define XNInputStyle "inputStyle"
-#define XNFocusWindow "focusWindow"
-#define XNResourceName "resourceName"
-#define XNResourceClass "resourceClass"
-#define XNGeometryCallback "geometryCallback"
-#define XNDestroyCallback "destroyCallback"
-#define XNFilterEvents "filterEvents"
-#define XNPreeditStartCallback "preeditStartCallback"
-#define XNPreeditDoneCallback "preeditDoneCallback"
-#define XNPreeditDrawCallback "preeditDrawCallback"
-#define XNPreeditCaretCallback "preeditCaretCallback"
-#define XNPreeditStateNotifyCallback "preeditStateNotifyCallback"
-#define XNPreeditAttributes "preeditAttributes"
-#define XNStatusStartCallback "statusStartCallback"
-#define XNStatusDoneCallback "statusDoneCallback"
-#define XNStatusDrawCallback "statusDrawCallback"
-#define XNStatusAttributes "statusAttributes"
-#define XNArea "area"
-#define XNAreaNeeded "areaNeeded"
-#define XNSpotLocation "spotLocation"
-#define XNColormap "colorMap"
-#define XNStdColormap "stdColorMap"
-#define XNForeground "foreground"
-#define XNBackground "background"
-#define XNBackgroundPixmap "backgroundPixmap"
-#define XNFontSet "fontSet"
-#define XNLineSpace "lineSpace"
-#define XNCursor "cursor"
-
-#define XNQueryIMValuesList "queryIMValuesList"
-#define XNQueryICValuesList "queryICValuesList"
-#define XNVisiblePosition "visiblePosition"
-#define XNR6PreeditCallback "r6PreeditCallback"
-#define XNStringConversionCallback "stringConversionCallback"
-#define XNStringConversion "stringConversion"
-#define XNResetState "resetState"
-#define XNHotKey "hotKey"
-#define XNHotKeyState "hotKeyState"
-#define XNPreeditState "preeditState"
-#define XNSeparatorofNestedList "separatorofNestedList"
 
 #define XimType_SeparatorOfNestedList   0
 #define XimType_CARD8           1

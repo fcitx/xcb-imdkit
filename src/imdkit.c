@@ -321,6 +321,7 @@ xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_wind
     int new_connect_id;
     if (im->free_list) {
         client = im->free_list;
+        // save as a cache, since we want to memset the item from free list
         new_connect_id = client->c.connect_id;
         xcb_im_client_table_t* dup = NULL;
         HASH_FIND(hh1, im->clients_by_id, &new_connect_id, sizeof(uint16_t), dup);
@@ -328,8 +329,8 @@ xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_wind
             DebugLog("Bug in implementation");
             return NULL;
         }
-        memset(&client->hh1, 0, sizeof(UT_hash_handle));
-        memset(&client->hh2, 0, sizeof(UT_hash_handle));
+        memset(client, 0, sizeof(xcb_im_client_table_t));
+        client->c.connect_id = new_connect_id;
         im->free_list = im->free_list->hh1.next;
     } else {
         new_connect_id = ++im->connect_id;
@@ -396,7 +397,8 @@ xcb_im_input_context_table_t* _xcb_im_new_input_context(xcb_im_t* im,
         }
 
         client->ic_free_list = client->ic_free_list->hh.next;
-        memset(&ic->hh, 0, sizeof(UT_hash_handle));
+        memset(ic, 0, sizeof(xcb_im_input_context_table_t));
+        ic->ic.id = icid;
     } else {
         icid = ++client->icid;
         xcb_im_input_context_table_t* dup = NULL;

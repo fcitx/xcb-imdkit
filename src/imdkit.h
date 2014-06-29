@@ -24,18 +24,6 @@
     "si,sid,sk,sl,so,sq,sr,ss,st,sv,sw,ta,te,tg,th,ti,tig,tk,tl,tn,tr," \
     "ts,tt,ug,uk,unm,ur,uz,ve,vi,wa,wae,wal,wo,xh,yi,yo,yue,zh,zu"
 
-typedef enum _xcb_im_style_t
-{
-    XCB_IM_PreeditArea      = 0x0001,
-    XCB_IM_PreeditCallbacks = 0x0002,
-    XCB_IM_PreeditPosition  = 0x0004,
-    XCB_IM_PreeditNothing   = 0x0008,
-    XCB_IM_PreeditNone      = 0x0010,
-    XCB_IM_StatusArea       = 0x0100,
-    XCB_IM_StatusCallbacks  = 0x0200,
-    XCB_IM_StatusNothing    = 0x0400,
-    XCB_IM_StatusNone       = 0x0800,
-} xcb_im_style_t;
 typedef struct _xcb_im_styles_t
 {
     uint32_t nStyles;
