@@ -813,11 +813,6 @@ void _xcb_im_handle_trigger_notify(xcb_im_t* im, xcb_im_client_table_t* client, 
         reply_frame.input_method_ID = frame.input_method_ID;
         reply_frame.input_context_ID = frame.input_context_ID;
 
-        // use stack to avoid alloc fails
-        const size_t length = 4 /* xcb_im_trigger_notify_reply_fr_size(&reply_frame) */;
-        uint8_t message[XCB_IM_HEADER_SIZE + length];
-        _xcb_write_xim_message_header(message, frame_opcode(reply_frame), 0, length, im->byte_order != ic->ic.client->byte_order);
-        xcb_im_trigger_notify_reply_fr_write(&reply_frame, message + XCB_IM_HEADER_SIZE, im->byte_order != ic->ic.client->byte_order);
 
         /* NOTE:
          * XIM_TRIGGER_NOTIFY_REPLY should be sent before XIM_SET_EVENT_MASK
@@ -826,7 +821,7 @@ void _xcb_im_handle_trigger_notify(xcb_im_t* im, xcb_im_client_table_t* client, 
          * XIM_TRIGGER_NOTIFY(flag == OFF).
          */
         if (frame.flag == 0) {
-            _xcb_im_send_message(im, client, message, length);
+            _xcb_im_send_frame(im, client, reply_frame, false);
             xcb_im_preedit_start(im, &ic->ic);
         }
 
@@ -836,7 +831,7 @@ void _xcb_im_handle_trigger_notify(xcb_im_t* im, xcb_im_client_table_t* client, 
 
         if (frame.flag == 1) {
             xcb_im_preedit_end(im, &ic->ic);
-            _xcb_im_send_message(im, client, message, length);
+            _xcb_im_send_frame(im, client, reply_frame, false);
         }
 
     } while(0);

@@ -24,15 +24,24 @@ bool _xcb_im_init_atoms(xcb_connection_t* conn, size_t n, const char** atom_name
     return (i == n);
 }
 
-bool _xcb_change_event_mask(xcb_connection_t* conn, xcb_window_t window, uint32_t mask, bool remove)
+uint32_t _xcb_get_event_mask(xcb_connection_t* conn, xcb_window_t window)
 {
+    if (window == XCB_NONE) {
+        return 0;
+    }
     xcb_get_window_attributes_cookie_t cookie = xcb_get_window_attributes(conn, window);
     xcb_get_window_attributes_reply_t* reply = xcb_get_window_attributes_reply(conn, cookie, NULL);
     if (!reply) {
-        return false;
+        return 0;
     }
     uint32_t your_event_mask = reply->your_event_mask;
     free(reply);
+    return your_event_mask;
+}
+
+bool _xcb_change_event_mask(xcb_connection_t* conn, xcb_window_t window, uint32_t mask, bool remove)
+{
+    uint32_t your_event_mask = _xcb_get_event_mask(conn, window);
 
     uint32_t masks[1];
     if (remove) {

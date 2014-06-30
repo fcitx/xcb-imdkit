@@ -16,6 +16,9 @@ bool _xcb_xim_send_query_extension(xcb_xim_t* im)
 
     bool fail;
     _xcb_xim_send_frame(im, frame, fail);
+    if (!fail) {
+        im->open_state = XIM_OPEN_WAIT_EXTENSION_REPLY;
+    }
     return !fail;
 }
 
@@ -34,11 +37,17 @@ bool _xcb_xim_send_encoding_negotiation(xcb_xim_t* im)
 
     bool fail;
     _xcb_xim_send_frame(im, frame, fail);
+    if (!fail) {
+        im->open_state = XIM_OPEN_WAIT_ENCODING_REPLY;
+    }
     return !fail;
 }
 
 void _xcb_xim_handle_open_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
+    if (im->open_state != XIM_OPEN_WAIT_OPEN_REPLY) {
+        return;
+    }
     xcb_im_open_reply_fr_t frame;
     bool fail;
     _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
@@ -91,6 +100,9 @@ void _xcb_xim_handle_open_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* 
 
 void _xcb_xim_handle_query_extension_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
+    if (im->open_state != XIM_OPEN_WAIT_EXTENSION_REPLY) {
+        return;
+    }
     xcb_im_query_extension_reply_fr_t frame;
     bool fail;
     _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
@@ -103,7 +115,12 @@ void _xcb_xim_handle_query_extension_reply(xcb_xim_t* im, const xcb_im_packet_he
             break;
         }
 
-        // TODO, save extensions here
+        im->extensions =frame.list_of_extensions_supported_by_th.size ? calloc(frame.list_of_extensions_supported_by_th.size, sizeof(xcb_xim_extension_t)) : NULL;
+        im->nExtensions = frame.list_of_extensions_supported_by_th.size;
+        for (uint32_t i = 0; i < frame.list_of_extensions_supported_by_th.size; i++) {
+            im->extensions[i].major_code = frame.list_of_extensions_supported_by_th.items[i].extension_major_opcode;
+            im->extensions[i].minor_code = frame.list_of_extensions_supported_by_th.items[i].extension_minor_opcode;
+        }
 
         _xcb_xim_send_encoding_negotiation(im);
     } while(0);
@@ -112,6 +129,9 @@ void _xcb_xim_handle_query_extension_reply(xcb_xim_t* im, const xcb_im_packet_he
 
 void _xcb_xim_handle_encoding_negotiation_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
+    if (im->open_state != XIM_OPEN_WAIT_ENCODING_REPLY) {
+        return;
+    }
     xcb_im_encoding_negotiation_reply_fr_t frame;
     bool fail;
     _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
@@ -120,22 +140,19 @@ void _xcb_xim_handle_encoding_negotiation_reply(xcb_xim_t* im, const xcb_im_pack
     }
 
     do {
-        if (frame.input_method_ID != im->connect_id) {
-            break;
-        }
-
         // we only send compound
-        if (frame.index_of_the_encoding_dterminated != 0) {
+        if (frame.input_method_ID != im->connect_id
+         && frame.index_of_the_encoding_dterminated != 0) {
             break;
         }
 
-        im->opened = true;
+        im->open_state = XIM_OPEN_DONE;
 
-        if (im->open.callback) {
-            im->open.callback(im, im->open.user_data);
+        if (im->connect_state.callback) {
+            im->connect_state.callback(im, im->connect_state.user_data);
         }
 
-        _xcb_change_event_mask(im->conn, im->accept_win, XCB_EVENT_MASK_STRUCTURE_NOTIFY, true);
+        _xcb_change_event_mask(im->conn, im->accept_win, XCB_EVENT_MASK_STRUCTURE_NOTIFY, false);
     } while(0);
     xcb_im_encoding_negotiation_reply_fr_free(&frame);
 }
@@ -152,8 +169,27 @@ void _xcb_xim_handle_register_triggerkeys(xcb_xim_t* im, const xcb_im_packet_hea
     do {
         // we dont check (frame.input_method_ID != im->connect_id);
         // here because this is send with open_reply
+        free(im->onKeys.keys);
+        free(im->offKeys.keys);
 
-        // TODO save register trigger keys here
+        im->onKeys.keys = frame.on_keys_list.size ? calloc(frame.on_keys_list.size, sizeof(xcb_im_ximtriggerkey_fr_t)) : NULL;
+        im->offKeys.keys = frame.off_keys_list.size ? calloc(frame.off_keys_list.size, sizeof(xcb_im_ximtriggerkey_fr_t)) : NULL;
+        if ((frame.on_keys_list.size && !im->onKeys.keys)
+         || (frame.off_keys_list.size && !im->offKeys.keys)) {
+            free(im->onKeys.keys);
+            free(im->offKeys.keys);
+            im->onKeys.keys = im->offKeys.keys = NULL;
+            im->onKeys.nKeys = im->offKeys.nKeys = 0;
+        }
+
+        im->onKeys.nKeys = frame.on_keys_list.size;
+        im->offKeys.nKeys = frame.off_keys_list.size;
+        if (frame.on_keys_list.size) {
+            memcpy(im->onKeys.keys, frame.on_keys_list.items, frame.on_keys_list.size* sizeof(xcb_im_ximtriggerkey_fr_t));
+        }
+        if (frame.off_keys_list.size) {
+            memcpy(im->offKeys.keys, frame.off_keys_list.items, frame.off_keys_list.size* sizeof(xcb_im_ximtriggerkey_fr_t));
+        }
     } while(0);
     xcb_im_register_triggerkeys_fr_free(&frame);
 
@@ -173,7 +209,8 @@ void _xcb_xim_handle_create_ic_reply(xcb_xim_t* im, const xcb_im_packet_header_f
             break;
         }
 
-        if (im->current->major_code != XIM_CREATE_IC) {
+        if (im->current->major_code != XIM_CREATE_IC
+         && im->connect_id != frame.input_method_ID) {
             break;
         }
 
@@ -181,7 +218,7 @@ void _xcb_xim_handle_create_ic_reply(xcb_xim_t* im, const xcb_im_packet_header_f
         im->current = NULL;
 
         if (request->callback.create_ic) {
-            request->callback.create_ic(im, true, frame.input_context_ID, request->user_data);
+            request->callback.create_ic(im, frame.input_context_ID, request->user_data);
         }
 
         _xcb_xim_request_free(request);
@@ -203,11 +240,9 @@ void _xcb_xim_handle_destroy_ic_reply(xcb_xim_t* im, const xcb_im_packet_header_
             break;
         }
 
-        if (im->current->major_code != XIM_DESTROY_IC) {
-            break;
-        }
-
-        if (im->current->frame.destroy_ic.input_context_ID != frame.input_context_ID) {
+        if (im->current->major_code != XIM_DESTROY_IC
+         && im->connect_id != frame.input_method_ID
+         && im->current->frame.destroy_ic.input_context_ID != frame.input_context_ID) {
             break;
         }
 
@@ -237,7 +272,8 @@ void _xcb_xim_handle_get_im_values_reply(xcb_xim_t* im, const xcb_im_packet_head
             break;
         }
 
-        if (im->current->major_code != XIM_GET_IM_VALUES) {
+        if (im->current->major_code != XIM_GET_IM_VALUES
+         && im->connect_id != frame.input_method_ID) {
             break;
         }
 
@@ -268,11 +304,9 @@ void _xcb_xim_handle_get_ic_values_reply(xcb_xim_t* im, const xcb_im_packet_head
             break;
         }
 
-        if (im->current->major_code != XIM_GET_IC_VALUES) {
-            break;
-        }
-
-        if (im->current->frame.get_ic_values.input_context_ID != frame.input_context_ID) {
+        if (im->current->major_code != XIM_GET_IC_VALUES
+         && im->connect_id != frame.input_method_ID
+         && im->current->frame.get_ic_values.input_context_ID != frame.input_context_ID) {
             break;
         }
 
@@ -304,11 +338,9 @@ void _xcb_xim_handle_set_ic_values_reply(xcb_xim_t* im, const xcb_im_packet_head
             break;
         }
 
-        if (im->current->major_code != XIM_SET_IC_VALUES) {
-            break;
-        }
-
-        if (im->current->frame.set_ic_values.input_context_ID != frame.input_context_ID) {
+        if (im->current->major_code != XIM_SET_IC_VALUES
+         && im->connect_id != frame.input_method_ID
+         && im->current->frame.set_ic_values.input_context_ID != frame.input_context_ID) {
             break;
         }
 
@@ -338,11 +370,9 @@ void _xcb_xim_handle_reset_ic_reply(xcb_xim_t* im, const xcb_im_packet_header_fr
             break;
         }
 
-        if (im->current->major_code != XIM_RESET_IC) {
-            break;
-        }
-
-        if (im->current->frame.reset_ic.input_context_ID != frame.input_context_ID) {
+        if (im->current->major_code != XIM_RESET_IC
+         && im->connect_id != frame.input_method_ID
+         && im->current->frame.reset_ic.input_context_ID != frame.input_context_ID) {
             break;
         }
 
@@ -359,4 +389,340 @@ void _xcb_xim_handle_reset_ic_reply(xcb_xim_t* im, const xcb_im_packet_header_fr
 
 }
 
+void _xcb_xim_handle_forward_event(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_forward_event_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
 
+    do {
+        if (XIM_MESSAGE_BYTES(hdr) < xcb_im_forward_event_fr_size(&frame) + sizeof(xcb_key_press_event_t)) {
+            break;
+        }
+        if (im->connect_id != frame.input_method_ID) {
+            break;
+        }
+        xcb_key_press_event_t key_event;
+        memcpy(&key_event, data, sizeof(xcb_key_press_event_t));
+
+        if (im->im_callback.forward_event) {
+            im->im_callback.forward_event(im, frame.input_context_ID, &key_event, im->user_data);
+        }
+    } while(0);
+    xcb_im_forward_event_fr_free(&frame);
+}
+
+void _xcb_xim_handle_commit(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_commit_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (im->connect_id != frame.input_method_ID) {
+            break;
+        }
+
+        if (im->im_callback.commit_string) {
+            im->im_callback.commit_string(im,
+                                          frame.input_context_ID,
+                                          frame.flag,
+                                          (char*) frame.committed_string,
+                                          frame.byte_length_of_committed_string,
+                                          frame.keysym.items,
+                                          frame.keysym.size,
+                                          im->user_data);
+        }
+    } while(0);
+    xcb_im_commit_fr_free(&frame);
+}
+
+void _xcb_xim_handle_close_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    // why we need to wait server :?
+}
+
+void _xcb_xim_handle_geometry(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_geometry_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (im->connect_id != frame.input_method_ID) {
+            break;
+        }
+
+        if (im->im_callback.geometry) {
+            im->im_callback.geometry(im,
+                                     frame.input_context_ID,
+                                     im->user_data);
+        }
+    } while(0);
+    xcb_im_geometry_fr_free(&frame);
+}
+
+void _xcb_xim_handle_preedit_start(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_preedit_start_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (im->connect_id != frame.input_method_ID) {
+            break;
+        }
+
+        if (im->im_callback.preedit_start) {
+            im->im_callback.preedit_start(im,
+                                          frame.input_context_ID,
+                                          im->user_data);
+        }
+    } while(0);
+    xcb_im_preedit_start_fr_free(&frame);
+}
+
+void _xcb_xim_handle_preedit_draw(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_preedit_draw_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (im->connect_id != frame.input_method_ID) {
+            break;
+        }
+
+        if (im->im_callback.preedit_draw) {
+            im->im_callback.preedit_draw(im,
+                                         frame.input_context_ID,
+                                         &frame,
+                                         im->user_data);
+        }
+    } while(0);
+    xcb_im_preedit_draw_fr_free(&frame);
+}
+
+void _xcb_xim_handle_preedit_caret(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_preedit_caret_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (im->connect_id != frame.input_method_ID) {
+            break;
+        }
+
+        if (im->im_callback.preedit_caret) {
+            im->im_callback.preedit_caret(im,
+                                          frame.input_context_ID,
+                                          &frame,
+                                          im->user_data);
+        }
+    } while(0);
+    xcb_im_preedit_caret_fr_free(&frame);
+}
+
+void _xcb_xim_handle_preedit_done(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_preedit_done_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (im->connect_id != frame.input_method_ID) {
+            break;
+        }
+
+        if (im->im_callback.preedit_done) {
+            im->im_callback.preedit_done(im,
+                                         frame.input_context_ID,
+                                         im->user_data);
+        }
+    } while(0);
+    xcb_im_preedit_done_fr_free(&frame);
+}
+
+void _xcb_xim_handle_status_start(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_status_start_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (im->connect_id != frame.input_method_ID) {
+            break;
+        }
+
+        if (im->im_callback.status_start) {
+            im->im_callback.status_start(im,
+                                         frame.input_context_ID,
+                                         im->user_data);
+        }
+    } while(0);
+    xcb_im_status_start_fr_free(&frame);
+}
+
+void _xcb_xim_handle_status_draw(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    if (XIM_MESSAGE_BYTES(hdr) < 8) {
+        return;
+    }
+
+    uint8_t* ptype = data + 4;
+    uint32_t type;
+    size_t len = XIM_MESSAGE_BYTES(hdr);
+    uint32_t_read(&type, &ptype, &len, false);
+
+    if (type == XCB_IM_TextType) {
+        xcb_im_status_draw_text_fr_t frame;
+        bool fail;
+        _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+        if (fail) {
+            return;
+        }
+
+        do {
+            if (im->connect_id != frame.input_method_ID) {
+                break;
+            }
+
+            if (im->im_callback.status_draw_text) {
+                im->im_callback.status_draw_text(im,
+                                                 frame.input_context_ID,
+                                                 &frame,
+                                                 im->user_data);
+            }
+        } while(0);
+        xcb_im_status_draw_text_fr_free(&frame);
+    } else if (type == XCB_IM_BitmapType) {
+        xcb_im_status_draw_bitmap_fr_t frame;
+        bool fail;
+        _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+        if (fail) {
+            return;
+        }
+
+        do {
+            if (im->connect_id != frame.input_method_ID) {
+                break;
+            }
+
+            if (im->im_callback.status_draw_bitmap) {
+                im->im_callback.status_draw_bitmap(im,
+                                                   frame.input_context_ID,
+                                                   &frame,
+                                                   im->user_data);
+            }
+        } while(0);
+        xcb_im_status_draw_bitmap_fr_free(&frame);
+    }
+}
+
+void _xcb_xim_handle_status_done(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_status_done_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (im->connect_id != frame.input_method_ID) {
+            break;
+        }
+
+        if (im->im_callback.status_done) {
+            im->im_callback.status_done(im,
+                                        frame.input_context_ID,
+                                        im->user_data);
+        }
+    } while(0);
+    xcb_im_status_done_fr_free(&frame);
+}
+
+void _xcb_xim_handle_set_event_mask(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_set_event_mask_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (im->connect_id != frame.input_method_ID) {
+            break;
+        }
+
+        if (im->im_callback.set_event_mask) {
+            im->im_callback.set_event_mask(im,
+                                           frame.input_context_ID,
+                                           frame.forward_event_mask,
+                                           frame.synchronous_event_mask,
+                                           im->user_data);
+        }
+    } while(0);
+    xcb_im_set_event_mask_fr_free(&frame);
+}
+
+void _xcb_xim_handle_sync(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    xcb_im_sync_fr_t frame;
+    bool fail;
+    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+    if (fail) {
+        return;
+    }
+
+    do {
+        if (im->connect_id != frame.input_method_ID) {
+            break;
+        }
+
+        _xcb_xim_sync(im, frame.input_context_ID);
+    } while(0);
+    xcb_im_sync_fr_free(&frame);
+}
+
+void _xcb_xim_handle_error(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
+{
+    if (im->open_state == XIM_OPEN_DONE) {
+        if (im->current) {
+            _xcb_xim_process_fail_callback(im, im->current);
+            _xcb_xim_request_free(im->current);
+            im->current = NULL;
+        }
+    } else {
+        if (im->open_state != XIM_OPEN_INVALID) {
+            im->open_state = XIM_OPEN_INVALID;
+            im->yield_recheck = true;
+        }
+    }
+}

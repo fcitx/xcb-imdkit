@@ -9,46 +9,54 @@
 
 // this phase is basically a directly mapping from _XimSOMETHING function in Xlib
 // state machine is more suitable for xcb asynchronous nature.
-typedef enum _xcb_xim_open_phase_t {
-    XIM_OPEN_PHASE_DONE,
-    XIM_OPEN_PHASE_FAIL,
-    XIM_OPEN_PHASE_CHECK_SERVER,
-    XIM_OPEN_PHASE_CONNECT,
+typedef enum _xcb_xim_connect_phase_t {
+    XIM_CONNECT_DONE,
+    XIM_CONNECT_FAIL,
+    XIM_CONNECT_CHECK_SERVER,
+    XIM_CONNECT_CONNECT,
+} xcb_xim_connect_phase_t;
+
+typedef enum _xcb_xim_connect_check_server_phase_t {
+    XIM_CONNECT_CHECK_SERVER_PREPARE,
+    XIM_CONNECT_CHECK_SERVER_LOCALE,
+    XIM_CONNECT_CHECK_SERVER_LOCALE_WAIT,
+    XIM_CONNECT_CHECK_SERVER_TRANSPORT,
+    XIM_CONNECT_CHECK_SERVER_TRANSPORT_WAIT,
+} xcb_xim_connect_check_server_phase_t;
+
+typedef enum _xcb_xim_connect_connect_phase_t {
+    XIM_CONNECT_CONNECT_PREPARE,
+    XIM_CONNECT_CONNECT_WAIT,
+    XIM_CONNECT_CONNECT_WAIT_REPLY,
+} xcb_xim_connect_connect_phase_t;
+
+typedef enum _xcb_xim_open_phase_t
+{
+    XIM_OPEN_INVALID,
+    XIM_OPEN_WAIT_OPEN_REPLY,
+    XIM_OPEN_WAIT_EXTENSION_REPLY,
+    XIM_OPEN_WAIT_ENCODING_REPLY,
+    XIM_OPEN_DONE
 } xcb_xim_open_phase_t;
 
-typedef enum _xcb_xim_open_check_server_phase_t {
-    XIM_OPEN_PHASE_CHECK_SERVER_PREPARE,
-    XIM_OPEN_PHASE_CHECK_SERVER_LOCALE,
-    XIM_OPEN_PHASE_CHECK_SERVER_LOCALE_WAIT,
-    XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT,
-    XIM_OPEN_PHASE_CHECK_SERVER_TRANSPORT_WAIT,
-} xcb_xim_open_check_server_phase_t;
-
-typedef enum _xcb_xim_open_connect_phase_t {
-    XIM_OPEN_PHASE_CONNECT_PREPARE,
-    XIM_OPEN_PHASE_CONNECT_WAIT,
-    XIM_OPEN_PHASE_CONNECT_WAIT_REPLY,
-    XIM_OPEN_PHASE_CONNECT_WAIT_OPEN_REPLY
-} xcb_xim_open_connect_phase_t;
-
-typedef struct _xcb_xim_open_t
+typedef struct _xcb_xim_connect_state_t
 {
-    xcb_xim_open_phase_t phase;
+    xcb_xim_connect_phase_t phase;
     xcb_xim_open_callback callback;
     void* user_data;
     union {
         struct {
             int index;
-            xcb_xim_open_check_server_phase_t subphase;
+            xcb_xim_connect_check_server_phase_t subphase;
             xcb_window_t window;
             xcb_window_t requestor_window;
         } check_server;
 
         struct {
-            xcb_xim_open_connect_phase_t subphase;
+            xcb_xim_connect_connect_phase_t subphase;
         } connect;
     };
-} xcb_xim_open_t;
+} xcb_xim_connect_state_t;
 
 typedef struct _xcb_xim_imattr_table_t
 {
@@ -61,6 +69,12 @@ typedef struct _xcb_xim_icattr_table_t
     xcb_im_xicattr_fr_t attr;
     UT_hash_handle hh;
 } xcb_xim_icattr_table_t;
+
+typedef struct _xcb_xim_extensionx_t
+{
+    uint16_t major_code;
+    uint16_t minor_code;
+} xcb_xim_extension_t;
 
 typedef struct _xcb_xim_request_queue_t
 {
@@ -95,6 +109,8 @@ struct _xcb_xim_t
     xcb_connection_t* conn;
     char* server_name;
     int screen_id;
+    xcb_xim_im_callback im_callback;
+    void* user_data;
 
     // some global data
     uint32_t sequence;
@@ -110,14 +126,14 @@ struct _xcb_xim_t
     int n_server_atoms;
 
     // used by _xcb_xim_check_server / _xcb_xim_connect
-    xcb_xim_open_t open;
+    xcb_xim_connect_state_t connect_state;
 
     // _xcb_xim_check_server
     char* trans_addr;
     xcb_window_t im_window;
     // and also server_atom
 
-    xcb_window_t client_window;
+    xcb_window_t im_client_window;
 
     // _xcb_xim_connect_wait
     int major_code;
@@ -125,14 +141,25 @@ struct _xcb_xim_t
     uint32_t accept_win;
 
     // xim open
-    bool opened;
+    xcb_xim_open_phase_t open_state;
     uint16_t connect_id;
     xcb_xim_imattr_table_t* imattr;
     xcb_xim_icattr_table_t* icattr;
+    xcb_xim_extension_t* extensions;
+    xcb_im_trigger_keys_t onKeys;
+    xcb_im_trigger_keys_t offKeys;
 
     // request
     xcb_xim_request_queue_t* current;
     list_head queue;
+    size_t nExtensions;
+    bool auto_connect;
+    bool recheck;
+    bool yield_recheck;
+
+    // some ic values
+    xcb_window_t client_window;
+    xcb_window_t focus_window;
 };
 
 #define _xcb_xim_read_frame(FRAME, DATA, LEN, FAIL) \
@@ -153,7 +180,7 @@ struct _xcb_xim_t
         size_t length = frame_size_func(FRAME); \
         uint8_t* reply = NULL; \
         uint8_t* alloc_reply = NULL; \
-        uint8_t static_reply[frame_has_static_size(FRAME) ? frame_size_func(FRAME) : 1]; \
+        uint8_t static_reply[XCB_IM_HEADER_SIZE + (frame_has_static_size(FRAME) ? frame_size_func(FRAME) : 1)]; \
         if (frame_has_static_size(FRAME)) { \
             reply = static_reply; \
             _xcb_write_xim_message_header(reply, frame_opcode(FRAME), 0, length, false); \
@@ -177,5 +204,7 @@ struct _xcb_xim_t
 bool _xcb_xim_send_message(xcb_xim_t* im,
                            uint8_t* data, size_t length);
 void _xcb_xim_request_free(xcb_xim_request_queue_t* request);
+bool _xcb_xim_sync(xcb_xim_t* im, xcb_xic_t ic);
+void _xcb_xim_process_fail_callback(xcb_xim_t* im, xcb_xim_request_queue_t* request);
 
 #endif // IMCLIENT_P_H

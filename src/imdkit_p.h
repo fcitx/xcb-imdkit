@@ -82,7 +82,7 @@
         size_t length = frame_size_func(FRAME); \
         uint8_t* reply; \
         uint8_t* alloc_reply = NULL; \
-        uint8_t static_reply[frame_has_static_size(FRAME) ? frame_size_func(FRAME) : 1]; \
+        uint8_t static_reply[XCB_IM_HEADER_SIZE + (frame_has_static_size(FRAME) ? frame_size_func(FRAME) : 1)]; \
         if (frame_has_static_size(FRAME)) { \
             reply = static_reply; \
             _xcb_write_xim_message_header(reply, frame_opcode(FRAME), 0, length, swap); \

@@ -333,7 +333,9 @@ xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_wind
         client->c.connect_id = new_connect_id;
         im->free_list = im->free_list->hh1.next;
     } else {
-        new_connect_id = ++im->connect_id;
+        while (new_connect_id == 0) {
+            new_connect_id = ++im->connect_id;
+        }
         xcb_im_client_table_t* dup = NULL;
         HASH_FIND(hh1, im->clients_by_id, &new_connect_id, sizeof(uint16_t), dup);
         if (dup) {
@@ -369,14 +371,7 @@ xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_wind
     HASH_ADD(hh2, im->clients_by_win, c.accept_win, sizeof(xcb_window_t), client);
 
 
-    uint32_t mask[] = { XCB_EVENT_MASK_STRUCTURE_NOTIFY };
-    xcb_void_cookie_t cookie = xcb_change_window_attributes_checked(im->conn, client_window, XCB_CW_EVENT_MASK, mask);
-
-    xcb_generic_error_t* error = NULL;
-    if ((error = xcb_request_check(im->conn, cookie)) != NULL) {
-        DebugLog("Error code: %d", error->error_code);
-        free(error);
-    }
+    _xcb_change_event_mask(im->conn, client_window, XCB_EVENT_MASK_STRUCTURE_NOTIFY, false);
 
     return client;
 }
@@ -400,7 +395,9 @@ xcb_im_input_context_table_t* _xcb_im_new_input_context(xcb_im_t* im,
         memset(ic, 0, sizeof(xcb_im_input_context_table_t));
         ic->ic.id = icid;
     } else {
-        icid = ++client->icid;
+        while (icid == 0) {
+            icid = ++client->icid;
+        }
         xcb_im_input_context_table_t* dup = NULL;
         HASH_FIND(hh, client->input_contexts, &icid, sizeof(uint16_t), dup);
         if (dup) {
@@ -874,11 +871,7 @@ void xcb_im_sync_xlib(xcb_im_t* im, xcb_im_input_context_t* ic)
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
 
-    // use stack to avoid alloc fails
-    uint8_t message[XCB_IM_HEADER_SIZE + 4];
-    _xcb_write_xim_message_header(message, XIM_SYNC, 0, 4, ic->client->byte_order != im->byte_order);
-    xcb_im_sync_fr_write(&frame, message + XCB_IM_HEADER_SIZE, ic->client->byte_order != im->byte_order);
-    _xcb_im_send_message(im, (xcb_im_client_table_t*) ic->client, message, 4);
+    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
 }
 
 bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, xcb_im_ximattribute_fr_t* attr)
@@ -1082,6 +1075,7 @@ void xcb_im_status_draw_text_callback(xcb_im_t* im, xcb_im_input_context_t* ic, 
 {
     frame->input_method_ID = ic->client->connect_id;
     frame->input_context_ID = ic->id;
+    frame->type = XCB_IM_TextType;
 
     _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, *frame, false);
 }
@@ -1090,6 +1084,7 @@ void xcb_im_status_draw_bitmap_callback(xcb_im_t* im, xcb_im_input_context_t* ic
 {
     frame->input_method_ID = ic->client->connect_id;
     frame->input_context_ID = ic->id;
+    frame->type = XCB_IM_BitmapType;
 
     _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, *frame, false);
 }
@@ -1110,3 +1105,15 @@ void _xcb_im_send_error_message(xcb_im_t* im,
 {
     _xcb_send_xim_error_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], client->c.client_win, im->byte_order != client->c.byte_order);
 }
+
+bool xcb_im_support_extension(xcb_im_t* im, uint16_t major_code, uint16_t minor_code)
+{
+    for (size_t i = 0 ; i < ARRAY_SIZE(im->extension); i++) {
+        if (im->extension[i].extension_major_opcode == major_code
+         && im->extension[i].extension_minor_opcode == minor_code) {
+            return true;
+        }
+    }
+    return false;
+}
+

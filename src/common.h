@@ -4,6 +4,7 @@
 #include <xcb/xcb.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include "ximproto.h"
 
 // some atom name
 #define XIM_SERVERS     "XIM_SERVERS"
@@ -60,14 +61,23 @@ enum {
     XIM_ATOM_LAST
 };
 
+static const xcb_im_ext_list Default_Extension[] = {
+    // client -> server, by set ic in xlib
+    // {"XIM_EXT_MOVE", XIM_EXTENSION, XIM_EXT_MOVE},
+    // server -> client
+    // {"XIM_EXT_SET_EVENT_MASK", XIM_EXTENSION, XIM_EXT_SET_EVENT_MASK},
+    // server <-> client
+    // {"XIM_EXT_FORWARD_KEYEVENT", XIM_EXTENSION, XIM_EXT_FORWARD_KEYEVENT},
+};
+
 typedef void (*xcb_xim_callback)();
 
 bool _xcb_im_init_atoms(xcb_connection_t* conn, size_t n, const char** atom_names, xcb_atom_t* atoms);
 
+uint32_t _xcb_get_event_mask(xcb_connection_t* conn, xcb_window_t window);
 bool _xcb_change_event_mask(xcb_connection_t* conn, xcb_window_t window, uint32_t mask, bool remove);
 
 size_t _xcb_im_ic_attr_size(uint32_t type);
-
 
 uint8_t* _xcb_im_get_ic_value(void* p,
                               uint32_t type,

@@ -31,9 +31,9 @@ void set_ic_values_callback(xcb_xim_t* im, xcb_xic_t ic, void* user_data)
                           NULL);
 }
 
-void create_ic_callback(xcb_xim_t* im, bool success, xcb_xic_t ic, void* user_data)
+void create_ic_callback(xcb_xim_t* im, xcb_xic_t ic, void* user_data)
 {
-    if (success) {
+    if (ic) {
         fprintf(stderr, "icid:%u\n", ic);
         xcb_point_t spot;
         spot.x = 0;
@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
         return false;
     }
     xcb_xim_t* im = xcb_xim_create(connection, screen_default_nbr, "@im=test_server");
-    assert(xcb_xim_open(im, open_callback, NULL));
+    assert(xcb_xim_open(im, open_callback, true, NULL));
 
     xcb_generic_event_t *event;
     while ( (event = xcb_wait_for_event (connection)) ) {

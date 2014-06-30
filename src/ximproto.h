@@ -89,6 +89,7 @@
     xcb_im_connect_reply_fr_t: XIM_CONNECT_REPLY, \
     xcb_im_open_fr_t: XIM_OPEN, \
     xcb_im_open_reply_fr_t: XIM_OPEN_REPLY, \
+    xcb_im_close_fr_t: XIM_CLOSE, \
     xcb_im_close_reply_fr_t: XIM_CLOSE_REPLY, \
     xcb_im_query_extension_fr_t: XIM_QUERY_EXTENSION, \
     xcb_im_query_extension_reply_fr_t: XIM_QUERY_EXTENSION_REPLY, \
@@ -108,6 +109,7 @@
     xcb_im_destroy_ic_reply_fr_t: XIM_DESTROY_IC_REPLY, \
     xcb_im_reset_ic_fr_t: XIM_RESET_IC, \
     xcb_im_reset_ic_reply_fr_t: XIM_RESET_IC_REPLY, \
+    xcb_im_trigger_notify_fr_t: XIM_TRIGGER_NOTIFY, \
     xcb_im_trigger_notify_reply_fr_t: XIM_TRIGGER_NOTIFY_REPLY, \
     xcb_im_preedit_start_fr_t: XIM_PREEDIT_START, \
     xcb_im_preedit_draw_fr_t: XIM_PREEDIT_DRAW, \
@@ -123,6 +125,8 @@
     xcb_im_disconnect_fr_t: XIM_DISCONNECT, \
     xcb_im_set_ic_focus_fr_t: XIM_SET_IC_FOCUS, \
     xcb_im_unset_ic_focus_fr_t: XIM_UNSET_IC_FOCUS, \
+    xcb_im_sync_fr_t: XIM_SYNC, \
+    xcb_im_sync_reply_fr_t: XIM_SYNC_REPLY, \
     xcb_im_geometry_fr_t: XIM_GEOMETRY \
     )
 
@@ -205,10 +209,14 @@ typedef enum _xcb_im_style_t
     XCB_IM_StatusNone       = 0x0800,
 } xcb_im_style_t;
 
-static const xcb_im_ext_list Default_Extension[] = {
-    {"XIM_EXT_MOVE", XIM_EXTENSION, XIM_EXT_MOVE},
-    {"XIM_EXT_SET_EVENT_MASK", XIM_EXTENSION, XIM_EXT_SET_EVENT_MASK},
-    {"XIM_EXT_FORWARD_KEYEVENT", XIM_EXTENSION, XIM_EXT_FORWARD_KEYEVENT},
+enum {
+    XCB_IM_TextType = 0,
+    XCB_IM_BitmapType = 1
 };
+
+typedef struct _xcb_im_trigger_keys_t{
+    uint16_t nKeys;
+    xcb_im_ximtriggerkey_fr_t *keys;
+} xcb_im_trigger_keys_t;
 
 #endif // XIMPROTO_H

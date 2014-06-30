@@ -30,11 +30,6 @@ typedef struct _xcb_im_styles_t
     uint32_t* styles;
 } xcb_im_styles_t;
 
-typedef struct _xcb_im_trigger_keys_t{
-    uint16_t nKeys;
-    xcb_im_ximtriggerkey_fr_t *keys;
-} xcb_im_trigger_keys_t;
-
 typedef char *xcb_im_encoding_t;
 
 typedef struct _xcb_im_encodings_t {
@@ -121,6 +116,6 @@ XCB_IMDKIT_EXPORT void xcb_im_status_done_callback(xcb_im_t* im, xcb_im_input_co
 XCB_IMDKIT_EXPORT void xcb_im_preedit_start(xcb_im_t* im, xcb_im_input_context_t* ic);
 XCB_IMDKIT_EXPORT void xcb_im_preedit_end(xcb_im_t* im, xcb_im_input_context_t* ic);
 XCB_IMDKIT_EXPORT void xcb_im_sync_xlib(xcb_im_t* im, xcb_im_input_context_t* ic);
-
+XCB_IMDKIT_EXPORT bool xcb_im_support_extension(xcb_im_t* im, uint16_t major_code, uint16_t minor_code);
 
 #endif // IMDKIT_H
