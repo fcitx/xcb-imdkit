@@ -1,3 +1,18 @@
+/*
+ * (C) Copyright 2014 Weng Xuetian <wengxt@gmail.com>
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser General Public License
+ * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-2.1.html
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ */
+
 #include "protocolhandler.h"
 #include "message.h"
 
@@ -742,9 +757,8 @@ void _xcb_im_handle_ext_move(xcb_im_t* im, xcb_im_client_table_t* client, const 
             break;
         }
 
-        if (im->callback) {
-            im->callback(im, &client->c, &ic->ic, hdr, &frame, NULL, im->user_data);
-        }
+        ic->ic.preedit.spot_location.x = frame.X;
+        ic->ic.preedit.spot_location.y = frame.Y;
     } while(0);
 
     xcb_im_ext_move_fr_free(&frame);

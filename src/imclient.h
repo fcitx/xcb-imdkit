@@ -1,3 +1,17 @@
+/*
+ * (C) Copyright 2014 Weng Xuetian <wengxt@gmail.com>
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser General Public License
+ * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-2.1.html
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ */
 #ifndef IMCLIENT_H
 #define IMCLIENT_H
 #include <xcb/xcb.h>
@@ -84,4 +98,5 @@ XCB_XIM_EXPORT bool xcb_xim_reset_ic(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_reset_
 XCB_XIM_EXPORT bool xcb_xim_destroy_ic(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_destroy_ic_callback callback, void* user_data);
 XCB_XIM_EXPORT void xcb_xim_close(xcb_xim_t* im);
 XCB_XIM_EXPORT bool xcb_xim_support_extension(xcb_xim_t* im, uint16_t major_code, uint16_t minor_code);
+XCB_XIM_EXPORT bool xcb_xim_ext_move(xcb_xim_t* im, xcb_xic_t ic, int16_t x, int16_t y);
 #endif // IMCLIENT_H

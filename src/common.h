@@ -1,3 +1,17 @@
+/*
+ * (C) Copyright 2014 Weng Xuetian <wengxt@gmail.com>
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser General Public License
+ * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-2.1.html
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ */
 #ifndef COMMON_H
 #define COMMON_H
 
@@ -63,11 +77,15 @@ enum {
 
 static const xcb_im_ext_list Default_Extension[] = {
     // client -> server, by set ic in xlib
-    // {"XIM_EXT_MOVE", XIM_EXTENSION, XIM_EXT_MOVE},
+    {"XIM_EXT_MOVE", XIM_EXTENSION, XIM_EXT_MOVE},
+#if 0
+    // not in any imdkit
     // server -> client
-    // {"XIM_EXT_SET_EVENT_MASK", XIM_EXTENSION, XIM_EXT_SET_EVENT_MASK},
+    {"XIM_EXT_SET_EVENT_MASK", XIM_EXTENSION, XIM_EXT_SET_EVENT_MASK},
     // server <-> client
-    // {"XIM_EXT_FORWARD_KEYEVENT", XIM_EXTENSION, XIM_EXT_FORWARD_KEYEVENT},
+    // not enabled by xlib
+    {"XIM_EXT_FORWARD_KEYEVENT", XIM_EXTENSION, XIM_EXT_FORWARD_KEYEVENT},
+#endif
 };
 
 typedef void (*xcb_xim_callback)();

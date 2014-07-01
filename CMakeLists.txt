@@ -2,14 +2,24 @@ cmake_minimum_required(VERSION 2.8.12)
 project(xcb-imdkit)
 
 find_package(ECM 0.0.11 REQUIRED NO_MODULE)
-set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 include(CheckCCompilerFlag)
 include(CheckFunctionExists)
+include(uninstall)
 
 check_c_compiler_flag("-std=c11" C11_SUPPORTED)
 if (NOT C11_SUPPORTED)
     message(FATAL_ERROR "C11 is required to compile xcb-imdkit.")
+endif()
+
+include(GNUInstallDirs)
+
+# directory needed by bsd
+if(NOT CMAKE_INSTALL_LIBDATADIR)
+  set(CMAKE_INSTALL_LIBDATADIR "${CMAKE_INSTALL_LIBDIR}" CACHE PATH "libdata root (LIBDIR)")
+  set(CMAKE_INSTALL_LIBDATADIR "${CMAKE_INSTALL_LIBDIR}")
+  mark_as_advanced(CMAKE_INSTALL_LIBDATADIR)
 endif()
 
 add_definitions(-D_GNU_SOURCE)

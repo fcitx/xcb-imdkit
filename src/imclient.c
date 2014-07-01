@@ -1,3 +1,17 @@
+/*
+ * (C) Copyright 2014 Weng Xuetian <wengxt@gmail.com>
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser General Public License
+ * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-2.1.html
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ */
 #include "imclient.h"
 #include "imclient_p.h"
 #include "common.h"
@@ -1260,6 +1274,25 @@ bool xcb_xim_get_ic_values(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_get_ic_values_ca
 
     _xcb_xim_process_queue(im);
 
+    return true;
+}
+
+// not actually enabled by Xlib
+bool xcb_xim_ext_move(xcb_xim_t* im, xcb_xic_t ic, int16_t x, int16_t y)
+{
+    xcb_im_ext_move_fr_t frame;
+    frame.input_method_ID = im->connect_id;
+    frame.input_context_ID = ic;
+    frame.X = x;
+    frame.Y = y;
+
+    size_t length = xcb_im_ext_move_fr_size(&frame);
+    uint8_t reply[XCB_IM_HEADER_SIZE + xcb_im_ext_move_fr_size(&frame)];
+    _xcb_write_xim_message_header(reply, XIM_EXTENSION, XIM_EXT_MOVE, length, false);
+    xcb_im_ext_move_fr_write(&frame, reply + XCB_IM_HEADER_SIZE, false);
+    if (!_xcb_xim_send_message(im, reply, length)) {
+        return false;
+    }
     return true;
 }
 
