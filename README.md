@@ -14,3 +14,16 @@ is never used. Those parts include:
 - XIM_STR_CONVERSION (Synchronous protocol, but not used anywhere)
 - Locale check on client side, this is actually very evil for input method.
 - Only X transport is supported.
+
+To build this project, you need:
+libxcb, xcb-util, xcb-util-keysym
+
+Commands:
+ mkdir build
+ cd build
+ cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+ make
+ sudo make install
+
+xcb-imdkit is released under LGPLv2+, and it is using uthash internally,
+which is released under BSD-license.
