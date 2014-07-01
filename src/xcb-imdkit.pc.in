@@ -4,7 +4,7 @@ includedir=@CMAKE_INSTALL_INCLUDEDIR@
 
 Name: xcb-imdkit
 Description: X input method support for XCB
-Version: @version@
+Version: @XCB_IMDKIT_VERSION@
 Requires: xcb xcb-util
 Cflags: -I${includedir}
 Libs: -L${libdir} -lxcb-imdkit

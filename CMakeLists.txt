@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(xcb-imdkit)
 
+set(XCB_IMDKIT_VERSION 0.1.0)
+
 find_package(ECM 0.0.11 REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
@@ -35,5 +37,4 @@ include_directories(${XCB_INCLUDE_DIRS})
 include_directories(src)
 
 add_subdirectory(src)
-
 add_subdirectory(test)
