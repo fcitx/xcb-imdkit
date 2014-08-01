@@ -332,7 +332,7 @@ bool xcb_im_open_im(xcb_im_t* im)
 xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_window)
 {
     xcb_im_client_table_t* client;
-    int new_connect_id;
+    int new_connect_id = 0;
     if (im->free_list) {
         client = im->free_list;
         // save as a cache, since we want to memset the item from free list

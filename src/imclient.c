@@ -1016,7 +1016,7 @@ static inline xcb_xim_imattr_table_t* _xcb_xim_find_imattr(xcb_xim_t* im, const 
     return imattr;
 }
 
-size_t _xcb_xim_check_valist(xcb_xim_t* im, va_list* var)
+size_t _xcb_xim_check_valist(xcb_xim_t* im, va_list var)
 {
     char *attr;
 
@@ -1127,7 +1127,7 @@ bool xcb_xim_create_ic(xcb_xim_t* im, xcb_xim_create_ic_callback callback, void*
     va_list var;
     va_start(var, user_data);
     queue->frame.create_ic.input_method_ID = im->connect_id;
-    queue->frame.create_ic.ic_attributes.size = _xcb_xim_check_valist(im, &var);
+    queue->frame.create_ic.ic_attributes.size = _xcb_xim_check_valist(im, var);
     queue->frame.create_ic.ic_attributes.items = calloc(queue->frame.create_ic.ic_attributes.size, sizeof(xcb_im_xicattribute_fr_t));
     va_end(var);
 
@@ -1311,7 +1311,7 @@ bool xcb_xim_set_ic_values(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_set_ic_values_ca
     va_start(var, user_data);
     queue->frame.set_ic_values.input_method_ID = im->connect_id;
     queue->frame.set_ic_values.input_context_ID = ic;
-    queue->frame.set_ic_values.ic_attribute.size = _xcb_xim_check_valist(im, &var);
+    queue->frame.set_ic_values.ic_attribute.size = _xcb_xim_check_valist(im, var);
     queue->frame.set_ic_values.ic_attribute.items = calloc(queue->frame.set_ic_values.ic_attribute.size, sizeof(xcb_im_xicattribute_fr_t));
     va_end(var);
 
