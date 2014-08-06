@@ -87,7 +87,7 @@ void _xcb_xim_handle_open_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* 
         imattr->attr.im_attribute[imattr->attr.length_of_im_attribute] = 0;
         memcpy(imattr->attr.im_attribute, subframe->im_attribute, imattr->attr.length_of_im_attribute);
 
-        HASH_ADD(hh, im->imattr, attr.im_attribute, imattr->attr.length_of_im_attribute, imattr);
+        HASH_ADD_KEYPTR(hh, im->imattr, imattr->attr.im_attribute, imattr->attr.length_of_im_attribute, imattr);
     }
     for (uint32_t i = 0; i < frame.IC_attribute_supported.size; i++) {
         xcb_im_xicattr_fr_t* subframe = &frame.IC_attribute_supported.items[i];
@@ -105,7 +105,7 @@ void _xcb_xim_handle_open_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* 
         icattr->attr.ic_attribute[icattr->attr.length_of_ic_attribute] = 0;
         memcpy(icattr->attr.ic_attribute, subframe->ic_attribute, icattr->attr.length_of_ic_attribute);
 
-        HASH_ADD(hh, im->icattr, attr.ic_attribute, icattr->attr.length_of_ic_attribute, icattr);
+        HASH_ADD_KEYPTR(hh, im->icattr, icattr->attr.ic_attribute, icattr->attr.length_of_ic_attribute, icattr);
     }
     xcb_im_open_reply_fr_free(&frame);
 

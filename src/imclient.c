@@ -1208,6 +1208,10 @@ bool xcb_xim_get_im_values(xcb_xim_t* im, xcb_xim_get_im_values_callback callbac
     }
     va_end(var);
 
+    if (count == 0) {
+        return false;
+    }
+
     xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_GET_IM_VALUES, 0, callback, user_data);
     if (!queue) {
         return false;
@@ -1249,6 +1253,10 @@ bool xcb_xim_get_ic_values(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_get_ic_values_ca
         }
     }
     va_end(var);
+
+    if (count == 0) {
+        return false;
+    }
 
     xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_GET_IC_VALUES, 0, callback, user_data);
     if (!queue) {

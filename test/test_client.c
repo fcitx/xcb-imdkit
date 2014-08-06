@@ -28,7 +28,7 @@ bool end = false;
 void destroy_ic_callback(xcb_xim_t* im, xcb_xic_t ic, void* user_data)
 {
     fprintf(stderr, "ic %d destroyed\n", ic);
-    end = true;
+    // end = true;
 }
 
 void get_ic_values_callback(xcb_xim_t* im, xcb_xic_t ic, xcb_im_get_ic_values_reply_fr_t* reply, void* user_data)
