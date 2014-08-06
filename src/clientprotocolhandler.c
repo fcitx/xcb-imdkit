@@ -420,6 +420,7 @@ void _xcb_xim_handle_forward_event(xcb_xim_t* im, const xcb_im_packet_header_fr_
             break;
         }
         xcb_key_press_event_t key_event;
+        data += xcb_im_forward_event_fr_size(&frame);
         memcpy(&key_event, data, sizeof(xcb_key_press_event_t));
 
         if (im->im_callback.forward_event) {
@@ -431,30 +432,66 @@ void _xcb_xim_handle_forward_event(xcb_xim_t* im, const xcb_im_packet_header_fr_
 
 void _xcb_xim_handle_commit(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
-    xcb_im_commit_fr_t frame;
-    bool fail;
-    _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
-    if (fail) {
+    if (XIM_MESSAGE_BYTES(hdr) < 6) {
         return;
     }
 
-    do {
-        if (im->connect_id != frame.input_method_ID) {
-            break;
+    uint8_t* pflag = data + 4;
+    uint16_t flag;
+    size_t len = XIM_MESSAGE_BYTES(hdr);
+    uint16_t_read(&flag, &pflag, &len, false);
+
+    if (flag & XimLookupKeySym) {
+        xcb_im_commit_both_fr_t frame;
+        bool fail;
+        _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+        if (fail) {
+            return;
         }
 
-        if (im->im_callback.commit_string) {
-            im->im_callback.commit_string(im,
-                                          frame.input_context_ID,
-                                          frame.flag,
-                                          (char*) frame.committed_string,
-                                          frame.byte_length_of_committed_string,
-                                          frame.keysym.items,
-                                          frame.keysym.size,
-                                          im->user_data);
+        do {
+            if (im->connect_id != frame.input_method_ID) {
+                break;
+            }
+
+            if (im->im_callback.commit_string) {
+                im->im_callback.commit_string(im,
+                                            frame.input_context_ID,
+                                            frame.flag,
+                                            (char*) frame.committed_string,
+                                            frame.byte_length_of_committed_string,
+                                            &frame.keysym,
+                                            1,
+                                            im->user_data);
+            }
+        } while(0);
+        xcb_im_commit_both_fr_free(&frame);
+    } else if ((flag & XimLookupBoth) == XimLookupChars) {
+        xcb_im_commit_chars_fr_t frame;
+        bool fail;
+        _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+        if (fail) {
+            return;
         }
-    } while(0);
-    xcb_im_commit_fr_free(&frame);
+
+        do {
+            if (im->connect_id != frame.input_method_ID) {
+                break;
+            }
+
+            if (im->im_callback.commit_string) {
+                im->im_callback.commit_string(im,
+                                            frame.input_context_ID,
+                                            frame.flag,
+                                            (char*) frame.committed_string,
+                                            frame.byte_length_of_committed_string,
+                                            NULL,
+                                            0,
+                                            im->user_data);
+            }
+        } while(0);
+        xcb_im_commit_chars_fr_free(&frame);
+    }
 }
 
 void _xcb_xim_handle_close_reply(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)

@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 #include "imclient.h"
 #include "ximproto.h"
 
@@ -24,6 +25,25 @@ xcb_connection_t *connection;
 xcb_window_t w;
 xcb_screen_t* screen;
 bool end = false;
+
+void forward_event(xcb_xim_t* im, xcb_xic_t ic, xcb_key_press_event_t* event, void* user_data)
+{
+    fprintf(stderr,
+            "Key %s Keycode %u, State %u\n",
+            event->response_type == XCB_KEY_PRESS ? "press": "release",
+            event->detail, event->state);
+}
+
+void commit_string(xcb_xim_t* im, xcb_xic_t ic, uint32_t flag, char* str, uint32_t length, uint32_t* keysym, size_t nKeySym, void* user_data)
+{
+    fprintf(stderr, "key commit: %.*s\n", length, str);
+}
+
+
+xcb_xim_im_callback callback = {
+    .forward_event = forward_event,
+    .commit_string = commit_string
+};
 
 void destroy_ic_callback(xcb_xim_t* im, xcb_xic_t ic, void* user_data)
 {
@@ -34,7 +54,39 @@ void destroy_ic_callback(xcb_xim_t* im, xcb_xic_t ic, void* user_data)
 void get_ic_values_callback(xcb_xim_t* im, xcb_xic_t ic, xcb_im_get_ic_values_reply_fr_t* reply, void* user_data)
 {
     fprintf(stderr, "get ic %d done\n", ic);
-    xcb_xim_destroy_ic(im, ic, destroy_ic_callback, NULL);
+    // xcb_xim_destroy_ic(im, ic, destroy_ic_callback, NULL);
+    xcb_key_press_event_t event;
+    memset(&event, 0, sizeof(event));
+    event.root = screen->root;
+    event.detail = 65;
+    event.state = 0x4;
+    event.event = w;
+    event.response_type = XCB_KEY_PRESS;
+    xcb_xim_forward_event(im, ic, &event);
+    event.detail = 38;
+    event.state = 0;
+    xcb_xim_forward_event(im, ic, &event);
+    event.detail = 56;
+    event.state = 0;
+    xcb_xim_forward_event(im, ic, &event);
+    event.detail = 38;
+    event.state = 0;
+    xcb_xim_forward_event(im, ic, &event);
+    event.detail = 56;
+    event.state = 0;
+    xcb_xim_forward_event(im, ic, &event);
+    event.detail = 38;
+    event.state = 0;
+    xcb_xim_forward_event(im, ic, &event);
+    event.detail = 56;
+    event.state = 0;
+    xcb_xim_forward_event(im, ic, &event);
+    event.detail = 38;
+    event.state = 0;
+    xcb_xim_forward_event(im, ic, &event);
+    event.detail = 56;
+    event.state = 0;
+    xcb_xim_forward_event(im, ic, &event);
 }
 
 void set_ic_values_callback(xcb_xim_t* im, xcb_xic_t ic, void* user_data)
@@ -109,6 +161,8 @@ int main(int argc, char* argv[])
         return false;
     }
     xcb_xim_t* im = xcb_xim_create(connection, screen_default_nbr, "@im=test_server");
+
+    xcb_xim_set_im_callback(im, &callback, NULL);
     assert(xcb_xim_open(im, open_callback, true, NULL));
 
     xcb_generic_event_t *event;
