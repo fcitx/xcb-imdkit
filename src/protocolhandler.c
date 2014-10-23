@@ -114,8 +114,9 @@ void _xcb_im_handle_query_extension(xcb_im_t* im,
         for (size_t j = 0; j < ARRAY_SIZE(Default_Extension); j ++) {
             if (frame.extensions_supported_by_the_IM_library.items[i].length_of_string
                 == im->extension[j].length_of_extension_name &&
-                strcmp((char*) frame.extensions_supported_by_the_IM_library.items[i].string,
-                       (char*) im->extension[j].extension_name) == 0) {
+                strncmp((char*) frame.extensions_supported_by_the_IM_library.items[i].string,
+                        (char*) im->extension[j].extension_name,
+                        frame.extensions_supported_by_the_IM_library.items[i].length_of_string) == 0) {
                 ext_list[nExts] = im->extension[j];
                 nExts ++;
                 break;
@@ -143,8 +144,11 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t* im,
     size_t i, j;
     for (i = 0; i < frame.supported_list_of_encoding_in_IM_library.size; i++) {
         for (j = 0; j < im->encodings.nEncodings; j ++) {
-            if (strcmp((char*) frame.supported_list_of_encoding_in_IM_library.items[i].string,
-                       im->encodings.encodings[j]) == 0) {
+            if (frame.supported_list_of_encoding_in_IM_library.items[i].length_of_string
+                == strlen(im->encodings.encodings[j]) &&
+                strncmp((char*) frame.supported_list_of_encoding_in_IM_library.items[i].string,
+                        im->encodings.encodings[j],
+                        frame.supported_list_of_encoding_in_IM_library.items[i].length_of_string) == 0) {
                 break;
             }
         }
@@ -223,6 +227,9 @@ void _xcb_im_handle_disconnect(xcb_im_t* im,
                                uint8_t* data)
 {
     _xcb_im_destroy_client(im, client);
+
+    xcb_im_disconnect_reply_fr_t reply_frame;
+    _xcb_im_send_frame(im, client, reply_frame, true);
 }
 
 void _xcb_im_parse_ic_value(xcb_im_t* im,

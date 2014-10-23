@@ -138,6 +138,7 @@
     xcb_im_commit_both_fr_t: XIM_COMMIT, \
     xcb_im_connect_fr_t: XIM_CONNECT, \
     xcb_im_disconnect_fr_t: XIM_DISCONNECT, \
+    xcb_im_disconnect_reply_fr_t: XIM_DISCONNECT_REPLY, \
     xcb_im_set_ic_focus_fr_t: XIM_SET_IC_FOCUS, \
     xcb_im_unset_ic_focus_fr_t: XIM_UNSET_IC_FOCUS, \
     xcb_im_sync_fr_t: XIM_SYNC, \
