@@ -132,6 +132,7 @@ struct _xcb_xim_t
 
     // set by _xcb_xim_init
     xcb_screen_t* screen;
+    xcb_screen_t* default_screen;
     xcb_atom_t atoms[XIM_ATOM_LAST]; // add one for SERVER_NAME
     bool init;
 

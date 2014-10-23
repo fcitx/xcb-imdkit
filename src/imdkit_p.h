@@ -201,12 +201,12 @@ struct _xcb_im_t
     xcb_window_t serverWindow;
     int screen_id;
     xcb_atom_t atoms[XIM_ATOM_LAST];
-    xcb_window_t root;
     xcb_im_client_table_t* free_list;
     xcb_im_client_table_t* clients_by_id;
     xcb_im_client_table_t* clients_by_win;
     uint16_t connect_id;
     xcb_screen_t* screen;
+    xcb_screen_t* default_screen;
     uint32_t sequence;
     bool init;
     xcb_im_callback callback;

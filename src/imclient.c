@@ -121,10 +121,10 @@ bool _xcb_xim_check_server_prepare(xcb_xim_t* im)
 
     xcb_window_t w = xcb_generate_id(im->conn);
 
-    xcb_create_window (im->conn, XCB_COPY_FROM_PARENT, w, im->screen->root,
+    xcb_create_window (im->conn, XCB_COPY_FROM_PARENT, w, im->default_screen->root,
                         0, 0, 1, 1, 1,
                         XCB_WINDOW_CLASS_INPUT_OUTPUT,
-                        im->screen->root_visual,
+                        im->default_screen->root_visual,
                         0, NULL);
     im->connect_state.check_server.requestor_window = w;
     return true;
@@ -212,10 +212,10 @@ xcb_xim_connect_action_t _xcb_xim_check_server_transport_wait(xcb_xim_t* im, xcb
 void _xcb_xim_connect_prepare(xcb_xim_t* im) {
     xcb_window_t w = xcb_generate_id(im->conn);
 
-    xcb_create_window (im->conn, XCB_COPY_FROM_PARENT, w, im->screen->root,
+    xcb_create_window (im->conn, XCB_COPY_FROM_PARENT, w, im->default_screen->root,
                         0, 0, 1, 1, 1,
                         XCB_WINDOW_CLASS_INPUT_OUTPUT,
-                        im->screen->root_visual,
+                        im->default_screen->root_visual,
                         0, NULL);
     im->im_client_window = w;
 
@@ -414,8 +414,9 @@ bool _xcb_xim_init(xcb_xim_t* im)
     if (!_xcb_im_init_atoms(im->conn, ARRAY_SIZE(atom_names), atom_names, im->atoms + 1)) {
         return false;
     }
-    im->screen = xcb_aux_get_screen(im->conn, im->screen_id);
-    if (!im->screen) {
+    im->screen = xcb_aux_get_screen(im->conn, 0);
+    im->default_screen = xcb_aux_get_screen(im->conn, im->screen_id);
+    if (!im->screen || !im->default_screen) {
         return false;
     }
 

@@ -207,15 +207,15 @@ bool _xcb_im_init(xcb_im_t* im)
     if (im->init) {
         return true;
     }
-    xcb_screen_t* screen = xcb_aux_get_screen(im->conn, im->screen_id);
+    xcb_screen_t* screen = xcb_aux_get_screen(im->conn, 0);
+    xcb_screen_t* defaultScreen = xcb_aux_get_screen(im->conn, im->screen_id);
 
-    if (!screen) {
+    if (!screen || !defaultScreen) {
         return false;
     }
 
     im->screen = screen;
-    xcb_window_t root = screen->root;
-    im->root = root;
+    im->default_screen = defaultScreen;
     char* buf;
     asprintf(&buf, "@server=%s", im->serverName);
     const char* atom_names[] = {buf, XIM_SERVERS, XIM_LOCALES, XIM_TRANSPORT, _XIM_PROTOCOL, _XIM_XCONNECT};
@@ -230,7 +230,7 @@ bool _xcb_im_set_selection_owner(xcb_im_t* im)
     xcb_atom_t* atoms = im->atoms;
     xcb_get_property_cookie_t cookie = xcb_get_property(im->conn,
                                                         false,
-                                                        im->root,
+                                                        im->screen->root,
                                                         atoms[XIM_ATOM_XIM_SERVERS],
                                                         XCB_ATOM_ATOM,
                                                         0L,
@@ -281,7 +281,7 @@ bool _xcb_im_set_selection_owner(xcb_im_t* im)
             xcb_set_selection_owner(im->conn, im->serverWindow, atoms[XIM_ATOM_SERVER_NAME], XCB_CURRENT_TIME);
             xcb_change_property(im->conn,
                                 XCB_PROP_MODE_PREPEND,
-                                im->root,
+                                im->screen->root,
                                 atoms[XIM_ATOM_XIM_SERVERS],
                                 XCB_ATOM_ATOM,
                                 32,
@@ -293,7 +293,7 @@ bool _xcb_im_set_selection_owner(xcb_im_t* im)
             */
             xcb_change_property(im->conn,
                                 XCB_PROP_MODE_PREPEND,
-                                im->root,
+                                im->screen->root,
                                 atoms[XIM_ATOM_XIM_SERVERS],
                                 XCB_ATOM_ATOM,
                                 32,
@@ -372,10 +372,10 @@ xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_wind
         return NULL;
     }
 
-    xcb_create_window (im->conn, XCB_COPY_FROM_PARENT, w, im->root,
+    xcb_create_window (im->conn, XCB_COPY_FROM_PARENT, w, im->default_screen->root,
                        0, 0, 1, 1, 1,
                        XCB_WINDOW_CLASS_INPUT_OUTPUT,
-                       im->screen->root_visual,
+                       im->default_screen->root_visual,
                        0, NULL);
 
     client->c.client_win = client_window;
@@ -738,7 +738,7 @@ void xcb_im_close_im(xcb_im_t* im)
     xcb_atom_t* atoms = im->atoms;
     xcb_get_property_cookie_t cookie = xcb_get_property(im->conn,
                                                         false,
-                                                        im->root,
+                                                        im->screen->root,
                                                         atoms[XIM_ATOM_XIM_SERVERS],
                                                         XCB_ATOM_ATOM,
                                                         0L,
@@ -772,7 +772,7 @@ void xcb_im_close_im(xcb_im_t* im)
             }
             xcb_change_property(im->conn,
                                 XCB_PROP_MODE_REPLACE,
-                                im->root,
+                                im->screen->root,
                                 atoms[XIM_ATOM_XIM_SERVERS],
                                 XCB_ATOM_ATOM,
                                 32,
@@ -784,7 +784,7 @@ void xcb_im_close_im(xcb_im_t* im)
             */
             xcb_change_property(im->conn,
                                 XCB_PROP_MODE_PREPEND,
-                                im->root,
+                                im->screen->root,
                                 atoms[XIM_ATOM_XIM_SERVERS],
                                 XCB_ATOM_ATOM,
                                 32,

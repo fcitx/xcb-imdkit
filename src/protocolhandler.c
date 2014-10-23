@@ -734,7 +734,7 @@ void _xcb_im_handle_ext_forward_keyevent(xcb_im_t* im, xcb_im_client_table_t* cl
         memset(&key_event, 0, sizeof(key_event));
         key_event.response_type = frame.xEvent_u_u_type;
         key_event.sequence = frame.sequence_number;
-        key_event.root = im->root;
+        key_event.root = im->default_screen->root;
         key_event.time = frame.time;
         key_event.detail = frame.keycode;
         key_event.state = frame.state;
