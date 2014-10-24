@@ -42,7 +42,7 @@ typedef void (*xcb_xim_status_draw_text_callback)(xcb_xim_t* im, xcb_xic_t ic, x
 typedef void (*xcb_xim_status_draw_bitmap_callback)(xcb_xim_t* im, xcb_xic_t ic, xcb_im_status_draw_bitmap_fr_t* frame, void* user_data);
 typedef void (*xcb_xim_status_done_callback)(xcb_xim_t* im, xcb_xic_t ic, void* user_data);
 typedef void (*xcb_xim_sync_callback)(xcb_xim_t* im, xcb_xic_t ic, void* user_data);
-typedef bool (*xcb_xim_disconnected_callback)(xcb_xim_t* im, void* user_data);
+typedef void (*xcb_xim_disconnected_callback)(xcb_xim_t* im, void* user_data);
 
 typedef struct _xcb_xim_im_callback
 {

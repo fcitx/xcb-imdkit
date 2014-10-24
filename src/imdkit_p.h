@@ -71,7 +71,7 @@
 #define _xcb_im_read_frame_with_error(IM, CLIENT, FRAME, DATA, LEN) \
     do { \
         size_t len = (LEN); \
-        frame_read_func(FRAME)(&FRAME, &DATA, &len, (CLIENT)->c.byte_order != (IM)->byte_order); \
+        frame_read_func(FRAME)(&FRAME, &DATA, &len, (CLIENT)->byte_order != (IM)->byte_order); \
         if (!DATA) { \
             frame_free_func(FRAME)(&FRAME); \
             _xcb_im_send_error_message((IM), (CLIENT)); \
@@ -82,7 +82,7 @@
 #define _xcb_im_read_frame(IM, CLIENT, FRAME, DATA, LEN) \
     do { \
         size_t len = (LEN); \
-        frame_read_func(FRAME)(&FRAME, &DATA, &len, (CLIENT)->c.byte_order != (IM)->byte_order); \
+        frame_read_func(FRAME)(&FRAME, &DATA, &len, (CLIENT)->byte_order != (IM)->byte_order); \
         if (!DATA) { \
             frame_free_func(FRAME)(&FRAME); \
             return; \
@@ -92,7 +92,7 @@
 #define _xcb_im_send_frame(IM, CLIENT, FRAME, SEND_ERROR) \
     do { \
         bool fail = true; \
-        bool swap = (CLIENT)->c.byte_order != (IM)->byte_order; \
+        bool swap = (CLIENT)->byte_order != (IM)->byte_order; \
         size_t length = frame_size_func(FRAME); \
         uint8_t* reply; \
         uint8_t* alloc_reply = NULL; \
@@ -120,31 +120,45 @@
         } \
     } while(0)
 
-typedef struct _xcb_im_input_context_table_t
-{
-    xcb_im_input_context_t ic;
-    UT_hash_handle hh;
-} xcb_im_input_context_table_t;
 
-typedef struct _xcb_im_client_table_t
+struct _xcb_im_input_context_t
 {
-    xcb_im_client_t c;
+    uint16_t id;
+    xcb_im_client_t* client;
+    uint32_t input_style;
+    xcb_window_t client_win;
+    xcb_window_t focus_win;
+
+    xcb_im_preedit_attr_t preedit;
+    xcb_im_status_attr_t status;
+    UT_hash_handle hh;
+    void* data;
+    xcb_im_free_function free_data_function;
+};
+
+struct _xcb_im_client_t
+{
+    xcb_window_t accept_win;
+    int connect_id;
+    xcb_window_t client_win;
+    uint8_t byte_order;
+    bool sync;
     uint16_t icid;
-    xcb_im_input_context_table_t* ic_free_list;
-    xcb_im_input_context_table_t* input_contexts;
+    xcb_im_input_context_t* ic_free_list;
+    xcb_im_input_context_t* input_contexts;
     list_head queue;
 
     UT_hash_handle hh1;
     UT_hash_handle hh2;
-} xcb_im_client_table_t;
+};
 
 typedef struct _xcb_im_default_im_attr_t {
     char *name;
     uint16_t type;
-    bool (*get_value)(xcb_im_t* im, xcb_im_client_table_t* client, xcb_im_ximattribute_fr_t* attr);
+    bool (*get_value)(xcb_im_t* im, xcb_im_client_t* client, xcb_im_ximattribute_fr_t* attr);
 } xcb_im_default_im_attr_t;
 
-bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, xcb_im_ximattribute_fr_t* attr);
+bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_t* client, xcb_im_ximattribute_fr_t* attr);
 
 static const xcb_im_default_im_attr_t Default_IMattr[] = {
     {XNQueryInputStyle,   XimType_XIMStyles, _xcb_im_get_input_styles_attr},
@@ -201,9 +215,9 @@ struct _xcb_im_t
     xcb_window_t serverWindow;
     int screen_id;
     xcb_atom_t atoms[XIM_ATOM_LAST];
-    xcb_im_client_table_t* free_list;
-    xcb_im_client_table_t* clients_by_id;
-    xcb_im_client_table_t* clients_by_win;
+    xcb_im_client_t* free_list;
+    xcb_im_client_t* clients_by_id;
+    xcb_im_client_t* clients_by_win;
     uint16_t connect_id;
     xcb_screen_t* screen;
     xcb_screen_t* default_screen;
@@ -234,24 +248,24 @@ typedef struct _xcb_im_queue_t
     list_head list;
 } xcb_im_queue_t;
 
-xcb_im_input_context_table_t* _xcb_im_new_input_context(xcb_im_t* im,
-                                                        xcb_im_client_table_t* client);
+xcb_im_input_context_t* _xcb_im_new_input_context(xcb_im_t* im,
+                                                  xcb_im_client_t* client);
 const xcb_im_default_ic_attr_t* _xcb_im_default_ic_attr_entry(xcb_im_t* im,
                                                               uint32_t id);
 
 bool _xcb_im_send_message(xcb_im_t* im,
-                          xcb_im_client_table_t* client,
+                          xcb_im_client_t* client,
                           uint8_t* data, size_t length);
 
 
 void _xcb_im_send_error_message(xcb_im_t* im,
-                                xcb_im_client_table_t* client);
+                                xcb_im_client_t* client);
 
 void _xcb_im_destroy_client(xcb_im_t* im,
-                            xcb_im_client_table_t* client);
+                            xcb_im_client_t* client);
 void _xcb_im_destroy_ic(xcb_im_t* im,
-                        xcb_im_input_context_table_t* ic);
-void _xcb_im_set_event_mask(xcb_im_t* im, xcb_im_client_table_t* client, uint32_t icid, uint32_t forward_event_mask, uint32_t sync_mask);
-void _xcb_im_add_queue(xcb_im_t* im, xcb_im_client_table_t* client, uint16_t icid, const xcb_im_packet_header_fr_t* hdr, xcb_im_forward_event_fr_t* frame, uint8_t* data);
-void _xcb_im_process_queue(xcb_im_t* im, xcb_im_client_table_t* client);
+                        xcb_im_input_context_t* ic);
+void _xcb_im_set_event_mask(xcb_im_t* im, xcb_im_client_t* client, uint32_t icid, uint32_t forward_event_mask, uint32_t sync_mask);
+void _xcb_im_add_queue(xcb_im_t* im, xcb_im_client_t* client, uint16_t icid, const xcb_im_packet_header_fr_t* hdr, xcb_im_forward_event_fr_t* frame, uint8_t* data);
+void _xcb_im_process_queue(xcb_im_t* im, xcb_im_client_t* client);
 #endif // IMDKIT_P_H

@@ -329,41 +329,41 @@ bool xcb_im_open_im(xcb_im_t* im)
     return true;
 }
 
-xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_window)
+xcb_im_client_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_window)
 {
-    xcb_im_client_table_t* client;
+    xcb_im_client_t* client;
     int new_connect_id = 0;
     if (im->free_list) {
         client = im->free_list;
         // save as a cache, since we want to memset the item from free list
-        new_connect_id = client->c.connect_id;
-        xcb_im_client_table_t* dup = NULL;
+        new_connect_id = client->connect_id;
+        xcb_im_client_t* dup = NULL;
         HASH_FIND(hh1, im->clients_by_id, &new_connect_id, sizeof(uint16_t), dup);
         if (dup) {
             DebugLog("Bug in implementation");
             return NULL;
         }
-        memset(client, 0, sizeof(xcb_im_client_table_t));
-        client->c.connect_id = new_connect_id;
+        memset(client, 0, sizeof(xcb_im_client_t));
+        client->connect_id = new_connect_id;
         im->free_list = im->free_list->hh1.next;
     } else {
         while (new_connect_id == 0) {
             new_connect_id = ++im->connect_id;
         }
-        xcb_im_client_table_t* dup = NULL;
+        xcb_im_client_t* dup = NULL;
         HASH_FIND(hh1, im->clients_by_id, &new_connect_id, sizeof(uint16_t), dup);
         if (dup) {
             DebugLog("overflow! too many clients");
             return NULL;
         }
-        client = calloc(1, sizeof(xcb_im_client_table_t));
-        client->c.connect_id = new_connect_id;
+        client = calloc(1, sizeof(xcb_im_client_t));
+        client->connect_id = new_connect_id;
     }
 
     list_init(&client->queue);
 
     xcb_window_t w = xcb_generate_id (im->conn);
-    xcb_im_client_table_t* dup = NULL;
+    xcb_im_client_t* dup = NULL;
     HASH_FIND(hh2, im->clients_by_win, &w, sizeof(xcb_window_t), dup);
     if (dup) {
         DebugLog("duplicate XID, Bug in XCB?");
@@ -378,11 +378,11 @@ xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_wind
                        im->default_screen->root_visual,
                        0, NULL);
 
-    client->c.client_win = client_window;
-    client->c.accept_win = w;
-    client->c.byte_order = '?'; // initial value
-    HASH_ADD(hh1, im->clients_by_id, c.connect_id, sizeof(int), client);
-    HASH_ADD(hh2, im->clients_by_win, c.accept_win, sizeof(xcb_window_t), client);
+    client->client_win = client_window;
+    client->accept_win = w;
+    client->byte_order = '?'; // initial value
+    HASH_ADD(hh1, im->clients_by_id, connect_id, sizeof(int), client);
+    HASH_ADD(hh2, im->clients_by_win, accept_win, sizeof(xcb_window_t), client);
 
 
     _xcb_change_event_mask(im->conn, client_window, XCB_EVENT_MASK_STRUCTURE_NOTIFY, false);
@@ -390,15 +390,15 @@ xcb_im_client_table_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_wind
     return client;
 }
 
-xcb_im_input_context_table_t* _xcb_im_new_input_context(xcb_im_t* im,
-                                                        xcb_im_client_table_t* client)
+xcb_im_input_context_t* _xcb_im_new_input_context(xcb_im_t* im,
+                                                  xcb_im_client_t* client)
 {
     uint16_t icid = 0;
-    xcb_im_input_context_table_t* ic = NULL;
+    xcb_im_input_context_t* ic = NULL;
     if (client->ic_free_list) {
         ic = client->ic_free_list;
-        icid = ic->ic.id;
-        xcb_im_input_context_table_t* dup = NULL;
+        icid = ic->id;
+        xcb_im_input_context_t* dup = NULL;
         HASH_FIND(hh, client->input_contexts, &icid, sizeof(uint16_t), dup);
         if (dup) {
             DebugLog("Bug in implementation");
@@ -406,28 +406,28 @@ xcb_im_input_context_table_t* _xcb_im_new_input_context(xcb_im_t* im,
         }
 
         client->ic_free_list = client->ic_free_list->hh.next;
-        memset(ic, 0, sizeof(xcb_im_input_context_table_t));
-        ic->ic.id = icid;
+        memset(ic, 0, sizeof(xcb_im_input_context_t));
+        ic->id = icid;
     } else {
         while (icid == 0) {
             icid = ++client->icid;
         }
-        xcb_im_input_context_table_t* dup = NULL;
+        xcb_im_input_context_t* dup = NULL;
         HASH_FIND(hh, client->input_contexts, &icid, sizeof(uint16_t), dup);
         if (dup) {
             DebugLog("overflow! too many clients");
             return NULL;
         }
 
-        ic = calloc(1, sizeof(xcb_im_input_context_table_t));
+        ic = calloc(1, sizeof(xcb_im_input_context_t));
         if (!ic) {
             return NULL;
         }
-        ic->ic.id = icid;
+        ic->id = icid;
     }
 
-    ic->ic.client = &client->c;
-    HASH_ADD(hh, client->input_contexts, ic.id, sizeof(uint16_t), ic);
+    ic->client = client;
+    HASH_ADD(hh, client->input_contexts, id, sizeof(uint16_t), ic);
     return ic;
 }
 
@@ -451,7 +451,7 @@ bool _xcb_im_filter_xconnect_message(xcb_im_t* im, xcb_generic_event_t* event)
         uint32_t major_version = clientmessage->data.data32[1];
         uint32_t minor_version = clientmessage->data.data32[2];
 
-        xcb_im_client_table_t *client = _xcb_im_new_client(im, client_window);
+        xcb_im_client_t *client = _xcb_im_new_client(im, client_window);
         if (!client) {
             break;
         }
@@ -466,7 +466,7 @@ bool _xcb_im_filter_xconnect_message(xcb_im_t* im, xcb_generic_event_t* event)
         ev.type = im->atoms[XIM_ATOM_XIM_CONNECT];
         ev.sequence = 0;
         ev.format = 32;
-        ev.data.data32[0] = client->c.accept_win;
+        ev.data.data32[0] = client->accept_win;
         ev.data.data32[1] = major_version;
         ev.data.data32[2] = minor_version;
         ev.data.data32[3] = XIM_CM_DATA_SIZE;
@@ -533,23 +533,23 @@ bool _xcb_im_filter_selection_request(xcb_im_t* im, xcb_generic_event_t* event)
 
 static uint8_t* _xcb_im_read_message(xcb_im_t* im,
                                      xcb_client_message_event_t *ev,
-                                     xcb_im_client_table_t* client,
+                                     xcb_im_client_t* client,
                                      xcb_im_packet_header_fr_t* hdr)
 {
     if (ev->format == 8) {
-        if (client->c.byte_order == '?') {
+        if (client->byte_order == '?') {
             // major_opcode
             if (ev->data.data8[0] != XIM_CONNECT) {
                 return NULL;  /* can do nothing */
             }
-            client->c.byte_order = ev->data.data8[XCB_IM_HEADER_SIZE];
+            client->byte_order = ev->data.data8[XCB_IM_HEADER_SIZE];
         }
     }
-    return _xcb_read_xim_message(im->conn, client->c.accept_win, ev, hdr, client->c.byte_order != im->byte_order);
+    return _xcb_read_xim_message(im->conn, client->accept_win, ev, hdr, client->byte_order != im->byte_order);
 }
 
 void _xcb_im_handle_message(xcb_im_t* im,
-                            xcb_im_client_table_t* client,
+                            xcb_im_client_t* client,
                             const xcb_im_packet_header_fr_t* hdr,
                             uint8_t* data)
 {
@@ -680,7 +680,7 @@ bool _xcb_im_filter_client(xcb_im_t* im, xcb_generic_event_t* event)
             break;
         }
 
-        xcb_im_client_table_t* client = NULL;
+        xcb_im_client_t* client = NULL;
         HASH_FIND(hh2, im->clients_by_win, &clientmessage->window, sizeof(xcb_window_t), client);
         if (!client) {
             break;
@@ -709,8 +709,8 @@ bool _xcb_im_filter_destroy_window(xcb_im_t* im, xcb_generic_event_t* event)
 
         xcb_destroy_notify_event_t* destroy_notify = (xcb_destroy_notify_event_t*) event;
 
-        xcb_im_client_table_t* client = im->clients_by_win;
-        while (client && client->c.client_win != destroy_notify->window) {
+        xcb_im_client_t* client = im->clients_by_win;
+        while (client && client->client_win != destroy_notify->window) {
             client = client->hh1.next;
         }
         if (!client) {
@@ -798,7 +798,7 @@ void xcb_im_close_im(xcb_im_t* im)
     }
 
     while (im->free_list) {
-        xcb_im_client_table_t* p = im->free_list;
+        xcb_im_client_t* p = im->free_list;
         // TODO: might need to free more?
         im->free_list = im->free_list->hh1.next;
         free(p);
@@ -825,13 +825,13 @@ void xcb_im_forward_event(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_key_pres
     frame.input_context_ID = ic->id;
     frame.flag = XimSYNCHRONUS;
     frame.sequence_number = event->sequence;
-    xcb_im_client_table_t* client = (xcb_im_client_table_t*) ic->client;
-    client->c.sync = true;
+    xcb_im_client_t* client = ic->client;
+    client->sync = true;
 
     const size_t length = 8 /* xcb_im_forward_event_fr_size(&frame) */ + sizeof(xcb_key_press_event_t);
     uint8_t data[XCB_IM_HEADER_SIZE + length];
-    _xcb_write_xim_message_header(data, XIM_FORWARD_EVENT, 0, length, client->c.byte_order != im->byte_order);
-    uint8_t* p = xcb_im_forward_event_fr_write(&frame, data + XCB_IM_HEADER_SIZE, client->c.byte_order != im->byte_order);
+    _xcb_write_xim_message_header(data, XIM_FORWARD_EVENT, 0, length, client->byte_order != im->byte_order);
+    uint8_t* p = xcb_im_forward_event_fr_write(&frame, data + XCB_IM_HEADER_SIZE, client->byte_order != im->byte_order);
     memcpy(p, event, sizeof(xcb_key_press_event_t));
 
     _xcb_im_send_message(im, client, data, length);
@@ -847,7 +847,7 @@ void xcb_im_commit_string(xcb_im_t* im, xcb_im_input_context_t* ic, uint32_t fla
         frame.byte_length_of_committed_string = length;
         frame.flag = flag | XimSYNCHRONUS;
         frame.committed_string = (uint8_t*) str;
-        _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+        _xcb_im_send_frame(im, ic->client, frame, false);
     } else {
         xcb_im_commit_both_fr_t frame;
         frame.input_method_ID = ic->client->connect_id;
@@ -856,7 +856,7 @@ void xcb_im_commit_string(xcb_im_t* im, xcb_im_input_context_t* ic, uint32_t fla
         frame.flag = flag | XimSYNCHRONUS;
         frame.committed_string = (uint8_t*) str;
         frame.keysym = keysym;
-        _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+        _xcb_im_send_frame(im, ic->client, frame, false);
     }
 }
 
@@ -866,7 +866,7 @@ void xcb_im_preedit_start(xcb_im_t* im, xcb_im_input_context_t* ic)
         return;
     }
 
-    _xcb_im_set_event_mask(im, (xcb_im_client_table_t*) ic->client, ic->id, im->event_mask, ~im->event_mask);
+    _xcb_im_set_event_mask(im, ic->client, ic->id, im->event_mask, ~im->event_mask);
 }
 
 void xcb_im_preedit_end(xcb_im_t* im, xcb_im_input_context_t* ic)
@@ -875,7 +875,7 @@ void xcb_im_preedit_end(xcb_im_t* im, xcb_im_input_context_t* ic)
         return;
     }
 
-    _xcb_im_set_event_mask(im, (xcb_im_client_table_t*) ic->client, ic->id, 0, 0);
+    _xcb_im_set_event_mask(im, ic->client, ic->id, 0, 0);
 }
 
 void xcb_im_sync_xlib(xcb_im_t* im, xcb_im_input_context_t* ic)
@@ -885,10 +885,10 @@ void xcb_im_sync_xlib(xcb_im_t* im, xcb_im_input_context_t* ic)
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
 
-    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+    _xcb_im_send_frame(im, ic->client, frame, false);
 }
 
-bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, xcb_im_ximattribute_fr_t* attr)
+bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_t* client, xcb_im_ximattribute_fr_t* attr)
 {
     xcb_im_input_styles_fr_t fr;
     memset(&fr, 0, sizeof(fr));
@@ -905,7 +905,7 @@ bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_table_t* client, 
     size_t frame_size = xcb_im_input_styles_fr_size(&fr);
     if ((attr->value = malloc(frame_size)) != NULL) {;
         attr->value_length = frame_size;
-        xcb_im_input_styles_fr_write(&fr, attr->value, client->c.byte_order != im->byte_order);
+        xcb_im_input_styles_fr_write(&fr, attr->value, client->byte_order != im->byte_order);
     }
     xcb_im_input_styles_fr_free(&fr);
     return attr->value != NULL;
@@ -926,16 +926,20 @@ const xcb_im_default_ic_attr_t* _xcb_im_default_ic_attr_entry(xcb_im_t* im,
 }
 
 void _xcb_im_destroy_ic(xcb_im_t* im,
-                        xcb_im_input_context_table_t* ic) {
+                        xcb_im_input_context_t* ic) {
 
-    xcb_im_client_table_t* client = (xcb_im_client_table_t*) ic->ic.client;
+    xcb_im_client_t* client = ic->client;
 
     if (im->callback) {
         xcb_im_packet_header_fr_t hdr;
         hdr.length = 0;
         hdr.major_opcode = XIM_DESTROY_IC;
         hdr.minor_opcode = 0;
-        im->callback(im, ic->ic.client, &ic->ic, &hdr, NULL, NULL, im->user_data);
+        im->callback(im, ic->client, ic, &hdr, NULL, NULL, im->user_data);
+    }
+
+    if (ic->free_data_function) {
+        ic->free_data_function(ic->data);
     }
 
     // Destroy ic
@@ -945,7 +949,7 @@ void _xcb_im_destroy_ic(xcb_im_t* im,
 }
 
 void _xcb_im_destroy_client(xcb_im_t* im,
-                            xcb_im_client_table_t* client)
+                            xcb_im_client_t* client)
 {
     xcb_im_packet_header_fr_t hdr;
     hdr.length = 0;
@@ -957,7 +961,7 @@ void _xcb_im_destroy_client(xcb_im_t* im,
     }
 
     if (im->callback) {
-        im->callback(im, &client->c, NULL, &hdr, NULL, NULL, im->user_data);
+        im->callback(im, client, NULL, &hdr, NULL, NULL, im->user_data);
     }
 
     list_entry_foreach_safe(item, xcb_im_queue_t, &client->queue, list) {
@@ -966,10 +970,10 @@ void _xcb_im_destroy_client(xcb_im_t* im,
 
     HASH_DELETE(hh2, im->clients_by_win, client);
     HASH_DELETE(hh1, im->clients_by_id, client);
-    xcb_destroy_window(im->conn, client->c.accept_win);
+    xcb_destroy_window(im->conn, client->accept_win);
 
     while (client->ic_free_list) {
-        xcb_im_input_context_table_t* p = client->ic_free_list;
+        xcb_im_input_context_t* p = client->ic_free_list;
         // TODO: mind need to free more?
         client->ic_free_list = client->ic_free_list->hh.next;
         free(p);
@@ -980,17 +984,17 @@ void _xcb_im_destroy_client(xcb_im_t* im,
 }
 
 
-void _xcb_im_set_event_mask(xcb_im_t* im, xcb_im_client_table_t* client, uint32_t icid, uint32_t forward_event_mask, uint32_t sync_mask)
+void _xcb_im_set_event_mask(xcb_im_t* im, xcb_im_client_t* client, uint32_t icid, uint32_t forward_event_mask, uint32_t sync_mask)
 {
     xcb_im_set_event_mask_fr_t frame;
     frame.forward_event_mask = forward_event_mask;
     frame.synchronous_event_mask = sync_mask;
-    frame.input_method_ID = client->c.connect_id;
+    frame.input_method_ID = client->connect_id;
     frame.input_context_ID = icid;
     _xcb_im_send_frame(im, client, frame, false);
 }
 
-void _xcb_im_add_queue(xcb_im_t* im, xcb_im_client_table_t* client, uint16_t icid, const xcb_im_packet_header_fr_t* hdr, xcb_im_forward_event_fr_t* frame, uint8_t* data)
+void _xcb_im_add_queue(xcb_im_t* im, xcb_im_client_t* client, uint16_t icid, const xcb_im_packet_header_fr_t* hdr, xcb_im_forward_event_fr_t* frame, uint8_t* data)
 {
     xcb_im_queue_t* item = malloc(sizeof(xcb_im_queue_t));
     if (!item) {
@@ -1006,18 +1010,18 @@ void _xcb_im_add_queue(xcb_im_t* im, xcb_im_client_table_t* client, uint16_t ici
     list_append(&item->list, &client->queue);
 }
 
-void _xcb_im_process_queue(xcb_im_t* im, xcb_im_client_table_t* client)
+void _xcb_im_process_queue(xcb_im_t* im, xcb_im_client_t* client)
 {
-    while (!client->c.sync && !list_is_empty(&client->queue))
+    while (!client->sync && !list_is_empty(&client->queue))
     {
         xcb_im_queue_t* item = list_container_of(client->queue.next, xcb_im_queue_t, list);
         list_remove(&item->list);
 
-        xcb_im_input_context_table_t* ic = NULL;
+        xcb_im_input_context_t* ic = NULL;
         HASH_FIND(hh, client->input_contexts, &item->icid, sizeof(uint16_t), ic);
         if (ic) {
             if (im->callback) {
-                im->callback(im, &client->c, &ic->ic, &item->hdr, &item->frame, &item->event, im->user_data);
+                im->callback(im, client, ic, &item->hdr, &item->frame, &item->event, im->user_data);
             }
         }
         free(item);
@@ -1030,7 +1034,7 @@ void xcb_im_geometry_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
 
-    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+    _xcb_im_send_frame(im, ic->client, frame, false);
 }
 
 void xcb_im_preedit_start_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
@@ -1039,7 +1043,7 @@ void xcb_im_preedit_start_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
 
-    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+    _xcb_im_send_frame(im, ic->client, frame, false);
 }
 
 void xcb_im_preedit_draw_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_preedit_draw_fr_t* frame)
@@ -1047,7 +1051,7 @@ void xcb_im_preedit_draw_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_
     frame->input_method_ID = ic->client->connect_id;
     frame->input_context_ID = ic->id;
 
-    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, *frame, false);
+    _xcb_im_send_frame(im, ic->client, *frame, false);
 }
 
 void xcb_im_preedit_caret_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_preedit_caret_fr_t* frame)
@@ -1055,7 +1059,7 @@ void xcb_im_preedit_caret_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb
     frame->input_method_ID = ic->client->connect_id;
     frame->input_context_ID = ic->id;
 
-    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, *frame, false);
+    _xcb_im_send_frame(im, ic->client, *frame, false);
 }
 
 void xcb_im_preedit_done_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
@@ -1064,7 +1068,7 @@ void xcb_im_preedit_done_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
 
-    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+    _xcb_im_send_frame(im, ic->client, frame, false);
 }
 
 void xcb_im_status_start_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
@@ -1073,7 +1077,7 @@ void xcb_im_status_start_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
 
-    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+    _xcb_im_send_frame(im, ic->client, frame, false);
 }
 
 void xcb_im_status_done_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
@@ -1082,7 +1086,7 @@ void xcb_im_status_done_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
 
-    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, frame, false);
+    _xcb_im_send_frame(im, ic->client, frame, false);
 }
 
 void xcb_im_status_draw_text_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_status_draw_text_fr_t* frame)
@@ -1091,7 +1095,7 @@ void xcb_im_status_draw_text_callback(xcb_im_t* im, xcb_im_input_context_t* ic, 
     frame->input_context_ID = ic->id;
     frame->type = XCB_IM_TextType;
 
-    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, *frame, false);
+    _xcb_im_send_frame(im, ic->client, *frame, false);
 }
 
 void xcb_im_status_draw_bitmap_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_status_draw_bitmap_fr_t* frame)
@@ -1100,24 +1104,24 @@ void xcb_im_status_draw_bitmap_callback(xcb_im_t* im, xcb_im_input_context_t* ic
     frame->input_context_ID = ic->id;
     frame->type = XCB_IM_BitmapType;
 
-    _xcb_im_send_frame(im, (xcb_im_client_table_t*) ic->client, *frame, false);
+    _xcb_im_send_frame(im, ic->client, *frame, false);
 }
 
 // length is the body without header size in byte
 bool _xcb_im_send_message(xcb_im_t* im,
-                          xcb_im_client_table_t* client,
+                          xcb_im_client_t* client,
                           uint8_t* data, size_t length)
 {
     char atomName[64];
-    int len = sprintf(atomName, "_server%u_%u", client->c.connect_id, im->sequence++);
-    return _xcb_send_xim_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], client->c.client_win,
+    int len = sprintf(atomName, "_server%u_%u", client->connect_id, im->sequence++);
+    return _xcb_send_xim_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], client->client_win,
                                  data, length, atomName, len);
 }
 
 void _xcb_im_send_error_message(xcb_im_t* im,
-                                xcb_im_client_table_t* client)
+                                xcb_im_client_t* client)
 {
-    _xcb_send_xim_error_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], client->c.client_win, im->byte_order != client->c.byte_order);
+    _xcb_send_xim_error_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], client->client_win, im->byte_order != client->byte_order);
 }
 
 bool xcb_im_support_extension(xcb_im_t* im, uint16_t major_code, uint16_t minor_code)
@@ -1131,3 +1135,17 @@ bool xcb_im_support_extension(xcb_im_t* im, uint16_t major_code, uint16_t minor_
     return false;
 }
 
+void xcb_im_input_context_set_data(xcb_im_input_context_t* ic, void* data, xcb_im_free_function free_data_function)
+{
+    if (ic->free_data_function) {
+        ic->free_data_function(ic->data);
+    }
+
+    ic->data = data;
+    ic->free_data_function = free_data_function;
+}
+
+void* xcb_im_input_context_get_data(xcb_im_input_context_t* ic)
+{
+    return ic->data;
+}

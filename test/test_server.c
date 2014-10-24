@@ -21,16 +21,12 @@
 
 bool end = false;
 
-bool callback(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
+void callback(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
               const xcb_im_packet_header_fr_t* hdr,
               void* frame, void* arg, void* user_data)
 {
     if (hdr->major_opcode == XIM_DISCONNECT) {
         // end = true;
-    }
-
-    if (hdr->major_opcode != XIM_FORWARD_EVENT) {
-        return false;
     }
 
     xcb_key_press_event_t* event = arg;
@@ -42,8 +38,6 @@ bool callback(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
     } else {
         xcb_im_forward_event(im, ic, event);
     }
-
-    return true;
 }
 
 static uint32_t style_array[] = {

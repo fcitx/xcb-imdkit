@@ -52,15 +52,8 @@ typedef struct _xcb_im_encodings_t {
 } xcb_im_encodings_t;
 
 typedef struct _xcb_im_t xcb_im_t;
-
-typedef struct _xcb_im_client_t
-{
-    xcb_window_t accept_win;
-    int connect_id;
-    xcb_window_t client_win;
-    uint8_t byte_order;
-    bool sync;
-} xcb_im_client_t;
+typedef struct _xcb_im_input_context_t xcb_im_input_context_t;
+typedef struct _xcb_im_client_t xcb_im_client_t;
 
 typedef struct _xcb_im_preedit_attr_t {
     xcb_rectangle_t area;
@@ -84,21 +77,11 @@ typedef struct _xcb_im_status_attr_t {
     uint32_t line_space;
 } xcb_im_status_attr_t;
 
-typedef struct _xcb_im_input_context_t
-{
-    uint16_t id;
-    xcb_im_client_t* client;
-    uint32_t input_style;
-    xcb_window_t client_win;
-    xcb_window_t focus_win;
-
-    xcb_im_preedit_attr_t preedit;
-    xcb_im_status_attr_t status;
-} xcb_im_input_context_t;
-
-typedef bool (*xcb_im_callback)(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
+typedef void (*xcb_im_callback)(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
                                 const xcb_im_packet_header_fr_t* hdr,
                                 void* frame, void* arg, void* user_data);
+
+typedef void (*xcb_im_free_function) (void *memory);
 
 XCB_IMDKIT_EXPORT xcb_im_t* xcb_im_create(xcb_connection_t* conn,
                                           int screen,
@@ -131,5 +114,7 @@ XCB_IMDKIT_EXPORT void xcb_im_preedit_start(xcb_im_t* im, xcb_im_input_context_t
 XCB_IMDKIT_EXPORT void xcb_im_preedit_end(xcb_im_t* im, xcb_im_input_context_t* ic);
 XCB_IMDKIT_EXPORT void xcb_im_sync_xlib(xcb_im_t* im, xcb_im_input_context_t* ic);
 XCB_IMDKIT_EXPORT bool xcb_im_support_extension(xcb_im_t* im, uint16_t major_code, uint16_t minor_code);
+XCB_IMDKIT_EXPORT void xcb_im_input_context_set_data(xcb_im_input_context_t* ic, void* data, xcb_im_free_function free_data_function);
+XCB_IMDKIT_EXPORT void* xcb_im_input_context_get_data(xcb_im_input_context_t* ic);
 
 #endif // IMDKIT_H
