@@ -351,7 +351,7 @@ void _xcb_im_handle_create_ic(xcb_im_t* im,
         reply_frame.input_context_ID = ic->id;
 
         if (im->callback) {
-            im->callback(im, client, NULL, hdr, &frame, &reply_frame, im->user_data);
+            im->callback(im, client, ic, hdr, &frame, &reply_frame, im->user_data);
         }
 
         _xcb_im_send_frame(im, client, reply_frame, true);
