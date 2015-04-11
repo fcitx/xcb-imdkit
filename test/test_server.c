@@ -18,6 +18,9 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "imdkit.h"
+#include "encoding.h"
+
+#define TEST_STRING "hello world你好世界켐ㅇㄹ貴方元気？☺"
 
 bool end = false;
 
@@ -35,7 +38,10 @@ void callback(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
         xcb_key_symbols_t* key_symbols = user_data;
         xcb_keysym_t sym = xcb_key_symbols_get_keysym(key_symbols, event->detail, 0);
         if (sym == 't') {
-            xcb_im_commit_string(im, ic, XCB_XIM_LOOKUP_CHARS, "hello world!\xe4\xbd\xa0\xe5\xa5\xbd", strlen("hello world!\xe4\xbd\xa0\xe5\xa5\xbd"), 0);
+            size_t len;
+            char* result = xcb_utf8_to_compound_text(TEST_STRING, strlen(TEST_STRING), &len);
+            xcb_im_commit_string(im, ic, XCB_XIM_LOOKUP_CHARS, result, len, 0);
+            free(result);
         } else {
             xcb_im_forward_event(im, ic, event);
         }
@@ -63,6 +69,7 @@ static xcb_im_styles_t styles = {
 
 int main(int argc, char* argv[])
 {
+    xcb_compound_text_init();
     /* Open the connection to the X server */
 
     int screen_default_nbr;

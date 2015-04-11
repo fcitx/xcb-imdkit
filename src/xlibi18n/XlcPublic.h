@@ -67,14 +67,6 @@ typedef enum {
     CSsrcXLC		/* defined in an XLC_LOCALE file */
 } CSSrc;
 
-/* These are the supported properties of XlcCharSet. */
-#define XlcNCharSize 		"charSize"
-#define XlcNControlSequence 	"controlSequence"
-#define XlcNEncodingName 	"encodingName"
-#define XlcNName 		"name"
-#define XlcNSetSize 		"setSize"
-#define XlcNSide 		"side"
-
 /* This is the structure of an XlcCharSet.
    Once allocated, they are never freed. */
 typedef struct _XlcCharSetRec {
