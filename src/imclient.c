@@ -12,16 +12,18 @@
  * Lesser General Public License for more details.
  *
  */
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <xcb/xcb.h>
+#include <xcb/xcb_aux.h>
+#include "parser.h"
 #include "imclient.h"
 #include "imclient_p.h"
 #include "common.h"
 #include "ximproto.h"
 #include "message.h"
 #include "clientprotocolhandler.h"
-#include <xcb/xcb_aux.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
 
 #define CHECK_NEXT_SERVER(IM) \
     do { \
@@ -302,7 +304,7 @@ xcb_xim_connect_action_t _xcb_xim_connect_wait_reply(xcb_xim_t* im, xcb_generic_
         return ACTION_FAILED;
     }
 
-    if (hdr.major_opcode != XIM_CONNECT_REPLY) {
+    if (hdr.major_opcode != XCB_XIM_CONNECT_REPLY) {
         return ACTION_YIELD;
     }
 
@@ -537,99 +539,99 @@ bool xcb_xim_open(xcb_xim_t* im,
 void _xcb_xim_handle_message(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
     switch (hdr->major_opcode) {
-    case XIM_OPEN_REPLY:
+    case XCB_XIM_OPEN_REPLY:
         DebugLog("-- XIM_OPEN_REPLY\n");
         _xcb_xim_handle_open_reply(im, hdr, data);
         break;
-    case XIM_REGISTER_TRIGGERKEYS:
+    case XCB_XIM_REGISTER_TRIGGERKEYS:
         DebugLog("-- XIM_REGISTER_TRIGGERKEYS\n");
         _xcb_xim_handle_register_triggerkeys(im, hdr, data);
         break;
-    case XIM_QUERY_EXTENSION_REPLY:
+    case XCB_XIM_QUERY_EXTENSION_REPLY:
         DebugLog("-- XIM_QUERY_EXTENSION_REPLY\n");
         _xcb_xim_handle_query_extension_reply(im, hdr, data);
         break;
-    case XIM_ENCODING_NEGOTIATION_REPLY:
+    case XCB_XIM_ENCODING_NEGOTIATION_REPLY:
         DebugLog("-- XIM_ENCODING_NEGOTIATION_REPLY\n");
         _xcb_xim_handle_encoding_negotiation_reply(im, hdr, data);
         break;
-    case XIM_GET_IM_VALUES_REPLY:
+    case XCB_XIM_GET_IM_VALUES_REPLY:
         DebugLog("-- XIM_GET_IM_VALUES_REPLY\n");
         _xcb_xim_handle_get_im_values_reply(im, hdr, data);
         break;
-    case XIM_SET_EVENT_MASK:
+    case XCB_XIM_SET_EVENT_MASK:
         DebugLog("-- XIM_SET_EVENT_MASK\n");
         _xcb_xim_handle_set_event_mask(im, hdr, data);
         break;
-    case XIM_CREATE_IC_REPLY:
+    case XCB_XIM_CREATE_IC_REPLY:
         DebugLog("-- XIM_CREATE_IC_REPLY\n");
         _xcb_xim_handle_create_ic_reply(im, hdr, data);
         break;
-    case XIM_GET_IC_VALUES_REPLY:
+    case XCB_XIM_GET_IC_VALUES_REPLY:
         DebugLog("-- XIM_GET_IC_VALUES_REPLY\n");
         _xcb_xim_handle_get_ic_values_reply(im, hdr, data);
         break;
-    case XIM_SET_IC_VALUES_REPLY:
+    case XCB_XIM_SET_IC_VALUES_REPLY:
         DebugLog("-- XIM_SET_IC_VALUES_REPLY\n");
         _xcb_xim_handle_set_ic_values_reply(im, hdr, data);
         break;
-    case XIM_FORWARD_EVENT:
+    case XCB_XIM_FORWARD_EVENT:
         DebugLog("-- XIM_FORWARD_EVENT\n");
         _xcb_xim_handle_forward_event(im, hdr, data);
         break;
-    case XIM_SYNC:
+    case XCB_XIM_SYNC:
         DebugLog("-- XIM_SYNC\n");
         _xcb_xim_handle_sync(im, hdr, data);
         break;
-    case XIM_COMMIT:
+    case XCB_XIM_COMMIT:
         DebugLog("-- XIM_COMMIT\n");
         _xcb_xim_handle_commit(im, hdr, data);
         break;
-    case XIM_GEOMETRY:
+    case XCB_XIM_GEOMETRY:
         DebugLog("-- XIM_GEOMETRY\n");
         _xcb_xim_handle_geometry(im, hdr, data);
         break;
-    case XIM_PREEDIT_START:
+    case XCB_XIM_PREEDIT_START:
         DebugLog("-- XIM_PREEDIT_START\n");
         _xcb_xim_handle_preedit_start(im, hdr, data);
         break;
-    case XIM_PREEDIT_DRAW:
+    case XCB_XIM_PREEDIT_DRAW:
         DebugLog("-- XIM_PREEDIT_DRAW\n");
         _xcb_xim_handle_preedit_draw(im, hdr, data);
         break;
-    case XIM_PREEDIT_CARET:
+    case XCB_XIM_PREEDIT_CARET:
         DebugLog("-- XIM_PREEDIT_CARET\n");
         _xcb_xim_handle_preedit_caret(im, hdr, data);
         break;
-    case XIM_PREEDIT_DONE:
+    case XCB_XIM_PREEDIT_DONE:
         DebugLog("-- XIM_PREEDIT_DONE\n");
         _xcb_xim_handle_preedit_done(im, hdr, data);
         break;
-    case XIM_STATUS_START:
+    case XCB_XIM_STATUS_START:
         DebugLog("-- XIM_STATUS_START\n");
         _xcb_xim_handle_status_start(im, hdr, data);
         break;
-    case XIM_STATUS_DRAW:
+    case XCB_XIM_STATUS_DRAW:
         DebugLog("-- XIM_STATUS_DRAW\n");
         _xcb_xim_handle_status_draw(im, hdr, data);
         break;
-    case XIM_STATUS_DONE:
+    case XCB_XIM_STATUS_DONE:
         DebugLog("-- XIM_STATUS_DONE\n");
         _xcb_xim_handle_status_done(im, hdr, data);
         break;
-    case XIM_CLOSE_REPLY:
+    case XCB_XIM_CLOSE_REPLY:
         DebugLog("-- XIM_CLOSE_REPLY\n");
         _xcb_xim_handle_close_reply(im, hdr, data);
         break;
-    case XIM_DESTROY_IC_REPLY:
+    case XCB_XIM_DESTROY_IC_REPLY:
         DebugLog("-- XIM_DESTROY_IC_REPLY\n");
         _xcb_xim_handle_destroy_ic_reply(im, hdr, data);
         break;
-    case XIM_RESET_IC_REPLY:
+    case XCB_XIM_RESET_IC_REPLY:
         DebugLog("-- XIM_DESTROY_IC_REPLY\n");
         _xcb_xim_handle_reset_ic_reply(im, hdr, data);
         break;
-    case XIM_ERROR:
+    case XCB_XIM_ERROR:
         DebugLog("-- XIM_ERROR\n");
         _xcb_xim_handle_error(im, hdr, data);
         break;
@@ -890,7 +892,7 @@ void xcb_xim_close(xcb_xim_t* im)
 void _xcb_xim_request_free(xcb_xim_request_queue_t* request)
 {
     switch (request->major_code) {
-        case XIM_CREATE_IC:
+        case XCB_XIM_CREATE_IC:
         {
             xcb_im_xicattribute_fr_t* items = request->frame.create_ic.ic_attributes.items;
             for (uint32_t i = 0; i < request->frame.create_ic.ic_attributes.size; i ++) {
@@ -900,13 +902,13 @@ void _xcb_xim_request_free(xcb_xim_request_queue_t* request)
             free(items);
             break;
         }
-        case XIM_GET_IM_VALUES:
+        case XCB_XIM_GET_IM_VALUES:
             free(request->frame.get_im_values.im_attribute_id.items);
             break;
-        case XIM_GET_IC_VALUES:
+        case XCB_XIM_GET_IC_VALUES:
             free(request->frame.get_ic_values.ic_attribute.items);
             break;
-        case XIM_SET_IC_VALUES:
+        case XCB_XIM_SET_IC_VALUES:
         {
             xcb_im_xicattribute_fr_t* items = request->frame.set_ic_values.ic_attribute.items;
             for (uint32_t i = 0; i < request->frame.set_ic_values.ic_attribute.size; i ++) {
@@ -916,9 +918,9 @@ void _xcb_xim_request_free(xcb_xim_request_queue_t* request)
             free(items);
             break;
         }
-        case XIM_DESTROY_IC:
-        case XIM_FORWARD_EVENT:
-        case XIM_RESET_IC:
+        case XCB_XIM_DESTROY_IC:
+        case XCB_XIM_FORWARD_EVENT:
+        case XCB_XIM_RESET_IC:
             break;
     }
     free(request);
@@ -929,25 +931,25 @@ bool _xcb_xim_send_request_frame(xcb_xim_t* im, xcb_xim_request_queue_t* request
     bool fail = true;
     switch(request->major_code)
     {
-    case XIM_CREATE_IC:
+    case XCB_XIM_CREATE_IC:
         _xcb_xim_send_frame(im, request->frame.create_ic, fail);
         break;
-    case XIM_DESTROY_IC:
+    case XCB_XIM_DESTROY_IC:
         _xcb_xim_send_frame(im, request->frame.destroy_ic, fail);
         break;
-    case XIM_GET_IM_VALUES:
+    case XCB_XIM_GET_IM_VALUES:
         _xcb_xim_send_frame(im, request->frame.get_im_values, fail);
         break;
-    case XIM_GET_IC_VALUES:
+    case XCB_XIM_GET_IC_VALUES:
         _xcb_xim_send_frame(im, request->frame.get_ic_values, fail);
         break;
-    case XIM_SET_IC_VALUES:
+    case XCB_XIM_SET_IC_VALUES:
         _xcb_xim_send_frame(im, request->frame.set_ic_values, fail);
         break;
-    case XIM_FORWARD_EVENT:
+    case XCB_XIM_FORWARD_EVENT:
         _xcb_xim_send_message(im, request->frame.forward_event, sizeof(request->frame.forward_event));
         break;
-    case XIM_RESET_IC:
+    case XCB_XIM_RESET_IC:
         _xcb_xim_send_frame(im, request->frame.reset_ic, fail);
         break;
     default:
@@ -963,25 +965,25 @@ void _xcb_xim_process_fail_callback(xcb_xim_t* im, xcb_xim_request_queue_t* requ
     }
     switch(request->major_code)
     {
-    case XIM_CREATE_IC:
+    case XCB_XIM_CREATE_IC:
         request->callback.create_ic(im, 0, request->user_data);
         break;
-    case XIM_DESTROY_IC:
+    case XCB_XIM_DESTROY_IC:
         request->callback.destroy_ic(im, request->frame.destroy_ic.input_context_ID, request->user_data);
         break;
-    case XIM_GET_IM_VALUES:
+    case XCB_XIM_GET_IM_VALUES:
         request->callback.get_im_values(im, NULL, request->user_data);
         break;
-    case XIM_GET_IC_VALUES:
+    case XCB_XIM_GET_IC_VALUES:
         request->callback.get_ic_values(im, request->frame.get_ic_values.input_context_ID, NULL, request->user_data);
         break;
-    case XIM_SET_IC_VALUES:
+    case XCB_XIM_SET_IC_VALUES:
         request->callback.set_ic_values(im, request->frame.set_ic_values.input_context_ID, request->user_data);
         break;
-    case XIM_RESET_IC:
+    case XCB_XIM_RESET_IC:
         request->callback.reset_ic(im, request->frame.reset_ic.input_context_ID, NULL, request->user_data);
         break;
-    case XIM_FORWARD_EVENT:
+    case XCB_XIM_FORWARD_EVENT:
         break;
     default:
         break;
@@ -1119,7 +1121,7 @@ bool xcb_xim_create_ic(xcb_xim_t* im, xcb_xim_create_ic_callback callback, void*
         return false;
     }
 
-    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_CREATE_IC, 0, callback, user_data);
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XCB_XIM_CREATE_IC, 0, callback, user_data);
     if (!queue) {
         return false;
     }
@@ -1144,9 +1146,9 @@ bool xcb_xim_create_ic(xcb_xim_t* im, xcb_xim_create_ic_callback callback, void*
     for (uint32_t i = 0; i < nItems; i++) {
         char* attr = va_arg(var, char *);
         void* p = va_arg(var, void*);
-        if (strcmp(attr, XNClientWindow) == 0) {
+        if (strcmp(attr, XCB_XIM_XNClientWindow) == 0) {
             im->client_window = *(xcb_window_t*)p;
-        } else if (strcmp(attr, XNFocusWindow) == 0) {
+        } else if (strcmp(attr, XCB_XIM_XNFocusWindow) == 0) {
             im->client_window = *(xcb_window_t*)p;
         }
 
@@ -1178,7 +1180,7 @@ bool xcb_xim_destroy_ic(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_destroy_ic_callback
         return false;
     }
 
-    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_DESTROY_IC, 0, callback, user_data);
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XCB_XIM_DESTROY_IC, 0, callback, user_data);
     if (!queue) {
         return false;
     }
@@ -1213,7 +1215,7 @@ bool xcb_xim_get_im_values(xcb_xim_t* im, xcb_xim_get_im_values_callback callbac
         return false;
     }
 
-    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_GET_IM_VALUES, 0, callback, user_data);
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XCB_XIM_GET_IM_VALUES, 0, callback, user_data);
     if (!queue) {
         return false;
     }
@@ -1259,7 +1261,7 @@ bool xcb_xim_get_ic_values(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_get_ic_values_ca
         return false;
     }
 
-    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_GET_IC_VALUES, 0, callback, user_data);
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XCB_XIM_GET_IC_VALUES, 0, callback, user_data);
     if (!queue) {
         return false;
     }
@@ -1297,7 +1299,7 @@ bool xcb_xim_ext_move(xcb_xim_t* im, xcb_xic_t ic, int16_t x, int16_t y)
 
     size_t length = xcb_im_ext_move_fr_size(&frame);
     uint8_t reply[XCB_IM_HEADER_SIZE + xcb_im_ext_move_fr_size(&frame)];
-    _xcb_write_xim_message_header(reply, XIM_EXTENSION, XIM_EXT_MOVE, length, false);
+    _xcb_write_xim_message_header(reply, XCB_XIM_EXTENSION, XCB_XIM_EXT_MOVE, length, false);
     xcb_im_ext_move_fr_write(&frame, reply + XCB_IM_HEADER_SIZE, false);
     if (!_xcb_xim_send_message(im, reply, length)) {
         return false;
@@ -1311,7 +1313,7 @@ bool xcb_xim_set_ic_values(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_set_ic_values_ca
         return false;
     }
 
-    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_SET_IC_VALUES, 0, callback, user_data);
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XCB_XIM_SET_IC_VALUES, 0, callback, user_data);
     if (!queue) {
         return false;
     }
@@ -1336,9 +1338,9 @@ bool xcb_xim_set_ic_values(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_set_ic_values_ca
     for (uint32_t i = 0; i < nItems; i++) {
         char* attr = va_arg(var, char *);
         void* p = va_arg(var, void*);
-        if (strcmp(attr, XNClientWindow) == 0) {
+        if (strcmp(attr, XCB_XIM_XNClientWindow) == 0) {
             im->client_window = *(xcb_window_t*)p;
-        } else if (strcmp(attr, XNFocusWindow) == 0) {
+        } else if (strcmp(attr, XCB_XIM_XNFocusWindow) == 0) {
             im->client_window = *(xcb_window_t*)p;
         }
 
@@ -1388,18 +1390,18 @@ bool xcb_xim_unset_ic_focus(xcb_xim_t* im, xcb_xic_t ic)
 
 bool xcb_xim_forward_event(xcb_xim_t* im, xcb_xic_t ic, xcb_key_press_event_t* event)
 {
-    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_FORWARD_EVENT, 0, NULL, NULL);
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XCB_XIM_FORWARD_EVENT, 0, NULL, NULL);
     if (!queue) {
         return false;
     }
     xcb_im_forward_event_fr_t frame;
     frame.input_method_ID = im->connect_id;
     frame.input_context_ID = ic;
-    frame.flag = XimSYNCHRONUS;
+    frame.flag = XCB_XIM_SYNCHRONOUS;
     frame.sequence_number = event->sequence;
 
     const size_t length = xcb_im_forward_event_fr_size(&frame) + sizeof(xcb_key_press_event_t);
-    _xcb_write_xim_message_header(queue->frame.forward_event, XIM_FORWARD_EVENT, 0, length, false);
+    _xcb_write_xim_message_header(queue->frame.forward_event, XCB_XIM_FORWARD_EVENT, 0, length, false);
     uint8_t* p = xcb_im_forward_event_fr_write(&frame, queue->frame.forward_event + XCB_IM_HEADER_SIZE, false);
     memcpy(p, event, sizeof(xcb_key_press_event_t));
 
@@ -1411,7 +1413,7 @@ bool xcb_xim_forward_event(xcb_xim_t* im, xcb_xic_t ic, xcb_key_press_event_t* e
 
 bool xcb_xim_reset_ic(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_reset_ic_callback callback, void* user_data)
 {
-    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XIM_RESET_IC, 0, NULL, NULL);
+    xcb_xim_request_queue_t* queue = _xcb_xim_new_request(im, XCB_XIM_RESET_IC, 0, NULL, NULL);
     if (!queue) {
         return false;
     }

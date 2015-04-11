@@ -17,7 +17,11 @@
 #define XIMPROTO_H
 
 #include <stdlib.h>
-#include "parser.h"
+#include <stdint.h>
+#include <stdbool.h>
+
+typedef uint8_t *xcb_im_bytearray_t;
+
 #include "ximproto-gen.h"
 
 #define XCB_IM_HEADER_SIZE 4
@@ -25,125 +29,128 @@
 /*
  * Client Message data size
  */
-#define XIM_CM_DATA_SIZE    20
+#define XCB_XIM_CM_DATA_SIZE    20
 
 /*
  * Xim implementation revision
  */
-#define PROTOCOLMAJORVERSION        0
-#define PROTOCOLMINORVERSION        0
+#define XCB_XIM_PROTOCOLMAJORVERSION        0
+#define XCB_XIM_PROTOCOLMINORVERSION        0
 
 /*
  * Major Protocol number
  */
-#define XIM_CONNECT           1
-#define XIM_CONNECT_REPLY         2
-#define XIM_DISCONNECT            3
-#define XIM_DISCONNECT_REPLY          4
+#define XCB_XIM_CONNECT           1
+#define XCB_XIM_CONNECT_REPLY         2
+#define XCB_XIM_DISCONNECT            3
+#define XCB_XIM_DISCONNECT_REPLY          4
 
-#define XIM_AUTH_REQUIRED        10
-#define XIM_AUTH_REPLY           11
-#define XIM_AUTH_NEXT            12
-#define XIM_AUTH_SETUP           13
-#define XIM_AUTH_NG          14
+#define XCB_XIM_AUTH_REQUIRED        10
+#define XCB_XIM_AUTH_REPLY           11
+#define XCB_XIM_AUTH_NEXT            12
+#define XCB_XIM_AUTH_SETUP           13
+#define XCB_XIM_AUTH_NG          14
 
-#define XIM_ERROR            20
+#define XCB_XIM_ERROR            20
 
-#define XIM_OPEN             30
-#define XIM_OPEN_REPLY           31
-#define XIM_CLOSE            32
-#define XIM_CLOSE_REPLY          33
-#define XIM_REGISTER_TRIGGERKEYS     34
-#define XIM_TRIGGER_NOTIFY       35
-#define XIM_TRIGGER_NOTIFY_REPLY     36
-#define XIM_SET_EVENT_MASK       37
-#define XIM_ENCODING_NEGOTIATION     38
-#define XIM_ENCODING_NEGOTIATION_REPLY   39
-#define XIM_QUERY_EXTENSION      40
-#define XIM_QUERY_EXTENSION_REPLY    41
-#define XIM_SET_IM_VALUES        42
-#define XIM_SET_IM_VALUES_REPLY      43
-#define XIM_GET_IM_VALUES        44
-#define XIM_GET_IM_VALUES_REPLY      45
+#define XCB_XIM_OPEN             30
+#define XCB_XIM_OPEN_REPLY           31
+#define XCB_XIM_CLOSE            32
+#define XCB_XIM_CLOSE_REPLY          33
+#define XCB_XIM_REGISTER_TRIGGERKEYS     34
+#define XCB_XIM_TRIGGER_NOTIFY       35
+#define XCB_XIM_TRIGGER_NOTIFY_REPLY     36
+#define XCB_XIM_SET_EVENT_MASK       37
+#define XCB_XIM_ENCODING_NEGOTIATION     38
+#define XCB_XIM_ENCODING_NEGOTIATION_REPLY   39
+#define XCB_XIM_QUERY_EXTENSION      40
+#define XCB_XIM_QUERY_EXTENSION_REPLY    41
+#define XCB_XIM_SET_IM_VALUES        42
+#define XCB_XIM_SET_IM_VALUES_REPLY      43
+#define XCB_XIM_GET_IM_VALUES        44
+#define XCB_XIM_GET_IM_VALUES_REPLY      45
 
-#define XIM_CREATE_IC            50
-#define XIM_CREATE_IC_REPLY      51
-#define XIM_DESTROY_IC           52
-#define XIM_DESTROY_IC_REPLY         53
-#define XIM_SET_IC_VALUES        54
-#define XIM_SET_IC_VALUES_REPLY      55
-#define XIM_GET_IC_VALUES        56
-#define XIM_GET_IC_VALUES_REPLY      57
-#define XIM_SET_IC_FOCUS         58
-#define XIM_UNSET_IC_FOCUS       59
-#define XIM_FORWARD_EVENT        60
-#define XIM_SYNC             61
-#define XIM_SYNC_REPLY           62
-#define XIM_COMMIT           63
-#define XIM_RESET_IC             64
-#define XIM_RESET_IC_REPLY       65
+#define XCB_XIM_CREATE_IC            50
+#define XCB_XIM_CREATE_IC_REPLY      51
+#define XCB_XIM_DESTROY_IC           52
+#define XCB_XIM_DESTROY_IC_REPLY         53
+#define XCB_XIM_SET_IC_VALUES        54
+#define XCB_XIM_SET_IC_VALUES_REPLY      55
+#define XCB_XIM_GET_IC_VALUES        56
+#define XCB_XIM_GET_IC_VALUES_REPLY      57
+#define XCB_XIM_SET_IC_FOCUS         58
+#define XCB_XIM_UNSET_IC_FOCUS       59
+#define XCB_XIM_FORWARD_EVENT        60
+#define XCB_XIM_SYNC             61
+#define XCB_XIM_SYNC_REPLY           62
+#define XCB_XIM_COMMIT           63
+#define XCB_XIM_RESET_IC             64
+#define XCB_XIM_RESET_IC_REPLY       65
 
-#define XIM_GEOMETRY             70
-#define XIM_STR_CONVERSION       71
-#define XIM_STR_CONVERSION_REPLY     72
-#define XIM_PREEDIT_START        73
-#define XIM_PREEDIT_START_REPLY      74
-#define XIM_PREEDIT_DRAW         75
-#define XIM_PREEDIT_CARET        76
-#define XIM_PREEDIT_CARET_REPLY      77
-#define XIM_PREEDIT_DONE         78
-#define XIM_STATUS_START         79
-#define XIM_STATUS_DRAW          80
-#define XIM_STATUS_DONE          81
+#define XCB_XIM_GEOMETRY             70
+#define XCB_XIM_STR_CONVERSION       71
+#define XCB_XIM_STR_CONVERSION_REPLY     72
+#define XCB_XIM_PREEDIT_START        73
+#define XCB_XIM_PREEDIT_START_REPLY      74
+#define XCB_XIM_PREEDIT_DRAW         75
+#define XCB_XIM_PREEDIT_CARET        76
+#define XCB_XIM_PREEDIT_CARET_REPLY      77
+#define XCB_XIM_PREEDIT_DONE         78
+#define XCB_XIM_STATUS_START         79
+#define XCB_XIM_STATUS_DRAW          80
+#define XCB_XIM_STATUS_DONE          81
 
-#define XimLookupChars        0x0002
-#define XimLookupKeySym       0x0004
-#define XimLookupBoth         0x0006
+typedef enum {
+    XCB_XIM_SYNCHRONOUS = (1 << 0),
+    XCB_XIM_LOOKUP_CHARS = (1 << 1),
+    XCB_XIM_LOOKUP_KEYSYM = (1 << 2),
+    XCB_XIM_LOOKUP_BOTH = XCB_XIM_LOOKUP_CHARS | XCB_XIM_LOOKUP_KEYSYM,
+} xcb_xim_lookup_flags_t;
 
 #define frame_opcode(FRAME) _Generic((FRAME), \
-    xcb_im_connect_reply_fr_t: XIM_CONNECT_REPLY, \
-    xcb_im_open_fr_t: XIM_OPEN, \
-    xcb_im_open_reply_fr_t: XIM_OPEN_REPLY, \
-    xcb_im_close_fr_t: XIM_CLOSE, \
-    xcb_im_close_reply_fr_t: XIM_CLOSE_REPLY, \
-    xcb_im_query_extension_fr_t: XIM_QUERY_EXTENSION, \
-    xcb_im_query_extension_reply_fr_t: XIM_QUERY_EXTENSION_REPLY, \
-    xcb_im_encoding_negotiation_fr_t: XIM_ENCODING_NEGOTIATION, \
-    xcb_im_encoding_negotiation_reply_fr_t: XIM_ENCODING_NEGOTIATION_REPLY, \
-    xcb_im_get_im_values_fr_t: XIM_GET_IM_VALUES, \
-    xcb_im_get_im_values_reply_fr_t: XIM_GET_IM_VALUES_REPLY, \
-    xcb_im_set_event_mask_fr_t: XIM_SET_EVENT_MASK, \
-    xcb_im_create_ic_fr_t: XIM_CREATE_IC, \
-    xcb_im_create_ic_reply_fr_t: XIM_CREATE_IC_REPLY, \
-    xcb_im_set_ic_values_fr_t: XIM_SET_IC_VALUES, \
-    xcb_im_set_ic_values_reply_fr_t: XIM_SET_IC_VALUES_REPLY, \
-    xcb_im_get_ic_values_fr_t: XIM_GET_IC_VALUES, \
-    xcb_im_get_ic_values_reply_fr_t: XIM_GET_IC_VALUES_REPLY, \
-    xcb_im_register_triggerkeys_fr_t: XIM_REGISTER_TRIGGERKEYS, \
-    xcb_im_destroy_ic_fr_t: XIM_DESTROY_IC, \
-    xcb_im_destroy_ic_reply_fr_t: XIM_DESTROY_IC_REPLY, \
-    xcb_im_reset_ic_fr_t: XIM_RESET_IC, \
-    xcb_im_reset_ic_reply_fr_t: XIM_RESET_IC_REPLY, \
-    xcb_im_trigger_notify_fr_t: XIM_TRIGGER_NOTIFY, \
-    xcb_im_trigger_notify_reply_fr_t: XIM_TRIGGER_NOTIFY_REPLY, \
-    xcb_im_preedit_start_fr_t: XIM_PREEDIT_START, \
-    xcb_im_preedit_draw_fr_t: XIM_PREEDIT_DRAW, \
-    xcb_im_preedit_caret_fr_t: XIM_PREEDIT_CARET, \
-    xcb_im_preedit_done_fr_t: XIM_PREEDIT_DONE, \
-    xcb_im_status_start_fr_t: XIM_STATUS_START, \
-    xcb_im_status_draw_text_fr_t: XIM_STATUS_DRAW, \
-    xcb_im_status_draw_bitmap_fr_t: XIM_STATUS_DRAW, \
-    xcb_im_status_done_fr_t: XIM_STATUS_DONE, \
-    xcb_im_commit_chars_fr_t: XIM_COMMIT, \
-    xcb_im_commit_both_fr_t: XIM_COMMIT, \
-    xcb_im_connect_fr_t: XIM_CONNECT, \
-    xcb_im_disconnect_fr_t: XIM_DISCONNECT, \
-    xcb_im_disconnect_reply_fr_t: XIM_DISCONNECT_REPLY, \
-    xcb_im_set_ic_focus_fr_t: XIM_SET_IC_FOCUS, \
-    xcb_im_unset_ic_focus_fr_t: XIM_UNSET_IC_FOCUS, \
-    xcb_im_sync_fr_t: XIM_SYNC, \
-    xcb_im_sync_reply_fr_t: XIM_SYNC_REPLY, \
-    xcb_im_geometry_fr_t: XIM_GEOMETRY \
+    xcb_im_connect_reply_fr_t: XCB_XIM_CONNECT_REPLY, \
+    xcb_im_open_fr_t: XCB_XIM_OPEN, \
+    xcb_im_open_reply_fr_t: XCB_XIM_OPEN_REPLY, \
+    xcb_im_close_fr_t: XCB_XIM_CLOSE, \
+    xcb_im_close_reply_fr_t: XCB_XIM_CLOSE_REPLY, \
+    xcb_im_query_extension_fr_t: XCB_XIM_QUERY_EXTENSION, \
+    xcb_im_query_extension_reply_fr_t: XCB_XIM_QUERY_EXTENSION_REPLY, \
+    xcb_im_encoding_negotiation_fr_t: XCB_XIM_ENCODING_NEGOTIATION, \
+    xcb_im_encoding_negotiation_reply_fr_t: XCB_XIM_ENCODING_NEGOTIATION_REPLY, \
+    xcb_im_get_im_values_fr_t: XCB_XIM_GET_IM_VALUES, \
+    xcb_im_get_im_values_reply_fr_t: XCB_XIM_GET_IM_VALUES_REPLY, \
+    xcb_im_set_event_mask_fr_t: XCB_XIM_SET_EVENT_MASK, \
+    xcb_im_create_ic_fr_t: XCB_XIM_CREATE_IC, \
+    xcb_im_create_ic_reply_fr_t: XCB_XIM_CREATE_IC_REPLY, \
+    xcb_im_set_ic_values_fr_t: XCB_XIM_SET_IC_VALUES, \
+    xcb_im_set_ic_values_reply_fr_t: XCB_XIM_SET_IC_VALUES_REPLY, \
+    xcb_im_get_ic_values_fr_t: XCB_XIM_GET_IC_VALUES, \
+    xcb_im_get_ic_values_reply_fr_t: XCB_XIM_GET_IC_VALUES_REPLY, \
+    xcb_im_register_triggerkeys_fr_t: XCB_XIM_REGISTER_TRIGGERKEYS, \
+    xcb_im_destroy_ic_fr_t: XCB_XIM_DESTROY_IC, \
+    xcb_im_destroy_ic_reply_fr_t: XCB_XIM_DESTROY_IC_REPLY, \
+    xcb_im_reset_ic_fr_t: XCB_XIM_RESET_IC, \
+    xcb_im_reset_ic_reply_fr_t: XCB_XIM_RESET_IC_REPLY, \
+    xcb_im_trigger_notify_fr_t: XCB_XIM_TRIGGER_NOTIFY, \
+    xcb_im_trigger_notify_reply_fr_t: XCB_XIM_TRIGGER_NOTIFY_REPLY, \
+    xcb_im_preedit_start_fr_t: XCB_XIM_PREEDIT_START, \
+    xcb_im_preedit_draw_fr_t: XCB_XIM_PREEDIT_DRAW, \
+    xcb_im_preedit_caret_fr_t: XCB_XIM_PREEDIT_CARET, \
+    xcb_im_preedit_done_fr_t: XCB_XIM_PREEDIT_DONE, \
+    xcb_im_status_start_fr_t: XCB_XIM_STATUS_START, \
+    xcb_im_status_draw_text_fr_t: XCB_XIM_STATUS_DRAW, \
+    xcb_im_status_draw_bitmap_fr_t: XCB_XIM_STATUS_DRAW, \
+    xcb_im_status_done_fr_t: XCB_XIM_STATUS_DONE, \
+    xcb_im_commit_chars_fr_t: XCB_XIM_COMMIT, \
+    xcb_im_commit_both_fr_t: XCB_XIM_COMMIT, \
+    xcb_im_connect_fr_t: XCB_XIM_CONNECT, \
+    xcb_im_disconnect_fr_t: XCB_XIM_DISCONNECT, \
+    xcb_im_disconnect_reply_fr_t: XCB_XIM_DISCONNECT_REPLY, \
+    xcb_im_set_ic_focus_fr_t: XCB_XIM_SET_IC_FOCUS, \
+    xcb_im_unset_ic_focus_fr_t: XCB_XIM_UNSET_IC_FOCUS, \
+    xcb_im_sync_fr_t: XCB_XIM_SYNC, \
+    xcb_im_sync_reply_fr_t: XCB_XIM_SYNC_REPLY, \
+    xcb_im_geometry_fr_t: XCB_XIM_GEOMETRY \
     )
 
 
@@ -156,60 +163,29 @@ typedef struct _xcb_im_ext_list{
 /*
  * Minor Protocol Number for Extension Protocol
  */
-#define XIM_EXTENSION               128
-#define XIM_EXT_SET_EVENT_MASK          (0x30)
-#define XIM_EXT_FORWARD_KEYEVENT        (0x32)
-#define XIM_EXT_MOVE                (0x33)
+#define XCB_XIM_EXTENSION               128
+#define XCB_XIM_EXT_SET_EVENT_MASK          (0x30)
+#define XCB_XIM_EXT_FORWARD_KEYEVENT        (0x32)
+#define XCB_XIM_EXT_MOVE                (0x33)
 
-
-#define XNVaNestedList "XNVaNestedList"
-#define XNQueryInputStyle "queryInputStyle"
-#define XNClientWindow "clientWindow"
-#define XNInputStyle "inputStyle"
-#define XNFocusWindow "focusWindow"
-#define XNResourceName "resourceName"
-#define XNResourceClass "resourceClass"
-#define XNGeometryCallback "geometryCallback"
-#define XNDestroyCallback "destroyCallback"
-#define XNFilterEvents "filterEvents"
-#define XNPreeditStartCallback "preeditStartCallback"
-#define XNPreeditDoneCallback "preeditDoneCallback"
-#define XNPreeditDrawCallback "preeditDrawCallback"
-#define XNPreeditCaretCallback "preeditCaretCallback"
-#define XNPreeditStateNotifyCallback "preeditStateNotifyCallback"
-#define XNPreeditAttributes "preeditAttributes"
-#define XNStatusStartCallback "statusStartCallback"
-#define XNStatusDoneCallback "statusDoneCallback"
-#define XNStatusDrawCallback "statusDrawCallback"
-#define XNStatusAttributes "statusAttributes"
-#define XNArea "area"
-#define XNAreaNeeded "areaNeeded"
-#define XNSpotLocation "spotLocation"
-#define XNColormap "colorMap"
-#define XNStdColormap "stdColorMap"
-#define XNForeground "foreground"
-#define XNBackground "background"
-#define XNBackgroundPixmap "backgroundPixmap"
-#define XNFontSet "fontSet"
-#define XNLineSpace "lineSpace"
-#define XNCursor "cursor"
-
-#define XNQueryIMValuesList "queryIMValuesList"
-#define XNQueryICValuesList "queryICValuesList"
-#define XNVisiblePosition "visiblePosition"
-#define XNR6PreeditCallback "r6PreeditCallback"
-#define XNStringConversionCallback "stringConversionCallback"
-#define XNStringConversion "stringConversion"
-#define XNResetState "resetState"
-#define XNHotKey "hotKey"
-#define XNHotKeyState "hotKeyState"
-#define XNPreeditState "preeditState"
-#define XNSeparatorofNestedList "separatorofNestedList"
-
-/*
- * value for the flag of XIM_FORWARD_EVENT, XIM_COMMIT
- */
-#define XimSYNCHRONUS         0x0001
+#define XCB_XIM_XNQueryInputStyle "queryInputStyle"
+#define XCB_XIM_XNClientWindow "clientWindow"
+#define XCB_XIM_XNInputStyle "inputStyle"
+#define XCB_XIM_XNFocusWindow "focusWindow"
+#define XCB_XIM_XNFilterEvents "filterEvents"
+#define XCB_XIM_XNPreeditAttributes "preeditAttributes"
+#define XCB_XIM_XNStatusAttributes "statusAttributes"
+#define XCB_XIM_XNArea "area"
+#define XCB_XIM_XNAreaNeeded "areaNeeded"
+#define XCB_XIM_XNSpotLocation "spotLocation"
+#define XCB_XIM_XNColormap "colorMap"
+#define XCB_XIM_XNStdColormap "stdColorMap"
+#define XCB_XIM_XNForeground "foreground"
+#define XCB_XIM_XNBackground "background"
+#define XCB_XIM_XNBackgroundPixmap "backgroundPixmap"
+#define XCB_XIM_XNFontSet "fontSet"
+#define XCB_XIM_XNLineSpace "lineSpace"
+#define XCB_XIM_XNSeparatorofNestedList "separatorofNestedList"
 
 
 typedef enum _xcb_im_style_t
@@ -229,6 +205,18 @@ enum {
     XCB_IM_TextType = 0,
     XCB_IM_BitmapType = 1
 };
+
+typedef enum {
+    XCB_XIM_REVERSE = (1 << 0),
+    XCB_XIM_UNDERLINE = (1 << 1),
+    XCB_XIM_HIGHLIGHT = (1 << 2),
+    XCB_XIM_PRIMARY = (1 << 5),
+    XCB_XIM_SECONDARY = (1 << 6),
+    XCB_XIM_TERTIARY = (1 << 7),
+    XCB_XIM_VISIBLE_TO_FORWARD = (1 << 8),
+    XCB_XIM_VISIBLE_TO_BACKWORD = (1 << 9),
+    XCB_XIM_VISIBLE_TO_CENTER = (1 << 10),
+} xcb_im_feedback_t;
 
 typedef struct _xcb_im_trigger_keys_t{
     uint16_t nKeys;

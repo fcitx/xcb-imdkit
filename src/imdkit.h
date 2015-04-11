@@ -12,8 +12,8 @@
  * Lesser General Public License for more details.
  *
  */
-#ifndef IMDKIT_H
-#define IMDKIT_H
+#ifndef _XCB_IMDKIT_IMDKIT_H_
+#define _XCB_IMDKIT_IMDKIT_H_
 
 #include <xcb/xcb.h>
 #include <stdbool.h>
@@ -100,7 +100,7 @@ XCB_IMDKIT_EXPORT bool xcb_im_filter_event(xcb_im_t* im, xcb_generic_event_t* ev
 XCB_IMDKIT_EXPORT void xcb_im_close_im(xcb_im_t* im);
 XCB_IMDKIT_EXPORT void xcb_im_destroy(xcb_im_t* im);
 XCB_IMDKIT_EXPORT void xcb_im_forward_event(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_key_press_event_t* event);
-XCB_IMDKIT_EXPORT void xcb_im_commit_string(xcb_im_t* im, xcb_im_input_context_t* ic, uint32_t flag, char* str, uint32_t length, uint32_t keysym);
+XCB_IMDKIT_EXPORT void xcb_im_commit_string(xcb_im_t* im, xcb_im_input_context_t* ic, uint32_t flag, const char* str, uint32_t length, uint32_t keysym);
 XCB_IMDKIT_EXPORT void xcb_im_geometry_callback(xcb_im_t* im, xcb_im_input_context_t* ic);
 XCB_IMDKIT_EXPORT void xcb_im_preedit_start_callback(xcb_im_t* im, xcb_im_input_context_t* ic);
 XCB_IMDKIT_EXPORT void xcb_im_preedit_draw_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_preedit_draw_fr_t* frame);
@@ -116,5 +116,10 @@ XCB_IMDKIT_EXPORT void xcb_im_sync_xlib(xcb_im_t* im, xcb_im_input_context_t* ic
 XCB_IMDKIT_EXPORT bool xcb_im_support_extension(xcb_im_t* im, uint16_t major_code, uint16_t minor_code);
 XCB_IMDKIT_EXPORT void xcb_im_input_context_set_data(xcb_im_input_context_t* ic, void* data, xcb_im_free_function free_data_function);
 XCB_IMDKIT_EXPORT void* xcb_im_input_context_get_data(xcb_im_input_context_t* ic);
+XCB_IMDKIT_EXPORT uint32_t xcb_im_input_context_get_input_style(xcb_im_input_context_t* ic);
+XCB_IMDKIT_EXPORT xcb_window_t xcb_im_input_context_get_client_window(xcb_im_input_context_t* ic);
+XCB_IMDKIT_EXPORT xcb_window_t xcb_im_input_context_get_focus_window(xcb_im_input_context_t* ic);
+XCB_IMDKIT_EXPORT const xcb_im_preedit_attr_t* xcb_im_input_context_get_preedit_attr(xcb_im_input_context_t* ic);
+XCB_IMDKIT_EXPORT const xcb_im_status_attr_t* xcb_im_input_context_get_status_attr(xcb_im_input_context_t* ic);
 
-#endif // IMDKIT_H
+#endif // _XCB_IMDKIT_IMDKIT_H_

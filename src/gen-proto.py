@@ -49,7 +49,7 @@ def gettypename(attr):
     elif "BIT32" in attr:
         return ("uint32_t")
     elif attr == "_FRAME(BARRAY)":
-        return ("bytearray")
+        return ("xcb_im_bytearray_t")
     elif "_PTR" in attr:
         return "xcb_im_" + attr[attr.find("(") + 1:attr.find(")")]
     else:
@@ -176,6 +176,7 @@ if len(sys.argv) > 2:
         print("")
 else:
     print("#include <string.h>")
+    print("#include \"parser.h\"")
     print("#include \"ximproto.h\"")
     print("")
 

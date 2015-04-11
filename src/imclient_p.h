@@ -12,8 +12,8 @@
  * Lesser General Public License for more details.
  *
  */
-#ifndef IMCLIENT_P_H
-#define IMCLIENT_P_H
+#ifndef _XCB_IMDKIT_IMCLIENT_P_H_
+#define _XCB_IMDKIT_IMCLIENT_P_H_
 #include "common.h"
 #include "ximproto.h"
 #include "uthash.h"
@@ -222,4 +222,4 @@ void _xcb_xim_request_free(xcb_xim_request_queue_t* request);
 bool _xcb_xim_sync(xcb_xim_t* im, xcb_xic_t ic);
 void _xcb_xim_process_fail_callback(xcb_xim_t* im, xcb_xim_request_queue_t* request);
 
-#endif // IMCLIENT_P_H
+#endif // _XCB_IMDKIT_IMCLIENT_P_H_

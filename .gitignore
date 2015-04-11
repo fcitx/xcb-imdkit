@@ -3,3 +3,4 @@ build*/
 *~
 *.swp
 cscope.*
+i18nIMProto.c

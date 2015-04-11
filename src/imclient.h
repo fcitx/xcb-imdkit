@@ -12,8 +12,8 @@
  * Lesser General Public License for more details.
  *
  */
-#ifndef IMCLIENT_H
-#define IMCLIENT_H
+#ifndef _XCB_IMDKIT_IMCLIENT_H_
+#define _XCB_IMDKIT_IMCLIENT_H_
 #include <xcb/xcb.h>
 #include <stdbool.h>
 #include "ximproto.h"
@@ -99,4 +99,4 @@ XCB_XIM_EXPORT bool xcb_xim_destroy_ic(xcb_xim_t* im, xcb_xic_t ic, xcb_xim_dest
 XCB_XIM_EXPORT void xcb_xim_close(xcb_xim_t* im);
 XCB_XIM_EXPORT bool xcb_xim_support_extension(xcb_xim_t* im, uint16_t major_code, uint16_t minor_code);
 XCB_XIM_EXPORT bool xcb_xim_ext_move(xcb_xim_t* im, xcb_xic_t ic, int16_t x, int16_t y);
-#endif // IMCLIENT_H
+#endif // _XCB_IMDKIT_IMCLIENT_H_

@@ -1,4 +1,5 @@
 #include <string.h>
+#include "parser.h"
 #include "ximproto.h"
 
 void xcb_im_ximattr_fr_read(xcb_im_ximattr_fr_t *frame, uint8_t **data, size_t *len, bool swap)
@@ -11,7 +12,7 @@ void xcb_im_ximattr_fr_read(xcb_im_ximattr_fr_t *frame, uint8_t **data, size_t *
     if (!*data) { return; }
     uint16_t_read(&frame->length_of_im_attribute, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->im_attribute, frame->length_of_im_attribute, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->im_attribute, frame->length_of_im_attribute, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -23,7 +24,7 @@ uint8_t* xcb_im_ximattr_fr_write(xcb_im_ximattr_fr_t *frame, uint8_t *data, bool
     data = uint16_t_write(&frame->attribute_ID, data, swap);
     data = uint16_t_write(&frame->type_of_the_value, data, swap);
     data = uint16_t_write(&frame->length_of_im_attribute, data, swap);
-    data = bytearray_write(&frame->im_attribute, frame->length_of_im_attribute, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->im_attribute, frame->length_of_im_attribute, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -53,7 +54,7 @@ void xcb_im_xicattr_fr_read(xcb_im_xicattr_fr_t *frame, uint8_t **data, size_t *
     if (!*data) { return; }
     uint16_t_read(&frame->length_of_ic_attribute, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->ic_attribute, frame->length_of_ic_attribute, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->ic_attribute, frame->length_of_ic_attribute, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -65,7 +66,7 @@ uint8_t* xcb_im_xicattr_fr_write(xcb_im_xicattr_fr_t *frame, uint8_t *data, bool
     data = uint16_t_write(&frame->attribute_ID, data, swap);
     data = uint16_t_write(&frame->type_of_the_value, data, swap);
     data = uint16_t_write(&frame->length_of_ic_attribute, data, swap);
-    data = bytearray_write(&frame->ic_attribute, frame->length_of_ic_attribute, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->ic_attribute, frame->length_of_ic_attribute, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -93,7 +94,7 @@ void xcb_im_ximattribute_fr_read(xcb_im_ximattribute_fr_t *frame, uint8_t **data
     if (!*data) { return; }
     uint16_t_read(&frame->value_length, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->value, frame->value_length, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->value, frame->value_length, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -104,7 +105,7 @@ uint8_t* xcb_im_ximattribute_fr_write(xcb_im_ximattribute_fr_t *frame, uint8_t *
     uint8_t* start = data;
     data = uint16_t_write(&frame->attribute_ID, data, swap);
     data = uint16_t_write(&frame->value_length, data, swap);
-    data = bytearray_write(&frame->value, frame->value_length, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->value, frame->value_length, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -131,7 +132,7 @@ void xcb_im_xicattribute_fr_read(xcb_im_xicattribute_fr_t *frame, uint8_t **data
     if (!*data) { return; }
     uint16_t_read(&frame->value_length, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->value, frame->value_length, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->value, frame->value_length, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -142,7 +143,7 @@ uint8_t* xcb_im_xicattribute_fr_write(xcb_im_xicattribute_fr_t *frame, uint8_t *
     uint8_t* start = data;
     data = uint16_t_write(&frame->attribute_ID, data, swap);
     data = uint16_t_write(&frame->value_length, data, swap);
-    data = bytearray_write(&frame->value, frame->value_length, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->value, frame->value_length, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -190,7 +191,7 @@ void xcb_im_encodinginfo_fr_read(xcb_im_encodinginfo_fr_t *frame, uint8_t **data
     uint8_t* start = *data;
     uint16_t_read(&frame->length_of_encoding_info, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->encoding_info, frame->length_of_encoding_info, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->encoding_info, frame->length_of_encoding_info, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -200,7 +201,7 @@ uint8_t* xcb_im_encodinginfo_fr_write(xcb_im_encodinginfo_fr_t *frame, uint8_t *
 {
     uint8_t* start = data;
     data = uint16_t_write(&frame->length_of_encoding_info, data, swap);
-    data = bytearray_write(&frame->encoding_info, frame->length_of_encoding_info, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->encoding_info, frame->length_of_encoding_info, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -223,14 +224,14 @@ void xcb_im_str_fr_read(xcb_im_str_fr_t *frame, uint8_t **data, size_t *len, boo
     memset(frame, 0, sizeof(*frame));
     uint8_t_read(&frame->length_of_string, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->string, frame->length_of_string, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->string, frame->length_of_string, data, len, swap);
     if (!*data) { return; }
 }
 
 uint8_t* xcb_im_str_fr_write(xcb_im_str_fr_t *frame, uint8_t *data, bool swap)
 {
     data = uint8_t_write(&frame->length_of_string, data, swap);
-    data = bytearray_write(&frame->string, frame->length_of_string, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->string, frame->length_of_string, data, swap);
     return data;
 }
 
@@ -252,7 +253,7 @@ void xcb_im_xpcs_fr_read(xcb_im_xpcs_fr_t *frame, uint8_t **data, size_t *len, b
     uint8_t* start = *data;
     uint16_t_read(&frame->length_of_string_in_bytes, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->string, frame->length_of_string_in_bytes, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->string, frame->length_of_string_in_bytes, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -262,7 +263,7 @@ uint8_t* xcb_im_xpcs_fr_write(xcb_im_xpcs_fr_t *frame, uint8_t *data, bool swap)
 {
     uint8_t* start = data;
     data = uint16_t_write(&frame->length_of_string_in_bytes, data, swap);
-    data = bytearray_write(&frame->string, frame->length_of_string_in_bytes, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->string, frame->length_of_string_in_bytes, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -290,7 +291,7 @@ void xcb_im_ext_fr_read(xcb_im_ext_fr_t *frame, uint8_t **data, size_t *len, boo
     if (!*data) { return; }
     uint16_t_read(&frame->length_of_extension_name, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->extension_name, frame->length_of_extension_name, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->extension_name, frame->length_of_extension_name, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -302,7 +303,7 @@ uint8_t* xcb_im_ext_fr_write(xcb_im_ext_fr_t *frame, uint8_t *data, bool swap)
     data = uint16_t_write(&frame->extension_major_opcode, data, swap);
     data = uint16_t_write(&frame->extension_minor_opcode, data, swap);
     data = uint16_t_write(&frame->length_of_extension_name, data, swap);
-    data = bytearray_write(&frame->extension_name, frame->length_of_extension_name, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->extension_name, frame->length_of_extension_name, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -445,7 +446,7 @@ void xcb_im_fontset_fr_read(xcb_im_fontset_fr_t *frame, uint8_t **data, size_t *
     uint8_t* start = *data;
     uint16_t_read(&frame->length_of_base_font_name, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->base_font_name_list, frame->length_of_base_font_name, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->base_font_name_list, frame->length_of_base_font_name, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -455,7 +456,7 @@ uint8_t* xcb_im_fontset_fr_write(xcb_im_fontset_fr_t *frame, uint8_t *data, bool
 {
     uint8_t* start = data;
     data = uint16_t_write(&frame->length_of_base_font_name, data, swap);
-    data = bytearray_write(&frame->base_font_name_list, frame->length_of_base_font_name, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->base_font_name_list, frame->length_of_base_font_name, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -576,7 +577,7 @@ void xcb_im_error_fr_read(xcb_im_error_fr_t *frame, uint8_t **data, size_t *len,
     if (!*data) { return; }
     uint16_t_read(&frame->type_of_error_detail, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->error_detail, frame->length_of_error_detail, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->error_detail, frame->length_of_error_detail, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -591,7 +592,7 @@ uint8_t* xcb_im_error_fr_write(xcb_im_error_fr_t *frame, uint8_t *data, bool swa
     data = uint16_t_write(&frame->Error_Code, data, swap);
     data = uint16_t_write(&frame->length_of_error_detail, data, swap);
     data = uint16_t_write(&frame->type_of_error_detail, data, swap);
-    data = bytearray_write(&frame->error_detail, frame->length_of_error_detail, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->error_detail, frame->length_of_error_detail, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -718,7 +719,7 @@ void xcb_im_auth_required_fr_read(xcb_im_auth_required_fr_t *frame, uint8_t **da
     if (!*data) { return; }
     uint8_t_read(&frame->auth_data1, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->auth_data2, frame->auth_data1, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->auth_data2, frame->auth_data1, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -729,7 +730,7 @@ uint8_t* xcb_im_auth_required_fr_write(xcb_im_auth_required_fr_t *frame, uint8_t
     uint8_t* start = data;
     data = uint8_t_write(&frame->auth_protocol_index, data, swap);
     data = uint8_t_write(&frame->auth_data1, data, swap);
-    data = bytearray_write(&frame->auth_data2, frame->auth_data1, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->auth_data2, frame->auth_data1, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -754,7 +755,7 @@ void xcb_im_auth_reply_fr_read(xcb_im_auth_reply_fr_t *frame, uint8_t **data, si
     uint8_t* start = *data;
     uint8_t_read(&frame->field0, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->field1, frame->field0, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->field1, frame->field0, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -764,7 +765,7 @@ uint8_t* xcb_im_auth_reply_fr_write(xcb_im_auth_reply_fr_t *frame, uint8_t *data
 {
     uint8_t* start = data;
     data = uint8_t_write(&frame->field0, data, swap);
-    data = bytearray_write(&frame->field1, frame->field0, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->field1, frame->field0, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -788,7 +789,7 @@ void xcb_im_auth_next_fr_read(xcb_im_auth_next_fr_t *frame, uint8_t **data, size
     uint8_t* start = *data;
     uint8_t_read(&frame->auth_data1, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->auth_data2, frame->auth_data1, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->auth_data2, frame->auth_data1, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -798,7 +799,7 @@ uint8_t* xcb_im_auth_next_fr_write(xcb_im_auth_next_fr_t *frame, uint8_t *data, 
 {
     uint8_t* start = data;
     data = uint8_t_write(&frame->auth_data1, data, swap);
-    data = bytearray_write(&frame->auth_data2, frame->auth_data1, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->auth_data2, frame->auth_data1, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -1393,7 +1394,7 @@ void xcb_im_encoding_negotiation_reply_fr_read(xcb_im_encoding_negotiation_reply
     if (!*data) { return; }
     uint16_t_read(&frame->category_of_the_encoding_determined, data, len, swap);
     if (!*data) { return; }
-    uint16_t_read(&frame->index_of_the_encoding_dterminated, data, len, swap);
+    uint16_t_read(&frame->index_of_the_encoding_determined, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -1404,7 +1405,7 @@ uint8_t* xcb_im_encoding_negotiation_reply_fr_write(xcb_im_encoding_negotiation_
     uint8_t* start = data;
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->category_of_the_encoding_determined, data, swap);
-    data = uint16_t_write(&frame->index_of_the_encoding_dterminated, data, swap);
+    data = uint16_t_write(&frame->index_of_the_encoding_determined, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -2131,7 +2132,7 @@ void xcb_im_commit_fr_read(xcb_im_commit_fr_t *frame, uint8_t **data, size_t *le
     if (!*data) { return; }
     uint16_t_read(&frame->byte_length_of_committed_string, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->committed_string, frame->byte_length_of_committed_string, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->committed_string, frame->byte_length_of_committed_string, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -2164,7 +2165,7 @@ uint8_t* xcb_im_commit_fr_write(xcb_im_commit_fr_t *frame, uint8_t *data, bool s
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     data = uint16_t_write(&frame->flag, data, swap);
     data = uint16_t_write(&frame->byte_length_of_committed_string, data, swap);
-    data = bytearray_write(&frame->committed_string, frame->byte_length_of_committed_string, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->committed_string, frame->byte_length_of_committed_string, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     counter16 = frame->keysym.size * 4;
     data = uint16_t_write(&counter16, data, swap);
@@ -2207,7 +2208,7 @@ void xcb_im_commit_chars_fr_read(xcb_im_commit_chars_fr_t *frame, uint8_t **data
     if (!*data) { return; }
     uint16_t_read(&frame->byte_length_of_committed_string, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->committed_string, frame->byte_length_of_committed_string, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->committed_string, frame->byte_length_of_committed_string, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -2220,7 +2221,7 @@ uint8_t* xcb_im_commit_chars_fr_write(xcb_im_commit_chars_fr_t *frame, uint8_t *
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     data = uint16_t_write(&frame->flag, data, swap);
     data = uint16_t_write(&frame->byte_length_of_committed_string, data, swap);
-    data = bytearray_write(&frame->committed_string, frame->byte_length_of_committed_string, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->committed_string, frame->byte_length_of_committed_string, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -2257,7 +2258,7 @@ void xcb_im_commit_both_fr_read(xcb_im_commit_both_fr_t *frame, uint8_t **data, 
     if (!*data) { return; }
     uint16_t_read(&frame->byte_length_of_committed_string, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->committed_string, frame->byte_length_of_committed_string, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->committed_string, frame->byte_length_of_committed_string, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -2272,7 +2273,7 @@ uint8_t* xcb_im_commit_both_fr_write(xcb_im_commit_both_fr_t *frame, uint8_t *da
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     data = uint32_t_write(&frame->keysym, data, swap);
     data = uint16_t_write(&frame->byte_length_of_committed_string, data, swap);
-    data = bytearray_write(&frame->committed_string, frame->byte_length_of_committed_string, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->committed_string, frame->byte_length_of_committed_string, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -2325,7 +2326,7 @@ void xcb_im_reset_ic_reply_fr_read(xcb_im_reset_ic_reply_fr_t *frame, uint8_t **
     if (!*data) { return; }
     uint16_t_read(&frame->byte_length_of_committed_string, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->committed_string, frame->byte_length_of_committed_string, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->committed_string, frame->byte_length_of_committed_string, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -2337,7 +2338,7 @@ uint8_t* xcb_im_reset_ic_reply_fr_write(xcb_im_reset_ic_reply_fr_t *frame, uint8
     data = uint16_t_write(&frame->input_method_ID, data, swap);
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     data = uint16_t_write(&frame->byte_length_of_committed_string, data, swap);
-    data = bytearray_write(&frame->committed_string, frame->byte_length_of_committed_string, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->committed_string, frame->byte_length_of_committed_string, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -2395,7 +2396,7 @@ void xcb_im_str_conversion_fr_read(xcb_im_str_conversion_fr_t *frame, uint8_t **
     if (!*data) { return; }
     uint16_t_read(&frame->length_of_the_string_to_b, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->string, frame->length_of_the_string_to_b, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->string, frame->length_of_the_string_to_b, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -2411,7 +2412,7 @@ uint8_t* xcb_im_str_conversion_fr_write(xcb_im_str_conversion_fr_t *frame, uint8
     data = uint32_t_write(&frame->XIMStringConversionOperation, data, swap);
     data = uint16_t_write(&frame->length_to_multiply_th, data, swap);
     data = uint16_t_write(&frame->length_of_the_string_to_b, data, swap);
-    data = bytearray_write(&frame->string, frame->length_of_the_string_to_b, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->string, frame->length_of_the_string_to_b, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     return data;
 }
@@ -2449,7 +2450,7 @@ void xcb_im_str_conversion_reply_fr_read(xcb_im_str_conversion_reply_fr_t *frame
     if (!*data) { return; }
     uint16_t_read(&frame->length_of_the_retrieved_string, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->retrieved_string, frame->length_of_the_retrieved_string, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->retrieved_string, frame->length_of_the_retrieved_string, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -2482,7 +2483,7 @@ uint8_t* xcb_im_str_conversion_reply_fr_write(xcb_im_str_conversion_reply_fr_t *
     data = uint16_t_write(&frame->input_context_ID, data, swap);
     data = uint32_t_write(&frame->XIMStringConversionFeedback, data, swap);
     data = uint16_t_write(&frame->length_of_the_retrieved_string, data, swap);
-    data = bytearray_write(&frame->retrieved_string, frame->length_of_the_retrieved_string, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->retrieved_string, frame->length_of_the_retrieved_string, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     counter16 = frame->feedback_array.size * 4;
     data = uint16_t_write(&counter16, data, swap);
@@ -2576,7 +2577,7 @@ void xcb_im_preedit_draw_fr_read(xcb_im_preedit_draw_fr_t *frame, uint8_t **data
     if (!*data) { return; }
     uint16_t_read(&frame->length_of_preedit_string, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->preedit_string, frame->length_of_preedit_string, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->preedit_string, frame->length_of_preedit_string, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -2612,7 +2613,7 @@ uint8_t* xcb_im_preedit_draw_fr_write(xcb_im_preedit_draw_fr_t *frame, uint8_t *
     data = uint32_t_write(&frame->chg_length, data, swap);
     data = uint32_t_write(&frame->status, data, swap);
     data = uint16_t_write(&frame->length_of_preedit_string, data, swap);
-    data = bytearray_write(&frame->preedit_string, frame->length_of_preedit_string, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->preedit_string, frame->length_of_preedit_string, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     counter16 = frame->feedback_array.size * 4;
     data = uint16_t_write(&counter16, data, swap);
@@ -2754,7 +2755,7 @@ void xcb_im_status_draw_text_fr_read(xcb_im_status_draw_text_fr_t *frame, uint8_
     if (!*data) { return; }
     uint16_t_read(&frame->length_of_status_string, data, len, swap);
     if (!*data) { return; }
-    bytearray_read(&frame->status_string, frame->length_of_status_string, data, len, swap);
+    xcb_im_bytearray_t_read(&frame->status_string, frame->length_of_status_string, data, len, swap);
     if (!*data) { return; }
     *data = (uint8_t*) align_to_4((uintptr_t) *data, *data - start, len);
     if (!*data) { return; }
@@ -2788,7 +2789,7 @@ uint8_t* xcb_im_status_draw_text_fr_write(xcb_im_status_draw_text_fr_t *frame, u
     data = uint32_t_write(&frame->type, data, swap);
     data = uint32_t_write(&frame->status, data, swap);
     data = uint16_t_write(&frame->length_of_status_string, data, swap);
-    data = bytearray_write(&frame->status_string, frame->length_of_status_string, data, swap);
+    data = xcb_im_bytearray_t_write(&frame->status_string, frame->length_of_status_string, data, swap);
     data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
     counter16 = frame->feedback_array.size * 4;
     data = uint16_t_write(&counter16, data, swap);

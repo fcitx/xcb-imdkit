@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <uthash.h>
+#include "uthash.h"
 #include "imdkit.h"
 #include "parser.h"
 #include "ximproto.h"
@@ -146,46 +146,46 @@ xcb_im_t* xcb_im_create(xcb_connection_t* conn,
         im->id2statusoffset[id] = -1;
         im->id2icoffset[id] = -1;
         // this is comparing two constant string so it should be fast
-        if (strcmp(Default_ICattr[i].name, XNPreeditAttributes) == 0) {
+        if (strcmp(Default_ICattr[i].name, XCB_XIM_XNPreeditAttributes) == 0) {
             im->preeditAttr_id = im->icattr[i].attribute_ID;
-        } else if (strcmp(Default_ICattr[i].name, XNStatusAttributes) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNStatusAttributes) == 0) {
             im->statusAttr_id = im->icattr[i].attribute_ID;
-        } else if (strcmp(Default_ICattr[i].name, XNSeparatorofNestedList) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNSeparatorofNestedList) == 0) {
             im->separatorAttr_id = im->icattr[i].attribute_ID;
-        } else if (strcmp(Default_ICattr[i].name, XNArea) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNArea) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, area);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, area);
-        } else if (strcmp(Default_ICattr[i].name, XNAreaNeeded) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNAreaNeeded) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
-        } else if (strcmp(Default_ICattr[i].name, XNAreaNeeded) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNAreaNeeded) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
-        } else if (strcmp(Default_ICattr[i].name, XNSpotLocation) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNSpotLocation) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, spot_location);
-        } else if (strcmp(Default_ICattr[i].name, XNColormap) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNColormap) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
-        } else if (strcmp(Default_ICattr[i].name, XNStdColormap) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNStdColormap) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
-        } else if (strcmp(Default_ICattr[i].name, XNForeground) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNForeground) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, foreground);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, foreground);
-        } else if (strcmp(Default_ICattr[i].name, XNBackground) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNBackground) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, background);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, background);
-        } else if (strcmp(Default_ICattr[i].name, XNBackgroundPixmap) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNBackgroundPixmap) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, bg_pixmap);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, bg_pixmap);
-        } else if (strcmp(Default_ICattr[i].name, XNLineSpace) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNLineSpace) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, line_space);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, line_space);
-        } else if (strcmp(Default_ICattr[i].name, XNClientWindow) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNClientWindow) == 0) {
             im->id2icoffset[id] = offsetof(xcb_im_input_context_t, client_win);
-        } else if (strcmp(Default_ICattr[i].name, XNInputStyle) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNInputStyle) == 0) {
             im->id2icoffset[id] = offsetof(xcb_im_input_context_t, input_style);
-        } else if (strcmp(Default_ICattr[i].name, XNFocusWindow) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNFocusWindow) == 0) {
             im->id2icoffset[id] = offsetof(xcb_im_input_context_t, focus_win);
         }
         im->id2attr[id] = (xcb_im_ximattr_fr_t*) &im->icattr[i];
@@ -469,7 +469,7 @@ bool _xcb_im_filter_xconnect_message(xcb_im_t* im, xcb_generic_event_t* event)
         ev.data.data32[0] = client->accept_win;
         ev.data.data32[1] = major_version;
         ev.data.data32[2] = minor_version;
-        ev.data.data32[3] = XIM_CM_DATA_SIZE;
+        ev.data.data32[3] = XCB_XIM_CM_DATA_SIZE;
         xcb_send_event(im->conn, false, client_window, XCB_EVENT_MASK_NO_EVENT, (char*) &ev);
         xcb_flush(im->conn);
 
@@ -539,7 +539,7 @@ static uint8_t* _xcb_im_read_message(xcb_im_t* im,
     if (ev->format == 8) {
         if (client->byte_order == '?') {
             // major_opcode
-            if (ev->data.data8[0] != XIM_CONNECT) {
+            if (ev->data.data8[0] != XCB_XIM_CONNECT) {
                 return NULL;  /* can do nothing */
             }
             client->byte_order = ev->data.data8[XCB_IM_HEADER_SIZE];
@@ -554,112 +554,112 @@ void _xcb_im_handle_message(xcb_im_t* im,
                             uint8_t* data)
 {
     switch (hdr->major_opcode) {
-    case XIM_CONNECT:
+    case XCB_XIM_CONNECT:
         DebugLog("-- XIM_CONNECT\n");
         _xcb_im_handle_connect(im, client, hdr, data);
         break;
 
-    case XIM_DISCONNECT:
+    case XCB_XIM_DISCONNECT:
         DebugLog("-- XIM_DISCONNECT\n");
         _xcb_im_handle_disconnect(im, client, hdr, data);
         break;
 
-    case XIM_OPEN:
+    case XCB_XIM_OPEN:
         DebugLog("-- XIM_OPEN\n");
         _xcb_im_handle_open(im, client, hdr, data);
         break;
 
-    case XIM_CLOSE:
+    case XCB_XIM_CLOSE:
         DebugLog("-- XIM_CLOSE\n");
         _xcb_im_handle_close(im, client, hdr, data);
         break;
 
-    case XIM_QUERY_EXTENSION:
+    case XCB_XIM_QUERY_EXTENSION:
         DebugLog("-- XIM_QUERY_EXTENSION\n");
         _xcb_im_handle_query_extension(im, client, hdr, data);
         break;
 
-    case XIM_GET_IM_VALUES:
+    case XCB_XIM_GET_IM_VALUES:
         DebugLog("-- XIM_GET_IM_VALUES\n");
         _xcb_im_handle_get_im_values(im, client, hdr, data);
         break;
 
-    case XIM_CREATE_IC:
+    case XCB_XIM_CREATE_IC:
         DebugLog("-- XIM_CREATE_IC\n");
         _xcb_im_handle_create_ic(im, client, hdr, data);
         break;
 
-    case XIM_SET_IC_VALUES:
+    case XCB_XIM_SET_IC_VALUES:
         DebugLog("-- XIM_SET_IC_VALUES\n");
         _xcb_im_handle_set_ic_values(im, client, hdr, data);
         break;
 
-    case XIM_GET_IC_VALUES:
+    case XCB_XIM_GET_IC_VALUES:
         DebugLog("-- XIM_GET_IC_VALUES\n");
         _xcb_im_handle_get_ic_values(im, client, hdr, data);
         break;
 
-    case XIM_SET_IC_FOCUS:
+    case XCB_XIM_SET_IC_FOCUS:
         DebugLog("-- XIM_SET_IC_FOCUS\n");
         _xcb_im_handle_set_ic_focus(im, client, hdr, data);
         break;
 
-    case XIM_UNSET_IC_FOCUS:
+    case XCB_XIM_UNSET_IC_FOCUS:
         DebugLog("-- XIM_UNSET_IC_FOCUS\n");
         _xcb_im_handle_unset_ic_focus(im, client, hdr, data);
         break;
 
-    case XIM_DESTROY_IC:
+    case XCB_XIM_DESTROY_IC:
         DebugLog("-- XIM_DESTROY_IC\n");
         _xcb_im_handle_destroy_ic(im, client, hdr, data);
         break;
 
-    case XIM_RESET_IC:
+    case XCB_XIM_RESET_IC:
         DebugLog("-- XIM_RESET_IC\n");
         _xcb_im_handle_reset_ic(im, client, hdr, data);
         break;
 
-    case XIM_FORWARD_EVENT:
+    case XCB_XIM_FORWARD_EVENT:
         DebugLog("-- XIM_FORWARD_EVENT\n");
         _xcb_im_handle_forward_event(im, client, hdr, data);
         break;
 
-    case XIM_EXTENSION:
+    case XCB_XIM_EXTENSION:
         DebugLog("-- XIM_EXTENSION\n");
         _xcb_im_handle_extension(im, client, hdr, data);
         break;
 
-    case XIM_SYNC:
+    case XCB_XIM_SYNC:
         DebugLog("-- XIM_SYNC\n");
         // nothing is needed here
         break;
 
-    case XIM_SYNC_REPLY:
+    case XCB_XIM_SYNC_REPLY:
         DebugLog("-- XIM_SYNC_REPLY\n");
         _xcb_im_handle_sync_reply(im, client, hdr, data);
         break;
 
-    case XIM_TRIGGER_NOTIFY:
+    case XCB_XIM_TRIGGER_NOTIFY:
         DebugLog("-- XIM_TRIGGER_NOTIFY\n");
         _xcb_im_handle_trigger_notify(im, client, hdr, data);
         break;
 
-    case XIM_ENCODING_NEGOTIATION:
+    case XCB_XIM_ENCODING_NEGOTIATION:
         DebugLog("-- XIM_ENCODING_NEGOTIATION\n");
         _xcb_im_handle_encoding_negotiation(im, client, hdr, data);
         break;
 
-    case XIM_PREEDIT_START_REPLY:
+    case XCB_XIM_PREEDIT_START_REPLY:
         DebugLog("-- XIM_PREEDIT_START_REPLY\n");
         _xcb_im_handle_preedit_start_reply(im, client, hdr, data);
         break;
 
-    case XIM_PREEDIT_CARET_REPLY:
+    case XCB_XIM_PREEDIT_CARET_REPLY:
         DebugLog("-- XIM_PREEDIT_CARET_REPLY\n");
         _xcb_im_handle_preedit_caret_reply(im, client, hdr, data);
         break;
 
-    case XIM_STR_CONVERSION_REPLY:
+    case XCB_XIM_STR_CONVERSION_REPLY:
         DebugLog("-- XIM_STR_CONVERSION_REPLY\n");
         // we don't care this one.
         break;
@@ -823,14 +823,14 @@ void xcb_im_forward_event(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_key_pres
     xcb_im_forward_event_fr_t frame;
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
-    frame.flag = XimSYNCHRONUS;
+    frame.flag = XCB_XIM_SYNCHRONOUS;
     frame.sequence_number = event->sequence;
     xcb_im_client_t* client = ic->client;
     client->sync = true;
 
     const size_t length = 8 /* xcb_im_forward_event_fr_size(&frame) */ + sizeof(xcb_key_press_event_t);
     uint8_t data[XCB_IM_HEADER_SIZE + length];
-    _xcb_write_xim_message_header(data, XIM_FORWARD_EVENT, 0, length, client->byte_order != im->byte_order);
+    _xcb_write_xim_message_header(data, XCB_XIM_FORWARD_EVENT, 0, length, client->byte_order != im->byte_order);
     uint8_t* p = xcb_im_forward_event_fr_write(&frame, data + XCB_IM_HEADER_SIZE, client->byte_order != im->byte_order);
     memcpy(p, event, sizeof(xcb_key_press_event_t));
 
@@ -838,14 +838,14 @@ void xcb_im_forward_event(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_key_pres
 }
 
 
-void xcb_im_commit_string(xcb_im_t* im, xcb_im_input_context_t* ic, uint32_t flag, char* str, uint32_t length, uint32_t keysym)
+void xcb_im_commit_string(xcb_im_t* im, xcb_im_input_context_t* ic, uint32_t flag, const char* str, uint32_t length, uint32_t keysym)
 {
-    if (!(flag & XimLookupKeySym) && (flag & XimLookupChars)) {
+    if (!(flag & XCB_XIM_LOOKUP_KEYSYM) && (flag & XCB_XIM_LOOKUP_CHARS)) {
         xcb_im_commit_chars_fr_t frame;
         frame.input_method_ID = ic->client->connect_id;
         frame.input_context_ID = ic->id;
         frame.byte_length_of_committed_string = length;
-        frame.flag = flag | XimSYNCHRONUS;
+        frame.flag = flag | XCB_XIM_SYNCHRONOUS;
         frame.committed_string = (uint8_t*) str;
         _xcb_im_send_frame(im, ic->client, frame, false);
     } else {
@@ -853,7 +853,7 @@ void xcb_im_commit_string(xcb_im_t* im, xcb_im_input_context_t* ic, uint32_t fla
         frame.input_method_ID = ic->client->connect_id;
         frame.input_context_ID = ic->id;
         frame.byte_length_of_committed_string = length;
-        frame.flag = flag | XimSYNCHRONUS;
+        frame.flag = flag | XCB_XIM_SYNCHRONOUS;
         frame.committed_string = (uint8_t*) str;
         frame.keysym = keysym;
         _xcb_im_send_frame(im, ic->client, frame, false);
@@ -933,7 +933,7 @@ void _xcb_im_destroy_ic(xcb_im_t* im,
     if (im->callback) {
         xcb_im_packet_header_fr_t hdr;
         hdr.length = 0;
-        hdr.major_opcode = XIM_DESTROY_IC;
+        hdr.major_opcode = XCB_XIM_DESTROY_IC;
         hdr.minor_opcode = 0;
         im->callback(im, ic->client, ic, &hdr, NULL, NULL, im->user_data);
     }
@@ -953,7 +953,7 @@ void _xcb_im_destroy_client(xcb_im_t* im,
 {
     xcb_im_packet_header_fr_t hdr;
     hdr.length = 0;
-    hdr.major_opcode = XIM_DISCONNECT;
+    hdr.major_opcode = XCB_XIM_DISCONNECT;
     hdr.minor_opcode = 0;
 
     while (client->input_contexts) {
@@ -1148,4 +1148,29 @@ void xcb_im_input_context_set_data(xcb_im_input_context_t* ic, void* data, xcb_i
 void* xcb_im_input_context_get_data(xcb_im_input_context_t* ic)
 {
     return ic->data;
+}
+
+xcb_window_t xcb_im_input_context_get_client_window(xcb_im_input_context_t* ic)
+{
+    return ic->client_win;
+}
+
+xcb_window_t xcb_im_input_context_get_focus_window(xcb_im_input_context_t* ic)
+{
+    return ic->focus_win;
+}
+
+uint32_t xcb_im_input_context_get_input_style(xcb_im_input_context_t* ic)
+{
+    return ic->input_style;
+}
+
+const xcb_im_preedit_attr_t* xcb_im_input_context_get_preedit_attr(xcb_im_input_context_t* ic)
+{
+    return &ic->preedit;
+}
+
+const xcb_im_status_attr_t* xcb_im_input_context_get_status_attr(xcb_im_input_context_t* ic)
+{
+    return &ic->status;
 }

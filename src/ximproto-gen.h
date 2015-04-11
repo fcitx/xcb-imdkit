@@ -3,7 +3,7 @@ typedef struct _xcb_im_ximattr_fr_t
     uint16_t attribute_ID;
     uint16_t type_of_the_value;
     uint16_t length_of_im_attribute;
-    bytearray im_attribute;
+    xcb_im_bytearray_t im_attribute;
 } xcb_im_ximattr_fr_t;
 
 typedef struct _xcb_im_xicattr_fr_t
@@ -11,21 +11,21 @@ typedef struct _xcb_im_xicattr_fr_t
     uint16_t attribute_ID;
     uint16_t type_of_the_value;
     uint16_t length_of_ic_attribute;
-    bytearray ic_attribute;
+    xcb_im_bytearray_t ic_attribute;
 } xcb_im_xicattr_fr_t;
 
 typedef struct _xcb_im_ximattribute_fr_t
 {
     uint16_t attribute_ID;
     uint16_t value_length;
-    bytearray value;
+    xcb_im_bytearray_t value;
 } xcb_im_ximattribute_fr_t;
 
 typedef struct _xcb_im_xicattribute_fr_t
 {
     uint16_t attribute_ID;
     uint16_t value_length;
-    bytearray value;
+    xcb_im_bytearray_t value;
 } xcb_im_xicattribute_fr_t;
 
 typedef struct _xcb_im_ximtriggerkey_fr_t
@@ -38,19 +38,19 @@ typedef struct _xcb_im_ximtriggerkey_fr_t
 typedef struct _xcb_im_encodinginfo_fr_t
 {
     uint16_t length_of_encoding_info;
-    bytearray encoding_info;
+    xcb_im_bytearray_t encoding_info;
 } xcb_im_encodinginfo_fr_t;
 
 typedef struct _xcb_im_str_fr_t
 {
     uint8_t length_of_string;
-    bytearray string;
+    xcb_im_bytearray_t string;
 } xcb_im_str_fr_t;
 
 typedef struct _xcb_im_xpcs_fr_t
 {
     uint16_t length_of_string_in_bytes;
-    bytearray string;
+    xcb_im_bytearray_t string;
 } xcb_im_xpcs_fr_t;
 
 typedef struct _xcb_im_ext_fr_t
@@ -58,7 +58,7 @@ typedef struct _xcb_im_ext_fr_t
     uint16_t extension_major_opcode;
     uint16_t extension_minor_opcode;
     uint16_t length_of_extension_name;
-    bytearray extension_name;
+    xcb_im_bytearray_t extension_name;
 } xcb_im_ext_fr_t;
 
 typedef struct _xcb_im_inputstyle_fr_t
@@ -99,7 +99,7 @@ typedef struct _xcb_im_xpoint_fr_t
 typedef struct _xcb_im_fontset_fr_t
 {
     uint16_t length_of_base_font_name;
-    bytearray base_font_name_list;
+    xcb_im_bytearray_t base_font_name_list;
 } xcb_im_fontset_fr_t;
 
 typedef struct _xcb_im_input_styles_fr_t
@@ -125,7 +125,7 @@ typedef struct _xcb_im_error_fr_t
     uint16_t Error_Code;
     uint16_t length_of_error_detail;
     uint16_t type_of_error_detail;
-    bytearray error_detail;
+    xcb_im_bytearray_t error_detail;
 } xcb_im_error_fr_t;
 
 typedef struct _xcb_im_connect_fr_t
@@ -149,19 +149,19 @@ typedef struct _xcb_im_auth_required_fr_t
 {
     uint8_t auth_protocol_index;
     uint8_t auth_data1;
-    bytearray auth_data2;
+    xcb_im_bytearray_t auth_data2;
 } xcb_im_auth_required_fr_t;
 
 typedef struct _xcb_im_auth_reply_fr_t
 {
     uint8_t field0;
-    bytearray field1;
+    xcb_im_bytearray_t field1;
 } xcb_im_auth_reply_fr_t;
 
 typedef struct _xcb_im_auth_next_fr_t
 {
     uint8_t auth_data1;
-    bytearray auth_data2;
+    xcb_im_bytearray_t auth_data2;
 } xcb_im_auth_next_fr_t;
 
 typedef struct _xcb_im_auth_setup_fr_t
@@ -265,7 +265,7 @@ typedef struct _xcb_im_encoding_negotiation_reply_fr_t
 {
     uint16_t input_method_ID;
     uint16_t category_of_the_encoding_determined;
-    uint16_t index_of_the_encoding_dterminated;
+    uint16_t index_of_the_encoding_determined;
 } xcb_im_encoding_negotiation_reply_fr_t;
 
 typedef struct _xcb_im_query_extension_fr_t
@@ -405,7 +405,7 @@ typedef struct _xcb_im_commit_fr_t
     uint16_t input_context_ID;
     uint16_t flag;
     uint16_t byte_length_of_committed_string;
-    bytearray committed_string;
+    xcb_im_bytearray_t committed_string;
     struct {
         uint32_t size;
         uint32_t* items;
@@ -418,7 +418,7 @@ typedef struct _xcb_im_commit_chars_fr_t
     uint16_t input_context_ID;
     uint16_t flag;
     uint16_t byte_length_of_committed_string;
-    bytearray committed_string;
+    xcb_im_bytearray_t committed_string;
 } xcb_im_commit_chars_fr_t;
 
 typedef struct _xcb_im_commit_both_fr_t
@@ -428,7 +428,7 @@ typedef struct _xcb_im_commit_both_fr_t
     uint16_t flag;
     uint32_t keysym;
     uint16_t byte_length_of_committed_string;
-    bytearray committed_string;
+    xcb_im_bytearray_t committed_string;
 } xcb_im_commit_both_fr_t;
 
 typedef struct _xcb_im_reset_ic_fr_t
@@ -442,7 +442,7 @@ typedef struct _xcb_im_reset_ic_reply_fr_t
     uint16_t input_method_ID;
     uint16_t input_context_ID;
     uint16_t byte_length_of_committed_string;
-    bytearray committed_string;
+    xcb_im_bytearray_t committed_string;
 } xcb_im_reset_ic_reply_fr_t;
 
 typedef struct _xcb_im_geometry_fr_t
@@ -460,7 +460,7 @@ typedef struct _xcb_im_str_conversion_fr_t
     uint32_t XIMStringConversionOperation;
     uint16_t length_to_multiply_th;
     uint16_t length_of_the_string_to_b;
-    bytearray string;
+    xcb_im_bytearray_t string;
 } xcb_im_str_conversion_fr_t;
 
 typedef struct _xcb_im_str_conversion_reply_fr_t
@@ -469,7 +469,7 @@ typedef struct _xcb_im_str_conversion_reply_fr_t
     uint16_t input_context_ID;
     uint32_t XIMStringConversionFeedback;
     uint16_t length_of_the_retrieved_string;
-    bytearray retrieved_string;
+    xcb_im_bytearray_t retrieved_string;
     struct {
         uint32_t size;
         uint32_t* items;
@@ -498,7 +498,7 @@ typedef struct _xcb_im_preedit_draw_fr_t
     uint32_t chg_length;
     uint32_t status;
     uint16_t length_of_preedit_string;
-    bytearray preedit_string;
+    xcb_im_bytearray_t preedit_string;
     struct {
         uint32_t size;
         uint32_t* items;
@@ -540,7 +540,7 @@ typedef struct _xcb_im_status_draw_text_fr_t
     uint32_t type;
     uint32_t status;
     uint16_t length_of_status_string;
-    bytearray status_string;
+    xcb_im_bytearray_t status_string;
     struct {
         uint32_t size;
         uint32_t* items;

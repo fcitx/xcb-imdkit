@@ -15,9 +15,10 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <ximproto.h>
+#include "ximproto.h"
 #include "message.h"
 #include "common.h"
+#include "parser.h"
 
 uint8_t* _xcb_new_xim_message(uint8_t major_opcode,
                              uint8_t minor_opcode,
@@ -65,7 +66,7 @@ bool _xcb_send_xim_message(xcb_connection_t* conn,
     event.window = window;
     event.type = protocol_atom;
 
-    if (length > XIM_CM_DATA_SIZE) {
+    if (length > XCB_XIM_CM_DATA_SIZE) {
         xcb_atom_t atom;
 
         xcb_intern_atom_cookie_t atom_cookie = xcb_intern_atom(conn, false, len, name);
@@ -111,7 +112,7 @@ bool _xcb_send_xim_message(xcb_connection_t* conn,
 
         memcpy(event.data.data8, data, length);
         /* Clear unused field with NULL */
-        for (size_t i = length; i < XIM_CM_DATA_SIZE; i++)
+        for (size_t i = length; i < XCB_XIM_CM_DATA_SIZE; i++)
             event.data.data8[i] = 0;
     }
     xcb_send_event(conn, false, window, XCB_EVENT_MASK_NO_EVENT, (const char*) &event);
@@ -126,7 +127,7 @@ void _xcb_send_xim_error_message(xcb_connection_t* conn,
 {
     // use stack to avoid alloc fails
     uint8_t message[XCB_IM_HEADER_SIZE];
-    _xcb_write_xim_message_header(message, XIM_ERROR, 0, 0, swap);
+    _xcb_write_xim_message_header(message, XCB_XIM_ERROR, 0, 0, swap);
     _xcb_send_xim_message(conn, protocol_atom, window, message, 0, NULL, 0);
 }
 

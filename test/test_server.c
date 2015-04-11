@@ -25,18 +25,20 @@ void callback(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
               const xcb_im_packet_header_fr_t* hdr,
               void* frame, void* arg, void* user_data)
 {
-    if (hdr->major_opcode == XIM_DISCONNECT) {
+    if (hdr->major_opcode == XCB_XIM_DISCONNECT) {
         // end = true;
     }
 
-    xcb_key_press_event_t* event = arg;
+    if (hdr->major_opcode == XCB_XIM_FORWARD_EVENT) {
+        xcb_key_press_event_t* event = arg;
 
-    xcb_key_symbols_t* key_symbols = user_data;
-    xcb_keysym_t sym = xcb_key_symbols_get_keysym(key_symbols, event->detail, 0);
-    if (sym == 't') {
-        xcb_im_commit_string(im, ic, XimLookupChars, "hello world", strlen("hello world"), 0);
-    } else {
-        xcb_im_forward_event(im, ic, event);
+        xcb_key_symbols_t* key_symbols = user_data;
+        xcb_keysym_t sym = xcb_key_symbols_get_keysym(key_symbols, event->detail, 0);
+        if (sym == 't') {
+            xcb_im_commit_string(im, ic, XCB_XIM_LOOKUP_CHARS, "hello world!\xe4\xbd\xa0\xe5\xa5\xbd", strlen("hello world!\xe4\xbd\xa0\xe5\xa5\xbd"), 0);
+        } else {
+            xcb_im_forward_event(im, ic, event);
+        }
     }
 }
 

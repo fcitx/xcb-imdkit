@@ -13,6 +13,7 @@
  *
  */
 
+#include "parser.h"
 #include "protocolhandler.h"
 #include "message.h"
 
@@ -165,7 +166,7 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t* im,
     xcb_im_encoding_negotiation_fr_free(&frame);
     xcb_im_encoding_negotiation_reply_fr_t reply_frame;
     reply_frame.input_method_ID = client->connect_id;
-    reply_frame.index_of_the_encoding_dterminated = i;
+    reply_frame.index_of_the_encoding_determined = i;
     reply_frame.category_of_the_encoding_determined = 0;
 
     _xcb_im_send_frame(im, client, reply_frame, true);
@@ -536,7 +537,7 @@ void _xcb_im_handle_get_ic_values(xcb_im_t* im,
                     continue;
                 }
 
-                if (strcmp(entry->name, XNFilterEvents) == 0) {
+                if (strcmp(entry->name, XCB_XIM_XNFilterEvents) == 0) {
                     uint32_t result = XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE;
                     buffers[nBuffers].value = malloc(sizeof(uint32_t));
                     buffers[nBuffers].value_length = sizeof(uint32_t);
@@ -774,10 +775,10 @@ void _xcb_im_handle_ext_move(xcb_im_t* im, xcb_im_client_t* client, const xcb_im
 void _xcb_im_handle_extension(xcb_im_t* im, xcb_im_client_t* client, const xcb_im_packet_header_fr_t* hdr, uint8_t* data)
 {
     switch (hdr->minor_opcode) {
-        case XIM_EXT_FORWARD_KEYEVENT:
+        case XCB_XIM_EXT_FORWARD_KEYEVENT:
             _xcb_im_handle_ext_forward_keyevent(im, client, hdr, data);
             break;
-        case XIM_EXT_MOVE:
+        case XCB_XIM_EXT_MOVE:
             _xcb_im_handle_ext_move(im, client, hdr, data);
             break;
     }

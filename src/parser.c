@@ -99,7 +99,7 @@ uint8_t* uint32_t_write(uint32_t* p, uint8_t* data, bool swap)
     return data;
 }
 
-void bytearray_read(bytearray* p, uint32_t arraylen, uint8_t** data, size_t* len, bool swap)
+void xcb_im_bytearray_t_read(xcb_im_bytearray_t* p, uint32_t arraylen, uint8_t** data, size_t* len, bool swap)
 {
     if (*len < arraylen) {
         *data = NULL;
@@ -111,7 +111,7 @@ void bytearray_read(bytearray* p, uint32_t arraylen, uint8_t** data, size_t* len
     *len -= arraylen;
 }
 
-uint8_t* bytearray_write(bytearray* p, uint32_t arraylen, uint8_t* data, bool swap)
+uint8_t* xcb_im_bytearray_t_write(xcb_im_bytearray_t* p, uint32_t arraylen, uint8_t* data, bool swap)
 {
     memcpy(data, *p, arraylen);
     return data + arraylen;

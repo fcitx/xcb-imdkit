@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include "ximproto.h"
 
+#define XCB_IMDKIT_EXPORT __attribute__ ((visibility("default")))
+
 // some atom name
 #define XIM_SERVERS     "XIM_SERVERS"
 #define XIM_LOCALES     "LOCALES"
@@ -77,7 +79,7 @@ enum {
 
 static const xcb_im_ext_list Default_Extension[] = {
     // client -> server, by set ic in xlib
-    {"XIM_EXT_MOVE", XIM_EXTENSION, XIM_EXT_MOVE},
+    {"XIM_EXT_MOVE", XCB_XIM_EXTENSION, XCB_XIM_EXT_MOVE},
 #if 0
     // not in any imdkit
     // server -> client

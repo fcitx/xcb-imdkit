@@ -12,8 +12,8 @@
  * Lesser General Public License for more details.
  *
  */
-#ifndef IMDKIT_P_H
-#define IMDKIT_P_H
+#ifndef _XCB_IMDKIT_IMDKIT_P_H_
+#define _XCB_IMDKIT_IMDKIT_P_H_
 
 #include "imdkit.h"
 #include "uthash.h"
@@ -161,8 +161,8 @@ typedef struct _xcb_im_default_im_attr_t {
 bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_t* client, xcb_im_ximattribute_fr_t* attr);
 
 static const xcb_im_default_im_attr_t Default_IMattr[] = {
-    {XNQueryInputStyle,   XimType_XIMStyles, _xcb_im_get_input_styles_attr},
-    /*    {XNQueryIMValuesList, XimType_XIMValuesList}, */
+    {XCB_XIM_XNQueryInputStyle,   XimType_XIMStyles, _xcb_im_get_input_styles_attr},
+    /*    {XCB_XIM_XNQueryIMValuesList, XimType_XIMValuesList}, */
 };
 
 typedef struct _xcb_im_default_ic_attr_t {
@@ -172,23 +172,23 @@ typedef struct _xcb_im_default_ic_attr_t {
 } xcb_im_default_ic_attr_t;
 
 static const xcb_im_default_ic_attr_t Default_ICattr[] = {
-    {XNInputStyle,              XimType_CARD32, false},
-    {XNClientWindow,            XimType_Window, false},
-    {XNFocusWindow,             XimType_Window, false},
-    {XNFilterEvents,            XimType_CARD32, false},
-    {XNPreeditAttributes,       XimType_NEST, false},
-    {XNStatusAttributes,        XimType_NEST, false},
-    {XNFontSet,                 XimType_XFontSet, false},
-    {XNArea,                    XimType_XRectangle, true},
-    {XNAreaNeeded,              XimType_XRectangle, true},
-    {XNColormap,                XimType_CARD32, false},
-    {XNStdColormap,             XimType_CARD32, false},
-    {XNForeground,              XimType_CARD32, true},
-    {XNBackground,              XimType_CARD32, true},
-    {XNBackgroundPixmap,        XimType_CARD32, false},
-    {XNSpotLocation,            XimType_XPoint, true},
-    {XNLineSpace,               XimType_CARD32, true},
-    {XNSeparatorofNestedList,   XimType_SeparatorOfNestedList, false},
+    {XCB_XIM_XNInputStyle,              XimType_CARD32, false},
+    {XCB_XIM_XNClientWindow,            XimType_Window, false},
+    {XCB_XIM_XNFocusWindow,             XimType_Window, false},
+    {XCB_XIM_XNFilterEvents,            XimType_CARD32, false},
+    {XCB_XIM_XNPreeditAttributes,       XimType_NEST, false},
+    {XCB_XIM_XNStatusAttributes,        XimType_NEST, false},
+    {XCB_XIM_XNFontSet,                 XimType_XFontSet, false},
+    {XCB_XIM_XNArea,                    XimType_XRectangle, true},
+    {XCB_XIM_XNAreaNeeded,              XimType_XRectangle, true},
+    {XCB_XIM_XNColormap,                XimType_CARD32, false},
+    {XCB_XIM_XNStdColormap,             XimType_CARD32, false},
+    {XCB_XIM_XNForeground,              XimType_CARD32, true},
+    {XCB_XIM_XNBackground,              XimType_CARD32, true},
+    {XCB_XIM_XNBackgroundPixmap,        XimType_CARD32, false},
+    {XCB_XIM_XNSpotLocation,            XimType_XPoint, true},
+    {XCB_XIM_XNLineSpace,               XimType_CARD32, true},
+    {XCB_XIM_XNSeparatorofNestedList,   XimType_SeparatorOfNestedList, false},
 };
 
 struct _xcb_im_t
@@ -268,4 +268,4 @@ void _xcb_im_destroy_ic(xcb_im_t* im,
 void _xcb_im_set_event_mask(xcb_im_t* im, xcb_im_client_t* client, uint32_t icid, uint32_t forward_event_mask, uint32_t sync_mask);
 void _xcb_im_add_queue(xcb_im_t* im, xcb_im_client_t* client, uint16_t icid, const xcb_im_packet_header_fr_t* hdr, xcb_im_forward_event_fr_t* frame, uint8_t* data);
 void _xcb_im_process_queue(xcb_im_t* im, xcb_im_client_t* client);
-#endif // IMDKIT_P_H
+#endif // _XCB_IMDKIT_IMDKIT_P_H_

@@ -93,7 +93,7 @@ void set_ic_values_callback(xcb_xim_t* im, xcb_xic_t ic, void* user_data)
 {
     fprintf(stderr, "set ic %d done\n", ic);
     xcb_xim_get_ic_values(im, ic, get_ic_values_callback, NULL,
-                          XNPreeditAttributes,
+                          XCB_XIM_XNPreeditAttributes,
                           NULL);
 }
 
@@ -106,10 +106,10 @@ void create_ic_callback(xcb_xim_t* im, xcb_xic_t ic, void* user_data)
         spot.y = 0;
         xcb_xim_nested_list nested = xcb_xim_create_nested_list(
             im,
-            XNSpotLocation, &spot, NULL
+            XCB_XIM_XNSpotLocation, &spot, NULL
         );
         xcb_xim_set_ic_values(im, ic, set_ic_values_callback, NULL,
-                              XNPreeditAttributes, &nested,
+                              XCB_XIM_XNPreeditAttributes, &nested,
                               NULL);
         free(nested.data);
     } else {
@@ -131,14 +131,14 @@ void get_im_values_callback(xcb_xim_t* im, xcb_im_get_im_values_reply_fr_t* repl
     spot.y = 0;
     xcb_xim_nested_list nested = xcb_xim_create_nested_list(
         im,
-        XNSpotLocation, &spot, NULL
+        XCB_XIM_XNSpotLocation, &spot, NULL
     );
     xcb_xim_create_ic(im,
                       create_ic_callback, NULL,
-                      XNInputStyle, &input_style,
-                      XNClientWindow, &w,
-                      XNFocusWindow, &w,
-                      XNPreeditAttributes, &nested,
+                      XCB_XIM_XNInputStyle, &input_style,
+                      XCB_XIM_XNClientWindow, &w,
+                      XCB_XIM_XNFocusWindow, &w,
+                      XCB_XIM_XNPreeditAttributes, &nested,
                       NULL
                      );
     free(nested.data);
@@ -146,7 +146,7 @@ void get_im_values_callback(xcb_xim_t* im, xcb_im_get_im_values_reply_fr_t* repl
 
 void open_callback(xcb_xim_t* im, void* user_data)
 {
-    xcb_xim_get_im_values(im, get_im_values_callback, NULL, XNQueryInputStyle, NULL);
+    xcb_xim_get_im_values(im, get_im_values_callback, NULL, XCB_XIM_XNQueryInputStyle, NULL);
 }
 
 int main(int argc, char* argv[])

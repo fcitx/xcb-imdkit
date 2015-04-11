@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include "common.h"
 #include "ximproto.h"
+#include "parser.h"
 
 bool _xcb_im_init_atoms(xcb_connection_t* conn, size_t n, const char** atom_names, xcb_atom_t* atoms)
 {

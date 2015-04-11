@@ -13,6 +13,7 @@
  *
  */
 #include "common.h"
+#include "parser.h"
 #include "imclient_p.h"
 #include "clientprotocolhandler.h"
 
@@ -156,7 +157,7 @@ void _xcb_xim_handle_encoding_negotiation_reply(xcb_xim_t* im, const xcb_im_pack
     do {
         // we only send compound
         if (frame.input_method_ID != im->connect_id
-         && frame.index_of_the_encoding_dterminated != 0) {
+         && frame.index_of_the_encoding_determined != 0) {
             break;
         }
 
@@ -223,7 +224,7 @@ void _xcb_xim_handle_create_ic_reply(xcb_xim_t* im, const xcb_im_packet_header_f
             break;
         }
 
-        if (im->current->major_code != XIM_CREATE_IC
+        if (im->current->major_code != XCB_XIM_CREATE_IC
          && im->connect_id != frame.input_method_ID) {
             break;
         }
@@ -254,7 +255,7 @@ void _xcb_xim_handle_destroy_ic_reply(xcb_xim_t* im, const xcb_im_packet_header_
             break;
         }
 
-        if (im->current->major_code != XIM_DESTROY_IC
+        if (im->current->major_code != XCB_XIM_DESTROY_IC
          && im->connect_id != frame.input_method_ID
          && im->current->frame.destroy_ic.input_context_ID != frame.input_context_ID) {
             break;
@@ -286,7 +287,7 @@ void _xcb_xim_handle_get_im_values_reply(xcb_xim_t* im, const xcb_im_packet_head
             break;
         }
 
-        if (im->current->major_code != XIM_GET_IM_VALUES
+        if (im->current->major_code != XCB_XIM_GET_IM_VALUES
          && im->connect_id != frame.input_method_ID) {
             break;
         }
@@ -318,7 +319,7 @@ void _xcb_xim_handle_get_ic_values_reply(xcb_xim_t* im, const xcb_im_packet_head
             break;
         }
 
-        if (im->current->major_code != XIM_GET_IC_VALUES
+        if (im->current->major_code != XCB_XIM_GET_IC_VALUES
          && im->connect_id != frame.input_method_ID
          && im->current->frame.get_ic_values.input_context_ID != frame.input_context_ID) {
             break;
@@ -352,7 +353,7 @@ void _xcb_xim_handle_set_ic_values_reply(xcb_xim_t* im, const xcb_im_packet_head
             break;
         }
 
-        if (im->current->major_code != XIM_SET_IC_VALUES
+        if (im->current->major_code != XCB_XIM_SET_IC_VALUES
          && im->connect_id != frame.input_method_ID
          && im->current->frame.set_ic_values.input_context_ID != frame.input_context_ID) {
             break;
@@ -384,7 +385,7 @@ void _xcb_xim_handle_reset_ic_reply(xcb_xim_t* im, const xcb_im_packet_header_fr
             break;
         }
 
-        if (im->current->major_code != XIM_RESET_IC
+        if (im->current->major_code != XCB_XIM_RESET_IC
          && im->connect_id != frame.input_method_ID
          && im->current->frame.reset_ic.input_context_ID != frame.input_context_ID) {
             break;
@@ -441,7 +442,7 @@ void _xcb_xim_handle_commit(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr,
     size_t len = XIM_MESSAGE_BYTES(hdr);
     uint16_t_read(&flag, &pflag, &len, false);
 
-    if (flag & XimLookupKeySym) {
+    if (flag & XCB_XIM_LOOKUP_KEYSYM) {
         xcb_im_commit_both_fr_t frame;
         bool fail;
         _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
@@ -466,7 +467,7 @@ void _xcb_xim_handle_commit(xcb_xim_t* im, const xcb_im_packet_header_fr_t* hdr,
             }
         } while(0);
         xcb_im_commit_both_fr_free(&frame);
-    } else if ((flag & XimLookupBoth) == XimLookupChars) {
+    } else if ((flag & XCB_XIM_LOOKUP_BOTH) == XCB_XIM_LOOKUP_CHARS) {
         xcb_im_commit_chars_fr_t frame;
         bool fail;
         _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
