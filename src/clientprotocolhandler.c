@@ -195,6 +195,7 @@ void _xcb_xim_handle_register_triggerkeys(xcb_xim_t* im, const xcb_im_packet_hea
             free(im->offKeys.keys);
             im->onKeys.keys = im->offKeys.keys = NULL;
             im->onKeys.nKeys = im->offKeys.nKeys = 0;
+            break;
         }
 
         im->onKeys.nKeys = frame.on_keys_list.size;

@@ -883,7 +883,6 @@ void xcb_im_auth_setup_fr_free(xcb_im_auth_setup_fr_t *frame)
 
 void xcb_im_auth_ng_fr_read(xcb_im_auth_ng_fr_t *frame, uint8_t **data, size_t *len, bool swap)
 {
-    memset(frame, 0, sizeof(*frame));
 }
 
 uint8_t* xcb_im_auth_ng_fr_write(xcb_im_auth_ng_fr_t *frame, uint8_t *data, bool swap)
@@ -897,7 +896,6 @@ void xcb_im_auth_ng_fr_free(xcb_im_auth_ng_fr_t *frame)
 
 void xcb_im_disconnect_fr_read(xcb_im_disconnect_fr_t *frame, uint8_t **data, size_t *len, bool swap)
 {
-    memset(frame, 0, sizeof(*frame));
 }
 
 uint8_t* xcb_im_disconnect_fr_write(xcb_im_disconnect_fr_t *frame, uint8_t *data, bool swap)
@@ -911,7 +909,6 @@ void xcb_im_disconnect_fr_free(xcb_im_disconnect_fr_t *frame)
 
 void xcb_im_disconnect_reply_fr_read(xcb_im_disconnect_reply_fr_t *frame, uint8_t **data, size_t *len, bool swap)
 {
-    memset(frame, 0, sizeof(*frame));
 }
 
 uint8_t* xcb_im_disconnect_reply_fr_write(xcb_im_disconnect_reply_fr_t *frame, uint8_t *data, bool swap)

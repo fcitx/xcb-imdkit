@@ -304,12 +304,13 @@ xcb_xim_connect_action_t _xcb_xim_connect_wait_reply(xcb_xim_t* im, xcb_generic_
         return ACTION_FAILED;
     }
 
-    if (hdr.major_opcode != XCB_XIM_CONNECT_REPLY) {
-        return ACTION_YIELD;
-    }
-
     xcb_xim_connect_action_t result = ACTION_FAILED;
     do {
+        if (hdr.major_opcode != XCB_XIM_CONNECT_REPLY) {
+            result = ACTION_YIELD;
+            break;
+        }
+
         xcb_im_connect_reply_fr_t reply_frame;
         bool fail;
         _xcb_xim_read_frame(reply_frame, message, XIM_MESSAGE_BYTES(&hdr), fail);
@@ -947,7 +948,7 @@ bool _xcb_xim_send_request_frame(xcb_xim_t* im, xcb_xim_request_queue_t* request
         _xcb_xim_send_frame(im, request->frame.set_ic_values, fail);
         break;
     case XCB_XIM_FORWARD_EVENT:
-        _xcb_xim_send_message(im, request->frame.forward_event, sizeof(request->frame.forward_event));
+        fail = !_xcb_xim_send_message(im, request->frame.forward_event, sizeof(request->frame.forward_event));
         break;
     case XCB_XIM_RESET_IC:
         _xcb_xim_send_frame(im, request->frame.reset_ic, fail);

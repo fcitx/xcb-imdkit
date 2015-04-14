@@ -188,7 +188,8 @@ else:
         usepad = any("_PAD" in attr for attr, name in attrs)
         print("void {0}_read({0}_t *frame, uint8_t **data, size_t *len, bool swap)".format(funcname))
         print("{")
-        print("    memset(frame, 0, sizeof(*frame));")
+        if len(attrs) > 0:
+            print("    memset(frame, 0, sizeof(*frame));")
         if usepad:
             print("    uint8_t* start = *data;")
         if usecounter:

@@ -834,7 +834,7 @@ void xcb_im_forward_event(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_key_pres
     uint8_t* p = xcb_im_forward_event_fr_write(&frame, data + XCB_IM_HEADER_SIZE, client->byte_order != im->byte_order);
     memcpy(p, event, sizeof(xcb_key_press_event_t));
 
-    _xcb_im_send_message(im, client, data, length);
+    (void) _xcb_im_send_message(im, client, data, length);
 }
 
 
@@ -862,7 +862,7 @@ void xcb_im_commit_string(xcb_im_t* im, xcb_im_input_context_t* ic, uint32_t fla
 
 void xcb_im_preedit_start(xcb_im_t* im, xcb_im_input_context_t* ic)
 {
-    if (im->onKeys.nKeys == 0  &&  im->onKeys.nKeys == 0) {
+    if (im->onKeys.nKeys == 0  &&  im->offKeys.nKeys == 0) {
         return;
     }
 
@@ -871,7 +871,7 @@ void xcb_im_preedit_start(xcb_im_t* im, xcb_im_input_context_t* ic)
 
 void xcb_im_preedit_end(xcb_im_t* im, xcb_im_input_context_t* ic)
 {
-    if (im->onKeys.nKeys == 0  &&  im->onKeys.nKeys == 0) {
+    if (im->onKeys.nKeys == 0  &&  im->offKeys.nKeys == 0) {
         return;
     }
 
