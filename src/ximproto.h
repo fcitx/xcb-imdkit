@@ -19,6 +19,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "ximcommon.h"
+
+XCB_IMDKIT_DECL_BEGIN
 
 typedef uint8_t *xcb_im_bytearray_t;
 
@@ -222,5 +225,7 @@ typedef struct _xcb_im_trigger_keys_t{
     uint16_t nKeys;
     xcb_im_ximtriggerkey_fr_t *keys;
 } xcb_im_trigger_keys_t;
+
+XCB_IMDKIT_DECL_END
 
 #endif // XIMPROTO_H

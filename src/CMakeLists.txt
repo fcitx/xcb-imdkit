@@ -29,4 +29,4 @@ configure_file(xcb-imdkit.pc.in ${CMAKE_CURRENT_BINARY_DIR}/xcb-imdkit.pc @ONLY)
 install(TARGETS xcb-imdkit EXPORT XCBImdkitLibraryTargets LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/xcb-imdkit.pc
   DESTINATION "${CMAKE_INSTALL_LIBDATADIR}/pkgconfig")
-install(FILES imdkit.h ximproto.h ximproto-gen.h imclient.h encoding.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/xcb-imdkit")
+install(FILES imdkit.h ximcommon.h ximproto.h ximproto-gen.h imclient.h encoding.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/xcb-imdkit")

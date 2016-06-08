@@ -20,9 +20,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ximcommon.h"
 #include "ximproto.h"
 
-#define XCB_IMDKIT_EXPORT __attribute__ ((visibility("default")))
+XCB_IMDKIT_DECL_BEGIN
 
 /*
  * `C' and `no' are additional one which cannot be obtained from modern
@@ -121,5 +122,7 @@ XCB_IMDKIT_EXPORT xcb_window_t xcb_im_input_context_get_client_window(xcb_im_inp
 XCB_IMDKIT_EXPORT xcb_window_t xcb_im_input_context_get_focus_window(xcb_im_input_context_t* ic);
 XCB_IMDKIT_EXPORT const xcb_im_preedit_attr_t* xcb_im_input_context_get_preedit_attr(xcb_im_input_context_t* ic);
 XCB_IMDKIT_EXPORT const xcb_im_status_attr_t* xcb_im_input_context_get_status_attr(xcb_im_input_context_t* ic);
+
+XCB_IMDKIT_DECL_END
 
 #endif // _XCB_IMDKIT_IMDKIT_H_

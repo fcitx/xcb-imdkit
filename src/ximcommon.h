@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2014 Weng Xuetian <wengxt@gmail.com>
+ * (C) Copyright 2016 Weng Xuetian <wengxt@gmail.com>
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the GNU Lesser General Public License
@@ -12,18 +12,26 @@
  * Lesser General Public License for more details.
  *
  */
-#ifndef _XCB_IMDKIT_ENCODING_H_
-#define _XCB_IMDKIT_ENCODING_H_
 
-#include <stdlib.h>
-#include "ximcommon.h"
+#ifndef XIMCOMMON_H
+#define XIMCOMMON_H
 
-XCB_IMDKIT_DECL_BEGIN
+#define XCB_IMDKIT_EXPORT __attribute__ ((visibility("default")))
 
-XCB_IMDKIT_EXPORT void xcb_compound_text_init();
-XCB_IMDKIT_EXPORT char* xcb_utf8_to_compound_text(const char* utf8, size_t length, size_t *lenghtOut);
-XCB_IMDKIT_EXPORT char* xcb_compound_text_to_utf8(const char* compound_text, size_t length, size_t *lenghtOut);
+#ifndef XCB_IMDKIT_DECL_BEGIN
+#  ifdef __cplusplus
+#    define XCB_IMDKIT_DECL_BEGIN extern "C" {
+#  else
+#    define XCB_IMDKIT_DECL_BEGIN
+#  endif
+#endif
 
-XCB_IMDKIT_DECL_END
+#ifndef XCB_IMDKIT_DECL_END
+#  ifdef __cplusplus
+#    define XCB_IMDKIT_DECL_END }
+#  else
+#    define XCB_IMDKIT_DECL_END
+#  endif
+#endif
 
-#endif // _XCB_IMDKIT_ENCODING_H_
+#endif
