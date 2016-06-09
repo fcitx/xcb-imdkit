@@ -20,8 +20,6 @@
 #include <stdio.h>
 #include "ximproto.h"
 
-#define XCB_IMDKIT_EXPORT __attribute__ ((visibility("default")))
-
 // some atom name
 #define XIM_SERVERS     "XIM_SERVERS"
 #define XIM_LOCALES     "LOCALES"
@@ -40,11 +38,10 @@
 #define XIM_LOCAL_CATEGORY  "@locale="
 #define XIM_TRANSPORT_CATEGORY  "@transport="
 
-#define XIM_DEBUG
 #ifdef XIM_DEBUG
 #define DebugLog(S...) fprintf(stderr, S)
 #else
-#define DebugLog(S...) ((void) (S))
+#define DebugLog(S...)
 #endif
 
 /*
