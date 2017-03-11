@@ -461,6 +461,7 @@ bool _xcb_im_filter_xconnect_message(xcb_im_t* im, xcb_generic_event_t* event)
         }
 
         xcb_client_message_event_t ev;
+        memset(&ev, 0, sizeof(ev));
         ev.response_type = XCB_CLIENT_MESSAGE;
         ev.window = client_window;
         ev.type = im->atoms[XIM_ATOM_XIM_CONNECT];
@@ -515,6 +516,7 @@ bool _xcb_im_filter_selection_request(xcb_im_t* im, xcb_generic_event_t* event)
                             (unsigned char*)buf);
 
         xcb_selection_notify_event_t ev;
+        memset(&ev, 0, sizeof(ev));
         ev.sequence = 0;
         ev.response_type = XCB_SELECTION_NOTIFY;
         ev.requestor = selection_request->requestor;

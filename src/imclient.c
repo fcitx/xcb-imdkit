@@ -222,6 +222,7 @@ void _xcb_xim_connect_prepare(xcb_xim_t* im) {
     im->im_client_window = w;
 
     xcb_client_message_event_t ev;
+    memset(&ev, 0, sizeof(ev));
     ev.response_type = XCB_CLIENT_MESSAGE;
     ev.format = 32;
     ev.sequence = 0;

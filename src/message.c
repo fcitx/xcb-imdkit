@@ -60,6 +60,7 @@ bool _xcb_send_xim_message(xcb_connection_t* conn,
     length += XCB_IM_HEADER_SIZE;
 
     xcb_client_message_event_t event;
+    memset(&event, 0, sizeof(event));
 
     event.response_type = XCB_CLIENT_MESSAGE;
     event.sequence = 0;
