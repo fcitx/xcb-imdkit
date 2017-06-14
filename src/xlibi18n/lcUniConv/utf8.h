@@ -1,4 +1,3 @@
-
 /*
  * UTF-8
  */
@@ -98,11 +97,11 @@ utf8_wctomb (unsigned char *r, ucs4_t wc, int n) /* n == 0 is acceptable */
   if (n < count)
     return RET_TOOSMALL;
   switch (count) { /* note: code falls through cases! */
-    case 6: r[5] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0x4000000;
-    case 5: r[4] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0x200000;
-    case 4: r[3] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0x10000;
-    case 3: r[2] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0x800;
-    case 2: r[1] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0xc0;
+    case 6: r[5] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0x4000000; /* FALLTHROUGH */
+    case 5: r[4] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0x200000; /* FALLTHROUGH */
+    case 4: r[3] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0x10000; /* FALLTHROUGH */
+    case 3: r[2] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0x800; /* FALLTHROUGH */
+    case 2: r[1] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0xc0; /* FALLTHROUGH */
     case 1: r[0] = wc;
   }
   return count;
