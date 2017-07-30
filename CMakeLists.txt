@@ -6,17 +6,15 @@ set(XCB_IMDKIT_VERSION 0.1.0)
 find_package(ECM 0.0.11 REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-include(CheckCCompilerFlag)
 include(CheckFunctionExists)
 include(ECMPackageConfigHelpers)
 include(ECMSetupVersion)
 include(ECMGenerateHeaders)
 include(uninstall)
 
-check_c_compiler_flag("-std=c11" C11_SUPPORTED)
-if (NOT C11_SUPPORTED)
-    message(FATAL_ERROR "C11 is required to compile xcb-imdkit.")
-endif()
+set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_C_STANDARD_REQUIRED TRUE)
+set(CMAKE_C_STANDARD 11)
 
 include(GNUInstallDirs)
 

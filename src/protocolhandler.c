@@ -457,8 +457,10 @@ uint32_t _xcb_im_get_nested_ic_values(xcb_im_t* im,
     for (int round = 0; round < 2; round ++) {
         i = start;
         while (i < size && attrIDs[i] != im->separatorAttr_id) {
-            const xcb_im_default_ic_attr_t* entry = _xcb_im_default_ic_attr_entry(im, attrIDs[i]);
-            if (!entry || !entry->read || offsets[attrIDs[i]] < 0) {
+            uint16_t attrID = attrIDs[i];
+            i++;
+            const xcb_im_default_ic_attr_t* entry = _xcb_im_default_ic_attr_entry(im, attrID);
+            if (!entry || !entry->read || offsets[attrID] < 0) {
                 continue;
             }
 
@@ -471,9 +473,9 @@ uint32_t _xcb_im_get_nested_ic_values(xcb_im_t* im,
                 uint8_t* start = data;
                 uint16_t value_length = _xcb_im_ic_attr_size(entry->type);
                 bool swap = im->byte_order != ic->client->byte_order;
-                data = uint16_t_write(&attrIDs[i], data, swap);
+                data = uint16_t_write(&attrID, data, swap);
                 data = uint16_t_write(&value_length, data, swap);
-                data = _xcb_im_get_ic_value((((uint8_t*)p) + offsets[attrIDs[i]]), entry->type, data, swap);
+                data = _xcb_im_get_ic_value((((uint8_t*)p) + offsets[attrID]), entry->type, data, swap);
                 data = (uint8_t*) align_to_4((uintptr_t) data, data - start, NULL);
             }
         }
@@ -527,9 +529,9 @@ void _xcb_im_handle_get_ic_values(xcb_im_t* im,
             buffers[nBuffers].attribute_ID = frame.ic_attribute.items[i];
 
             if (frame.ic_attribute.items[i] == im->statusAttr_id) {
-                i += _xcb_im_get_nested_ic_values(im, ic, &ic->status, im->id2statusoffset, frame.ic_attribute.items, i + 1, frame.ic_attribute.size, &buffers[nBuffers]);
+                i = _xcb_im_get_nested_ic_values(im, ic, &ic->status, im->id2statusoffset, frame.ic_attribute.items, i + 1, frame.ic_attribute.size, &buffers[nBuffers]);
             } else if (frame.ic_attribute.items[i] == im->preeditAttr_id) {
-                i += _xcb_im_get_nested_ic_values(im, ic, &ic->preedit, im->id2preeditoffset, frame.ic_attribute.items, i + 1, frame.ic_attribute.size, &buffers[nBuffers]);
+                i = _xcb_im_get_nested_ic_values(im, ic, &ic->preedit, im->id2preeditoffset, frame.ic_attribute.items, i + 1, frame.ic_attribute.size, &buffers[nBuffers]);
             } else {
                 const xcb_im_default_ic_attr_t* entry = _xcb_im_default_ic_attr_entry(im, frame.ic_attribute.items[i]);
                 i++;
