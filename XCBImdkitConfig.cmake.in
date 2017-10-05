@@ -1,5 +1,3 @@
 @PACKAGE_INIT@
 
-find_dependency(XCB COMPONENTS XCB)
-
 include("${CMAKE_CURRENT_LIST_DIR}/XCBImdkitLibraryTargets.cmake")
