@@ -20,6 +20,7 @@
 #include "list.h"
 #include "common.h"
 #include "message.h"
+#include "ximproto_p.h"
 
 #define LOCALES_BUFSIZE (sizeof(XCB_IM_ALL_LOCALES) + 32)
 
@@ -99,9 +100,9 @@
         uint8_t static_reply[XCB_IM_HEADER_SIZE + (frame_has_static_size(FRAME) ? frame_size_func(FRAME) : 1)]; \
         if (frame_has_static_size(FRAME)) { \
             reply = static_reply; \
-            _xcb_write_xim_message_header(reply, frame_opcode(FRAME), 0, length, swap); \
+            _xcb_write_xim_message_header(reply, XIM_PROTO_FRAME_OPCODE(FRAME), 0, length, swap); \
         } else { \
-            reply = _xcb_new_xim_message(frame_opcode(FRAME), 0, length, swap); \
+            reply = _xcb_new_xim_message(XIM_PROTO_FRAME_OPCODE(FRAME), 0, length, swap); \
             alloc_reply = reply; \
         } \
         do { \

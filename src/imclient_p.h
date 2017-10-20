@@ -14,8 +14,10 @@
  */
 #ifndef _XCB_IMDKIT_IMCLIENT_P_H_
 #define _XCB_IMDKIT_IMCLIENT_P_H_
+
 #include "common.h"
 #include "ximproto.h"
+#include "ximproto_p.h"
 #include "uthash.h"
 #include "message.h"
 #include "imclient.h"
@@ -198,9 +200,9 @@ struct _xcb_xim_t
         uint8_t static_reply[XCB_IM_HEADER_SIZE + (frame_has_static_size(FRAME) ? frame_size_func(FRAME) : 1)]; \
         if (frame_has_static_size(FRAME)) { \
             reply = static_reply; \
-            _xcb_write_xim_message_header(reply, frame_opcode(FRAME), 0, length, false); \
+            _xcb_write_xim_message_header(reply, XIM_PROTO_FRAME_OPCODE(FRAME), 0, length, false); \
         } else { \
-            reply = _xcb_new_xim_message(frame_opcode(FRAME), 0, length, false); \
+            reply = _xcb_new_xim_message(XIM_PROTO_FRAME_OPCODE(FRAME), 0, length, false); \
             alloc_reply = reply; \
         } \
         do { \
