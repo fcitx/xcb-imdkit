@@ -131,7 +131,9 @@ struct _xcb_im_input_context_t
     xcb_window_t focus_win;
 
     xcb_im_preedit_attr_t preedit;
+    uint32_t preedit_mask;
     xcb_im_status_attr_t status;
+    uint32_t status_mask;
     UT_hash_handle hh;
     void* data;
     xcb_im_free_function free_data_function;
@@ -203,8 +205,13 @@ struct _xcb_im_t
     uint16_t statusAttr_id;
     uint16_t separatorAttr_id;
     xcb_im_ximattr_fr_t* id2attr[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
+
     ssize_t id2preeditoffset[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
+    uint32_t id2preeditmask[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
+
     ssize_t id2statusoffset[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
+    uint32_t id2statusmask[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
+
     ssize_t id2icoffset[ARRAY_SIZE(Default_IMattr) + ARRAY_SIZE(Default_ICattr)];
     uint32_t event_mask;
     xcb_im_trigger_keys_t onKeys;

@@ -56,6 +56,18 @@ typedef struct _xcb_im_t xcb_im_t;
 typedef struct _xcb_im_input_context_t xcb_im_input_context_t;
 typedef struct _xcb_im_client_t xcb_im_client_t;
 
+// Mask to check if the attribute is set.
+typedef enum _xcb_im_attr_mask_t {
+    XCB_XIM_XNArea_MASK = (1 << 0),
+    XCB_XIM_XNAreaNeeded_MASK = (1 << 1),
+    XCB_XIM_XNSpotLocation_MASK = (1 << 2),
+    XCB_XIM_XNColormap_MASK = (1 << 3),
+    XCB_XIM_XNForeground_MASK = (1 << 4),
+    XCB_XIM_XNBackground_MASK = (1 << 5),
+    XCB_XIM_XNBackgroundPixmap_MASK = (1 << 7),
+    XCB_XIM_XNLineSpace_MASK = (1 << 8),
+} xcb_im_attr_mask_t;
+
 typedef struct _xcb_im_preedit_attr_t {
     xcb_rectangle_t area;
     xcb_rectangle_t area_needed;
@@ -122,6 +134,8 @@ XCB_IMDKIT_EXPORT xcb_window_t xcb_im_input_context_get_client_window(xcb_im_inp
 XCB_IMDKIT_EXPORT xcb_window_t xcb_im_input_context_get_focus_window(xcb_im_input_context_t* ic);
 XCB_IMDKIT_EXPORT const xcb_im_preedit_attr_t* xcb_im_input_context_get_preedit_attr(xcb_im_input_context_t* ic);
 XCB_IMDKIT_EXPORT const xcb_im_status_attr_t* xcb_im_input_context_get_status_attr(xcb_im_input_context_t* ic);
+XCB_IMDKIT_EXPORT uint32_t xcb_im_input_context_get_preedit_attr_mask(xcb_im_input_context_t* ic);
+XCB_IMDKIT_EXPORT uint32_t xcb_im_input_context_get_status_attr_mask(xcb_im_input_context_t* ic);
 
 XCB_IMDKIT_DECL_END
 

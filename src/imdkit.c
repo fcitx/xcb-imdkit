@@ -144,6 +144,8 @@ xcb_im_t* xcb_im_create(xcb_connection_t* conn,
         im->icattr[i].attribute_ID = id;
         im->id2preeditoffset[id] = -1;
         im->id2statusoffset[id] = -1;
+        im->id2preeditmask[id] = 0;
+        im->id2statusmask[id] = 0;
         im->id2icoffset[id] = -1;
         // this is comparing two constant string so it should be fast
         if (strcmp(Default_ICattr[i].name, XCB_XIM_XNPreeditAttributes) == 0) {
@@ -155,32 +157,46 @@ xcb_im_t* xcb_im_create(xcb_connection_t* conn,
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNArea) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, area);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, area);
+            im->id2preeditmask[id] = XCB_XIM_XNArea_MASK;
+            im->id2statusmask[id] = XCB_XIM_XNArea_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNAreaNeeded) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
-        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNAreaNeeded) == 0) {
-            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
-            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
+            im->id2preeditmask[id] = XCB_XIM_XNAreaNeeded_MASK;
+            im->id2statusmask[id] = XCB_XIM_XNAreaNeeded_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNSpotLocation) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, spot_location);
+            im->id2preeditmask[id] = XCB_XIM_XNSpotLocation_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNColormap) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
+            im->id2preeditmask[id] = XCB_XIM_XNColormap_MASK;
+            im->id2statusmask[id] = XCB_XIM_XNColormap_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNStdColormap) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
+            im->id2preeditmask[id] = XCB_XIM_XNColormap_MASK;
+            im->id2statusmask[id] = XCB_XIM_XNColormap_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNForeground) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, foreground);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, foreground);
+            im->id2preeditmask[id] = XCB_XIM_XNForeground_MASK;
+            im->id2statusmask[id] = XCB_XIM_XNForeground_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNBackground) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, background);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, background);
+            im->id2preeditmask[id] = XCB_XIM_XNBackground_MASK;
+            im->id2statusmask[id] = XCB_XIM_XNBackground_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNBackgroundPixmap) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, bg_pixmap);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, bg_pixmap);
+            im->id2preeditmask[id] = XCB_XIM_XNBackgroundPixmap_MASK;
+            im->id2statusmask[id] = XCB_XIM_XNBackgroundPixmap_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNLineSpace) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, line_space);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, line_space);
+            im->id2preeditmask[id] = XCB_XIM_XNLineSpace_MASK;
+            im->id2statusmask[id] = XCB_XIM_XNLineSpace_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNClientWindow) == 0) {
             im->id2icoffset[id] = offsetof(xcb_im_input_context_t, client_win);
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNInputStyle) == 0) {
@@ -1172,7 +1188,17 @@ const xcb_im_preedit_attr_t* xcb_im_input_context_get_preedit_attr(xcb_im_input_
     return &ic->preedit;
 }
 
+uint32_t xcb_im_input_context_get_preedit_attr_mask(xcb_im_input_context_t* ic)
+{
+    return ic->preedit_mask;
+}
+
 const xcb_im_status_attr_t* xcb_im_input_context_get_status_attr(xcb_im_input_context_t* ic)
 {
     return &ic->status;
+}
+
+uint32_t xcb_im_input_context_get_status_attr_mask(xcb_im_input_context_t* ic)
+{
+    return ic->status_mask;
 }

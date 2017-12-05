@@ -277,7 +277,9 @@ void _xcb_im_parse_ic_value(xcb_im_t* im,
 void _xcb_im_parse_nested_ic_values(xcb_im_t* im,
                                     xcb_im_input_context_t* ic,
                                     void* p,
+                                    uint32_t* mask,
                                     ssize_t* offsets,
+                                    uint32_t* masks,
                                     uint8_t* data, size_t length
                                    )
 {
@@ -293,6 +295,7 @@ void _xcb_im_parse_nested_ic_values(xcb_im_t* im,
             continue;
         }
 
+        *mask |= masks[fr.attribute_ID];
         _xcb_im_parse_ic_value(im, ic, (((uint8_t*)p) + offsets[fr.attribute_ID]), entry, fr.value, fr.value_length);
     }
 }
@@ -308,9 +311,9 @@ void _xcb_im_parse_ic_values(xcb_im_t* im,
         }
 
         if (icattrs[i].attribute_ID == im->statusAttr_id) {
-            _xcb_im_parse_nested_ic_values(im, ic, &ic->status, im->id2statusoffset, icattrs[i].value, icattrs[i].value_length);
+            _xcb_im_parse_nested_ic_values(im, ic, &ic->status, &ic->status_mask, im->id2statusoffset, im->id2statusmask, icattrs[i].value, icattrs[i].value_length);
         } else if (icattrs[i].attribute_ID == im->preeditAttr_id) {
-            _xcb_im_parse_nested_ic_values(im, ic, &ic->preedit, im->id2preeditoffset, icattrs[i].value, icattrs[i].value_length);
+            _xcb_im_parse_nested_ic_values(im, ic, &ic->preedit, &ic->preedit_mask, im->id2preeditoffset, im->id2preeditmask, icattrs[i].value, icattrs[i].value_length);
         } else {
             const xcb_im_default_ic_attr_t* entry = _xcb_im_default_ic_attr_entry(im, icattrs[i].attribute_ID);
             if (!entry || im->id2icoffset[icattrs[i].attribute_ID] < 0) {
