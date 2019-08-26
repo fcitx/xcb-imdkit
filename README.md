@@ -8,7 +8,7 @@ And not to say it's all asynchronous and it works with xcb.
 
 Though, it doesn't have complete protocol support, since some part of the protocol
 is never used. Those parts include:
-- XIM_EXT_SET_EVENT_MASK (no im actually use this
+- XIM_EXT_SET_EVENT_MASK (no im actually use this)
 - XIM_EXT_FORWARD_EVENT (it's not any better than forward event)
 - XIM_AUTH (IMDkit doesn't implement this, Xlib only has stub, so still no implementation.)
 - XIM_STR_CONVERSION (Synchronous protocol, but not used anywhere)
