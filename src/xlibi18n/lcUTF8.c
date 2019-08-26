@@ -424,6 +424,22 @@ charset_wctocs(
     Utf8Conv convptr;
     int i;
 
+    // First one is utf8. We are not able to fetch XLC_FONTSET like libX11, so
+    // we just hard code utf8 as our preferred charset.
+    Utf8Conv preferred_charset[] = {all_charsets, NULL};
+    Utf8Conv* preferred = preferred_charset;
+    for (; *preferred != (Utf8Conv) NULL; preferred++) {
+        convptr = *preferred;
+        count = convptr->wctocs(r, wc, n);
+        if (count == RET_TOOSMALL)
+            return RET_TOOSMALL;
+        if (count != RET_ILSEQ) {
+            *charsetp = convptr;
+            *sidep = (*r < 0x80 ? XlcGL : XlcGR);
+            return count;
+        }
+    }
+
     for (convptr = all_charsets+1, i = all_charsets_count-1; i > 0; convptr++, i--) {
         count = convptr->wctocs(r, wc, n);
         if (count == RET_TOOSMALL)
