@@ -12,32 +12,27 @@
  * Lesser General Public License for more details.
  *
  */
-#include <string.h>
 #include "encoding.h"
 #include "common.h"
 #include "xlibi18n/XlcPubI.h"
+#include <string.h>
 
 #define _CONVERT_BUFSIZE 2048
 
 typedef int (*convert_func)();
 
-static size_t
-get_buf_size(size_t length)
-{
-    length *= 3;    /* XXX */
-    length = (length / _CONVERT_BUFSIZE + 1) * _CONVERT_BUFSIZE;    /* XXX */
+static size_t get_buf_size(size_t length) {
+    length *= 3;                                                 /* XXX */
+    length = (length / _CONVERT_BUFSIZE + 1) * _CONVERT_BUFSIZE; /* XXX */
 
     return length;
 }
 
 XCB_IMDKIT_EXPORT
-void xcb_compound_text_init()
-{
-    _XlcInitCTInfo();
-}
+void xcb_compound_text_init() { _XlcInitCTInfo(); }
 
-int indirect_convert(void** from, size_t* from_left, void** to, size_t* to_left, convert_func tocs, convert_func csto)
-{
+int indirect_convert(void **from, size_t *from_left, void **to, size_t *to_left,
+                     convert_func tocs, convert_func csto) {
     char buf[_CONVERT_BUFSIZE];
     void *cs;
     size_t cs_left;
@@ -57,14 +52,15 @@ int indirect_convert(void** from, size_t* from_left, void** to, size_t* to_left,
 
         unconv_num += ret;
 
-        size_t length = ((char*)cs) - buf;
+        size_t length = ((char *)cs) - buf;
         if (length > 0) {
             cs_left = length;
             cs = buf;
 
             ret = csto(&state, &cs, &cs_left, to, to_left, charset);
             if (ret < 0) {
-                unconv_num += length / (charset->char_size > 0 ? charset->char_size : 1);
+                unconv_num +=
+                    length / (charset->char_size > 0 ? charset->char_size : 1);
                 continue;
             }
 
@@ -79,19 +75,20 @@ int indirect_convert(void** from, size_t* from_left, void** to, size_t* to_left,
 }
 
 XCB_IMDKIT_EXPORT
-char* xcb_utf8_to_compound_text(const char* utf8, size_t len, size_t* lenghtOut)
-{
+char *xcb_utf8_to_compound_text(const char *utf8, size_t len,
+                                size_t *lenghtOut) {
     size_t buf_len = get_buf_size(len) + 1;
-    void* result;
+    void *result;
     if ((result = malloc(buf_len)) == NULL) {
         return NULL;
     }
 
-    void *from = (void*) utf8;
+    void *from = (void *)utf8;
     void *to = result;
     size_t from_left = len;
     size_t to_left = buf_len;
-    int ret = indirect_convert(&from, &from_left, &to, &to_left, utf8tocs, cstoct);
+    int ret =
+        indirect_convert(&from, &from_left, &to, &to_left, utf8tocs, cstoct);
 
     if (ret || from_left != 0) {
         free(result);
@@ -102,25 +99,26 @@ char* xcb_utf8_to_compound_text(const char* utf8, size_t len, size_t* lenghtOut)
         *lenghtOut = to - result;
     }
 
-    *((char*)to) = '\0';
+    *((char *)to) = '\0';
 
     return result;
 }
 
 XCB_IMDKIT_EXPORT
-char* xcb_compound_text_to_utf8(const char* compound_text, size_t len, size_t* lenghtOut)
-{
+char *xcb_compound_text_to_utf8(const char *compound_text, size_t len,
+                                size_t *lenghtOut) {
     size_t buf_len = get_buf_size(len) + 1;
-    void* result;
+    void *result;
     if ((result = malloc(buf_len)) == NULL) {
         return NULL;
     }
 
-    void *from = (void*) compound_text;
+    void *from = (void *)compound_text;
     void *to = result;
     size_t from_left = len;
     size_t to_left = buf_len;
-    int ret = indirect_convert(&from, &from_left, &to, &to_left, cttocs, cstoutf8);
+    int ret =
+        indirect_convert(&from, &from_left, &to, &to_left, cttocs, cstoutf8);
 
     if (ret || from_left != 0) {
         free(result);
@@ -131,7 +129,7 @@ char* xcb_compound_text_to_utf8(const char* compound_text, size_t len, size_t* l
         *lenghtOut = to - result;
     }
 
-    *((char*)to) = '\0';
+    *((char *)to) = '\0';
 
     return result;
 }

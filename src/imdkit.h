@@ -15,13 +15,13 @@
 #ifndef _XCB_IMDKIT_IMDKIT_H_
 #define _XCB_IMDKIT_IMDKIT_H_
 
-#include <xcb/xcb.h>
+#include "ximcommon.h"
+#include "ximproto.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ximcommon.h"
-#include "ximproto.h"
+#include <xcb/xcb.h>
 
 XCB_IMDKIT_DECL_BEGIN
 
@@ -29,20 +29,19 @@ XCB_IMDKIT_DECL_BEGIN
  * `C' and `no' are additional one which cannot be obtained from modern
  * locale.gen. `no' is obsolete, but we keep it here for compatible reason.
  */
-#define XCB_IM_ALL_LOCALES \
-    "aa,af,am,an,ar,as,ast,az,be,bem,ber,bg,bho,bn,bo,br,brx,bs,byn," \
-    "C,ca,crh,cs,csb,cv,cy,da,de,dv,dz,el,en,es,et,eu,fa,ff,fi,fil,fo," \
-    "fr,fur,fy,ga,gd,gez,gl,gu,gv,ha,he,hi,hne,hr,hsb,ht,hu,hy,id,ig," \
-    "ik,is,it,iu,iw,ja,ka,kk,kl,km,kn,ko,kok,ks,ku,kw,ky,lb,lg,li,lij," \
-    "lo,lt,lv,mag,mai,mg,mhr,mi,mk,ml,mn,mr,ms,mt,my,nan,nb,nds,ne,nl," \
-    "nn,no,nr,nso,oc,om,or,os,pa,pap,pl,ps,pt,ro,ru,rw,sa,sc,sd,se,shs," \
-    "si,sid,sk,sl,so,sq,sr,ss,st,sv,sw,ta,te,tg,th,ti,tig,tk,tl,tn,tr," \
+#define XCB_IM_ALL_LOCALES                                                     \
+    "aa,af,am,an,ar,as,ast,az,be,bem,ber,bg,bho,bn,bo,br,brx,bs,byn,"          \
+    "C,ca,crh,cs,csb,cv,cy,da,de,dv,dz,el,en,es,et,eu,fa,ff,fi,fil,fo,"        \
+    "fr,fur,fy,ga,gd,gez,gl,gu,gv,ha,he,hi,hne,hr,hsb,ht,hu,hy,id,ig,"         \
+    "ik,is,it,iu,iw,ja,ka,kk,kl,km,kn,ko,kok,ks,ku,kw,ky,lb,lg,li,lij,"        \
+    "lo,lt,lv,mag,mai,mg,mhr,mi,mk,ml,mn,mr,ms,mt,my,nan,nb,nds,ne,nl,"        \
+    "nn,no,nr,nso,oc,om,or,os,pa,pap,pl,ps,pt,ro,ru,rw,sa,sc,sd,se,shs,"       \
+    "si,sid,sk,sl,so,sq,sr,ss,st,sv,sw,ta,te,tg,th,ti,tig,tk,tl,tn,tr,"        \
     "ts,tt,ug,uk,unm,ur,uz,ve,vi,wa,wae,wal,wo,xh,yi,yo,yue,zh,zu"
 
-typedef struct _xcb_im_styles_t
-{
+typedef struct _xcb_im_styles_t {
     uint32_t nStyles;
-    uint32_t* styles;
+    uint32_t *styles;
 } xcb_im_styles_t;
 
 typedef char *xcb_im_encoding_t;
@@ -90,52 +89,83 @@ typedef struct _xcb_im_status_attr_t {
     uint32_t line_space;
 } xcb_im_status_attr_t;
 
-typedef void (*xcb_im_callback)(xcb_im_t* im, xcb_im_client_t* client, xcb_im_input_context_t* ic,
-                                const xcb_im_packet_header_fr_t* hdr,
-                                void* frame, void* arg, void* user_data);
+typedef void (*xcb_im_callback)(xcb_im_t *im, xcb_im_client_t *client,
+                                xcb_im_input_context_t *ic,
+                                const xcb_im_packet_header_fr_t *hdr,
+                                void *frame, void *arg, void *user_data);
 
-typedef void (*xcb_im_free_function) (void *memory);
+typedef void (*xcb_im_free_function)(void *memory);
 
-XCB_IMDKIT_EXPORT xcb_im_t* xcb_im_create(xcb_connection_t* conn,
-                                          int screen,
-                                          xcb_window_t serverWindow,
-                                          const char* serverName,
-                                          const char* locale,
-                                          const xcb_im_styles_t* inputStyles,
-                                          const xcb_im_trigger_keys_t* onKeysList,
-                                          const xcb_im_trigger_keys_t* offKeysList,
-                                          const xcb_im_encodings_t* encodingList,
-                                          uint32_t event_mask,
-                                          xcb_im_callback callback,
-                                          void* user_data);
-XCB_IMDKIT_EXPORT bool xcb_im_open_im(xcb_im_t* im);
-XCB_IMDKIT_EXPORT bool xcb_im_filter_event(xcb_im_t* im, xcb_generic_event_t* event);
-XCB_IMDKIT_EXPORT void xcb_im_close_im(xcb_im_t* im);
-XCB_IMDKIT_EXPORT void xcb_im_destroy(xcb_im_t* im);
-XCB_IMDKIT_EXPORT void xcb_im_forward_event(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_key_press_event_t* event);
-XCB_IMDKIT_EXPORT void xcb_im_commit_string(xcb_im_t* im, xcb_im_input_context_t* ic, uint32_t flag, const char* str, uint32_t length, uint32_t keysym);
-XCB_IMDKIT_EXPORT void xcb_im_geometry_callback(xcb_im_t* im, xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT void xcb_im_preedit_start_callback(xcb_im_t* im, xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT void xcb_im_preedit_draw_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_preedit_draw_fr_t* frame);
-XCB_IMDKIT_EXPORT void xcb_im_preedit_caret_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_preedit_caret_fr_t* frame);
-XCB_IMDKIT_EXPORT void xcb_im_preedit_done_callback(xcb_im_t* im, xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT void xcb_im_status_start_callback(xcb_im_t* im, xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT void xcb_im_status_draw_text_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_status_draw_text_fr_t* frame);
-XCB_IMDKIT_EXPORT void xcb_im_status_draw_bitmap_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_status_draw_bitmap_fr_t* frame);
-XCB_IMDKIT_EXPORT void xcb_im_status_done_callback(xcb_im_t* im, xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT void xcb_im_preedit_start(xcb_im_t* im, xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT void xcb_im_preedit_end(xcb_im_t* im, xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT void xcb_im_sync_xlib(xcb_im_t* im, xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT bool xcb_im_support_extension(xcb_im_t* im, uint16_t major_code, uint16_t minor_code);
-XCB_IMDKIT_EXPORT void xcb_im_input_context_set_data(xcb_im_input_context_t* ic, void* data, xcb_im_free_function free_data_function);
-XCB_IMDKIT_EXPORT void* xcb_im_input_context_get_data(xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT uint32_t xcb_im_input_context_get_input_style(xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT xcb_window_t xcb_im_input_context_get_client_window(xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT xcb_window_t xcb_im_input_context_get_focus_window(xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT const xcb_im_preedit_attr_t* xcb_im_input_context_get_preedit_attr(xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT const xcb_im_status_attr_t* xcb_im_input_context_get_status_attr(xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT uint32_t xcb_im_input_context_get_preedit_attr_mask(xcb_im_input_context_t* ic);
-XCB_IMDKIT_EXPORT uint32_t xcb_im_input_context_get_status_attr_mask(xcb_im_input_context_t* ic);
+XCB_IMDKIT_EXPORT xcb_im_t *
+xcb_im_create(xcb_connection_t *conn, int screen, xcb_window_t serverWindow,
+              const char *serverName, const char *locale,
+              const xcb_im_styles_t *inputStyles,
+              const xcb_im_trigger_keys_t *onKeysList,
+              const xcb_im_trigger_keys_t *offKeysList,
+              const xcb_im_encodings_t *encodingList, uint32_t event_mask,
+              xcb_im_callback callback, void *user_data);
+XCB_IMDKIT_EXPORT bool xcb_im_open_im(xcb_im_t *im);
+XCB_IMDKIT_EXPORT bool xcb_im_filter_event(xcb_im_t *im,
+                                           xcb_generic_event_t *event);
+XCB_IMDKIT_EXPORT void xcb_im_close_im(xcb_im_t *im);
+XCB_IMDKIT_EXPORT void xcb_im_destroy(xcb_im_t *im);
+XCB_IMDKIT_EXPORT void xcb_im_forward_event(xcb_im_t *im,
+                                            xcb_im_input_context_t *ic,
+                                            xcb_key_press_event_t *event);
+XCB_IMDKIT_EXPORT void xcb_im_commit_string(xcb_im_t *im,
+                                            xcb_im_input_context_t *ic,
+                                            uint32_t flag, const char *str,
+                                            uint32_t length, uint32_t keysym);
+XCB_IMDKIT_EXPORT void xcb_im_geometry_callback(xcb_im_t *im,
+                                                xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT void
+xcb_im_preedit_start_callback(xcb_im_t *im, xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT void
+xcb_im_preedit_draw_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
+                             xcb_im_preedit_draw_fr_t *frame);
+XCB_IMDKIT_EXPORT void
+xcb_im_preedit_caret_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
+                              xcb_im_preedit_caret_fr_t *frame);
+XCB_IMDKIT_EXPORT void xcb_im_preedit_done_callback(xcb_im_t *im,
+                                                    xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT void xcb_im_status_start_callback(xcb_im_t *im,
+                                                    xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT void
+xcb_im_status_draw_text_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
+                                 xcb_im_status_draw_text_fr_t *frame);
+XCB_IMDKIT_EXPORT void
+xcb_im_status_draw_bitmap_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
+                                   xcb_im_status_draw_bitmap_fr_t *frame);
+XCB_IMDKIT_EXPORT void xcb_im_status_done_callback(xcb_im_t *im,
+                                                   xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT void xcb_im_preedit_start(xcb_im_t *im,
+                                            xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT void xcb_im_preedit_end(xcb_im_t *im,
+                                          xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT void xcb_im_sync_xlib(xcb_im_t *im,
+                                        xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT bool xcb_im_support_extension(xcb_im_t *im,
+                                                uint16_t major_code,
+                                                uint16_t minor_code);
+XCB_IMDKIT_EXPORT void
+xcb_im_input_context_set_data(xcb_im_input_context_t *ic, void *data,
+                              xcb_im_free_function free_data_function);
+XCB_IMDKIT_EXPORT void *
+xcb_im_input_context_get_data(xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT uint32_t
+xcb_im_input_context_get_input_style(xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT xcb_window_t
+xcb_im_input_context_get_client_window(xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT xcb_window_t
+xcb_im_input_context_get_focus_window(xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT const xcb_im_preedit_attr_t *
+xcb_im_input_context_get_preedit_attr(xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT const xcb_im_status_attr_t *
+xcb_im_input_context_get_status_attr(xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT uint32_t
+xcb_im_input_context_get_preedit_attr_mask(xcb_im_input_context_t *ic);
+XCB_IMDKIT_EXPORT uint32_t
+xcb_im_input_context_get_status_attr_mask(xcb_im_input_context_t *ic);
 
 XCB_IMDKIT_DECL_END
 

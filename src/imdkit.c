@@ -12,95 +12,78 @@
  * Lesser General Public License for more details.
  *
  */
-#include <xcb/xcb.h>
-#include <xcb/xproto.h>
-#include <xcb/xcb_aux.h>
-#include <xcb/xcb_atom.h>
+#include "imdkit.h"
+#include "common.h"
+#include "message.h"
+#include "parser.h"
+#include "protocolhandler.h"
+#include "uthash.h"
+#include "ximproto.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "uthash.h"
-#include "imdkit.h"
-#include "parser.h"
-#include "ximproto.h"
-#include "protocolhandler.h"
-#include "message.h"
-#include "common.h"
+#include <xcb/xcb.h>
+#include <xcb/xcb_atom.h>
+#include <xcb/xcb_aux.h>
+#include <xcb/xproto.h>
 
 typedef struct _xcb_im_ext_t {
-    uint16_t  major_opcode;
-    uint16_t  minor_opcode;
-    uint16_t  length;
-    const char    *name;
+    uint16_t major_opcode;
+    uint16_t minor_opcode;
+    uint16_t length;
+    const char *name;
 } xcb_im_ext_t;
 
-#define SIMPLE_ARRAY_FUNC(NAME, ARRAY_TYPE, ELEM_TYPE, NUM, PTR) \
-void _copy_##NAME(ARRAY_TYPE* to, const ARRAY_TYPE* from) \
-{ \
-    if (!from || !from->NUM) { \
-        to->NUM = 0; \
-        to->PTR = NULL; \
-        return; \
-    } \
-    to->PTR = malloc(from->NUM * sizeof(ELEM_TYPE)); \
-    if (!to->PTR) { \
-        return; \
-    } \
-    to->NUM = from->NUM; \
-    memcpy(to->PTR, from->PTR, from->NUM * sizeof(ELEM_TYPE)); \
-} \
-void _free_##NAME(ARRAY_TYPE* to) \
-{ \
-    free(to->PTR); \
-}
+#define SIMPLE_ARRAY_FUNC(NAME, ARRAY_TYPE, ELEM_TYPE, NUM, PTR)               \
+    void _copy_##NAME(ARRAY_TYPE *to, const ARRAY_TYPE *from) {                \
+        if (!from || !from->NUM) {                                             \
+            to->NUM = 0;                                                       \
+            to->PTR = NULL;                                                    \
+            return;                                                            \
+        }                                                                      \
+        to->PTR = malloc(from->NUM * sizeof(ELEM_TYPE));                       \
+        if (!to->PTR) {                                                        \
+            return;                                                            \
+        }                                                                      \
+        to->NUM = from->NUM;                                                   \
+        memcpy(to->PTR, from->PTR, from->NUM * sizeof(ELEM_TYPE));             \
+    }                                                                          \
+    void _free_##NAME(ARRAY_TYPE *to) { free(to->PTR); }
 
-SIMPLE_ARRAY_FUNC(trigger_keys,
-                    xcb_im_trigger_keys_t,
-                    xcb_im_ximtriggerkey_fr_t,
-                    nKeys,
-                    keys)
+SIMPLE_ARRAY_FUNC(trigger_keys, xcb_im_trigger_keys_t,
+                  xcb_im_ximtriggerkey_fr_t, nKeys, keys)
 
-SIMPLE_ARRAY_FUNC(input_styles,
-                    xcb_im_styles_t,
-                    xcb_im_style_t,
-                    nStyles,
-                    styles)
+SIMPLE_ARRAY_FUNC(input_styles, xcb_im_styles_t, xcb_im_style_t, nStyles,
+                  styles)
 
-void _copy_encodings (xcb_im_encodings_t * to, const xcb_im_encodings_t * from)
-{
-    to->encodings  = malloc(from->nEncodings * sizeof(xcb_im_encoding_t));
+void _copy_encodings(xcb_im_encodings_t *to, const xcb_im_encodings_t *from) {
+    to->encodings = malloc(from->nEncodings * sizeof(xcb_im_encoding_t));
     if (!to->encodings) {
         return;
     }
     to->nEncodings = from->nEncodings;
-    for (int i = 0;i < to->nEncodings; i++) {
+    for (int i = 0; i < to->nEncodings; i++) {
         to->encodings[i] = strdup(from->encodings[i]);
     }
 }
 
-void _free_encodings (xcb_im_encodings_t * to)
-{
-    for (int i = 0;i < to->nEncodings; i++) {
+void _free_encodings(xcb_im_encodings_t *to) {
+    for (int i = 0; i < to->nEncodings; i++) {
         free(to->encodings[i]);
     }
     free(to->encodings);
 }
 
-xcb_im_t* xcb_im_create(xcb_connection_t* conn,
-                        int screen,
-                        xcb_window_t serverWindow,
-                        const char* serverName,
-                        const char* locale,
-                        const xcb_im_styles_t* inputStyles,
-                        const xcb_im_trigger_keys_t* onKeysList,
-                        const xcb_im_trigger_keys_t* offKeysList,
-                        const xcb_im_encodings_t* encodingList,
-                        uint32_t event_mask,
-                        xcb_im_callback callback,
-                        void* user_data)
-{
-    xcb_im_t* im = calloc(1, sizeof(xcb_im_t));
+xcb_im_t *xcb_im_create(xcb_connection_t *conn, int screen,
+                        xcb_window_t serverWindow, const char *serverName,
+                        const char *locale, const xcb_im_styles_t *inputStyles,
+                        const xcb_im_trigger_keys_t *onKeysList,
+                        const xcb_im_trigger_keys_t *offKeysList,
+                        const xcb_im_encodings_t *encodingList,
+                        uint32_t event_mask, xcb_im_callback callback,
+                        void *user_data) {
+    xcb_im_t *im = calloc(1, sizeof(xcb_im_t));
     im->conn = conn;
     im->screen_id = screen;
     im->callback = callback;
@@ -121,7 +104,7 @@ xcb_im_t* xcb_im_create(xcb_connection_t* conn,
     im->serverWindow = serverWindow;
 
     uint16_t endian = 1;
-    if (*(char *) &endian) {
+    if (*(char *)&endian) {
         im->byte_order = 'l';
     } else {
         im->byte_order = 'B';
@@ -129,7 +112,7 @@ xcb_im_t* xcb_im_create(xcb_connection_t* conn,
 
     int id = 0;
     for (size_t i = 0; i < ARRAY_SIZE(Default_IMattr); i++) {
-        im->imattr[i].im_attribute = (uint8_t*) Default_IMattr[i].name;
+        im->imattr[i].im_attribute = (uint8_t *)Default_IMattr[i].name;
         im->imattr[i].length_of_im_attribute = strlen(Default_IMattr[i].name);
         im->imattr[i].type_of_the_value = Default_IMattr[i].type;
         im->imattr[i].attribute_ID = id;
@@ -138,7 +121,7 @@ xcb_im_t* xcb_im_create(xcb_connection_t* conn,
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(Default_ICattr); i++) {
-        im->icattr[i].ic_attribute = (uint8_t*) Default_ICattr[i].name;
+        im->icattr[i].ic_attribute = (uint8_t *)Default_ICattr[i].name;
         im->icattr[i].length_of_ic_attribute = strlen(Default_ICattr[i].name);
         im->icattr[i].type_of_the_value = Default_ICattr[i].type;
         im->icattr[i].attribute_ID = id;
@@ -150,9 +133,11 @@ xcb_im_t* xcb_im_create(xcb_connection_t* conn,
         // this is comparing two constant string so it should be fast
         if (strcmp(Default_ICattr[i].name, XCB_XIM_XNPreeditAttributes) == 0) {
             im->preeditAttr_id = im->icattr[i].attribute_ID;
-        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNStatusAttributes) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNStatusAttributes) ==
+                   0) {
             im->statusAttr_id = im->icattr[i].attribute_ID;
-        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNSeparatorofNestedList) == 0) {
+        } else if (strcmp(Default_ICattr[i].name,
+                          XCB_XIM_XNSeparatorofNestedList) == 0) {
             im->separatorAttr_id = im->icattr[i].attribute_ID;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNArea) == 0) {
             im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, area);
@@ -160,71 +145,89 @@ xcb_im_t* xcb_im_create(xcb_connection_t* conn,
             im->id2preeditmask[id] = XCB_XIM_XNArea_MASK;
             im->id2statusmask[id] = XCB_XIM_XNArea_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNAreaNeeded) == 0) {
-            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
-            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, area_needed);
+            im->id2preeditoffset[id] =
+                offsetof(xcb_im_preedit_attr_t, area_needed);
+            im->id2statusoffset[id] =
+                offsetof(xcb_im_preedit_attr_t, area_needed);
             im->id2preeditmask[id] = XCB_XIM_XNAreaNeeded_MASK;
             im->id2statusmask[id] = XCB_XIM_XNAreaNeeded_MASK;
-        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNSpotLocation) == 0) {
-            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, spot_location);
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNSpotLocation) ==
+                   0) {
+            im->id2preeditoffset[id] =
+                offsetof(xcb_im_preedit_attr_t, spot_location);
             im->id2preeditmask[id] = XCB_XIM_XNSpotLocation_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNColormap) == 0) {
-            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
+            im->id2preeditoffset[id] =
+                offsetof(xcb_im_preedit_attr_t, colormap);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
             im->id2preeditmask[id] = XCB_XIM_XNColormap_MASK;
             im->id2statusmask[id] = XCB_XIM_XNColormap_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNStdColormap) == 0) {
-            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
+            im->id2preeditoffset[id] =
+                offsetof(xcb_im_preedit_attr_t, colormap);
             im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, colormap);
             im->id2preeditmask[id] = XCB_XIM_XNColormap_MASK;
             im->id2statusmask[id] = XCB_XIM_XNColormap_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNForeground) == 0) {
-            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, foreground);
-            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, foreground);
+            im->id2preeditoffset[id] =
+                offsetof(xcb_im_preedit_attr_t, foreground);
+            im->id2statusoffset[id] =
+                offsetof(xcb_im_preedit_attr_t, foreground);
             im->id2preeditmask[id] = XCB_XIM_XNForeground_MASK;
             im->id2statusmask[id] = XCB_XIM_XNForeground_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNBackground) == 0) {
-            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, background);
-            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, background);
+            im->id2preeditoffset[id] =
+                offsetof(xcb_im_preedit_attr_t, background);
+            im->id2statusoffset[id] =
+                offsetof(xcb_im_preedit_attr_t, background);
             im->id2preeditmask[id] = XCB_XIM_XNBackground_MASK;
             im->id2statusmask[id] = XCB_XIM_XNBackground_MASK;
-        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNBackgroundPixmap) == 0) {
-            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, bg_pixmap);
-            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, bg_pixmap);
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNBackgroundPixmap) ==
+                   0) {
+            im->id2preeditoffset[id] =
+                offsetof(xcb_im_preedit_attr_t, bg_pixmap);
+            im->id2statusoffset[id] =
+                offsetof(xcb_im_preedit_attr_t, bg_pixmap);
             im->id2preeditmask[id] = XCB_XIM_XNBackgroundPixmap_MASK;
             im->id2statusmask[id] = XCB_XIM_XNBackgroundPixmap_MASK;
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNLineSpace) == 0) {
-            im->id2preeditoffset[id] = offsetof(xcb_im_preedit_attr_t, line_space);
-            im->id2statusoffset[id] = offsetof(xcb_im_preedit_attr_t, line_space);
+            im->id2preeditoffset[id] =
+                offsetof(xcb_im_preedit_attr_t, line_space);
+            im->id2statusoffset[id] =
+                offsetof(xcb_im_preedit_attr_t, line_space);
             im->id2preeditmask[id] = XCB_XIM_XNLineSpace_MASK;
             im->id2statusmask[id] = XCB_XIM_XNLineSpace_MASK;
-        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNClientWindow) == 0) {
+        } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNClientWindow) ==
+                   0) {
             im->id2icoffset[id] = offsetof(xcb_im_input_context_t, client_win);
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNInputStyle) == 0) {
             im->id2icoffset[id] = offsetof(xcb_im_input_context_t, input_style);
         } else if (strcmp(Default_ICattr[i].name, XCB_XIM_XNFocusWindow) == 0) {
             im->id2icoffset[id] = offsetof(xcb_im_input_context_t, focus_win);
         }
-        im->id2attr[id] = (xcb_im_ximattr_fr_t*) &im->icattr[i];
+        im->id2attr[id] = (xcb_im_ximattr_fr_t *)&im->icattr[i];
         id++;
     }
 
-    for (size_t i = 0;  i < ARRAY_SIZE(Default_Extension);  i++) {
-        im->extension[i].extension_major_opcode = Default_Extension[i].major_opcode;
-        im->extension[i].extension_minor_opcode = Default_Extension[i].minor_opcode;
-        im->extension[i].extension_name = (uint8_t*) Default_Extension[i].name;
-        im->extension[i].length_of_extension_name = strlen(Default_Extension[i].name);
+    for (size_t i = 0; i < ARRAY_SIZE(Default_Extension); i++) {
+        im->extension[i].extension_major_opcode =
+            Default_Extension[i].major_opcode;
+        im->extension[i].extension_minor_opcode =
+            Default_Extension[i].minor_opcode;
+        im->extension[i].extension_name = (uint8_t *)Default_Extension[i].name;
+        im->extension[i].length_of_extension_name =
+            strlen(Default_Extension[i].name);
     }
 
     return im;
 }
 
-bool _xcb_im_init(xcb_im_t* im)
-{
+bool _xcb_im_init(xcb_im_t *im) {
     if (im->init) {
         return true;
     }
-    xcb_screen_t* screen = xcb_aux_get_screen(im->conn, 0);
-    xcb_screen_t* defaultScreen = xcb_aux_get_screen(im->conn, im->screen_id);
+    xcb_screen_t *screen = xcb_aux_get_screen(im->conn, 0);
+    xcb_screen_t *defaultScreen = xcb_aux_get_screen(im->conn, im->screen_id);
 
     if (!screen || !defaultScreen) {
         return false;
@@ -232,27 +235,25 @@ bool _xcb_im_init(xcb_im_t* im)
 
     im->screen = screen;
     im->default_screen = defaultScreen;
-    char* buf;
+    char *buf;
     asprintf(&buf, "@server=%s", im->serverName);
-    const char* atom_names[] = {buf, XIM_SERVERS, XIM_LOCALES, XIM_TRANSPORT, _XIM_PROTOCOL, _XIM_XCONNECT};
-    im->init = _xcb_im_init_atoms(im->conn, ARRAY_SIZE(atom_names), atom_names, im->atoms);
+    const char *atom_names[] = {buf,           XIM_SERVERS,   XIM_LOCALES,
+                                XIM_TRANSPORT, _XIM_PROTOCOL, _XIM_XCONNECT};
+    im->init = _xcb_im_init_atoms(im->conn, ARRAY_SIZE(atom_names), atom_names,
+                                  im->atoms);
     free(buf);
 
     return im->init;
 }
 
-bool _xcb_im_set_selection_owner(xcb_im_t* im)
-{
-    xcb_atom_t* atoms = im->atoms;
-    xcb_get_property_cookie_t cookie = xcb_get_property(im->conn,
-                                                        false,
-                                                        im->screen->root,
-                                                        atoms[XIM_ATOM_XIM_SERVERS],
-                                                        XCB_ATOM_ATOM,
-                                                        0L,
-                                                        1000000L);
+bool _xcb_im_set_selection_owner(xcb_im_t *im) {
+    xcb_atom_t *atoms = im->atoms;
+    xcb_get_property_cookie_t cookie = xcb_get_property(
+        im->conn, false, im->screen->root, atoms[XIM_ATOM_XIM_SERVERS],
+        XCB_ATOM_ATOM, 0L, 1000000L);
 
-    xcb_get_property_reply_t* reply = xcb_get_property_reply(im->conn, cookie, NULL);
+    xcb_get_property_reply_t *reply =
+        xcb_get_property_reply(im->conn, cookie, NULL);
     bool found = false;
     bool conflict = false;
     bool result = false;
@@ -260,26 +261,33 @@ bool _xcb_im_set_selection_owner(xcb_im_t* im)
         if (!reply) {
             break;
         }
-        if (reply->type != XCB_ATOM_NONE && (reply->type != XCB_ATOM_ATOM || reply->format != 32)) {
+        if (reply->type != XCB_ATOM_NONE &&
+            (reply->type != XCB_ATOM_ATOM || reply->format != 32)) {
             break;
         }
-        uint32_t* data = xcb_get_property_value(reply);
+        uint32_t *data = xcb_get_property_value(reply);
         if (!data) {
             break;
         }
-        uint32_t length = xcb_get_property_value_length(reply) / sizeof(uint32_t);
-        for (uint32_t i = 0; i < length ; i++) {
+        uint32_t length =
+            xcb_get_property_value_length(reply) / sizeof(uint32_t);
+        for (uint32_t i = 0; i < length; i++) {
             if (data[i] == atoms[XIM_ATOM_SERVER_NAME]) {
                 found = true;
-                xcb_get_selection_owner_reply_t* owner_reply = xcb_get_selection_owner_reply(im->conn,
-                                                                                             xcb_get_selection_owner(im->conn, atoms[XIM_ATOM_SERVER_NAME]),
-                                                                                             NULL);
+                xcb_get_selection_owner_reply_t *owner_reply =
+                    xcb_get_selection_owner_reply(
+                        im->conn,
+                        xcb_get_selection_owner(im->conn,
+                                                atoms[XIM_ATOM_SERVER_NAME]),
+                        NULL);
                 if (owner_reply) {
                     xcb_window_t owner = owner_reply->owner;
                     free(owner_reply);
                     if (owner != im->serverWindow) {
                         if (owner == XCB_WINDOW_NONE) {
-                            xcb_set_selection_owner(im->conn, im->serverWindow, atoms[XIM_ATOM_SERVER_NAME], XCB_CURRENT_TIME);
+                            xcb_set_selection_owner(im->conn, im->serverWindow,
+                                                    atoms[XIM_ATOM_SERVER_NAME],
+                                                    XCB_CURRENT_TIME);
                         } else {
                             conflict = true;
                         }
@@ -294,46 +302,40 @@ bool _xcb_im_set_selection_owner(xcb_im_t* im)
         }
 
         if (!found) {
-            xcb_set_selection_owner(im->conn, im->serverWindow, atoms[XIM_ATOM_SERVER_NAME], XCB_CURRENT_TIME);
-            xcb_change_property(im->conn,
-                                XCB_PROP_MODE_PREPEND,
-                                im->screen->root,
-                                atoms[XIM_ATOM_XIM_SERVERS],
-                                XCB_ATOM_ATOM,
-                                32,
-                                1,
+            xcb_set_selection_owner(im->conn, im->serverWindow,
+                                    atoms[XIM_ATOM_SERVER_NAME],
+                                    XCB_CURRENT_TIME);
+            xcb_change_property(im->conn, XCB_PROP_MODE_PREPEND,
+                                im->screen->root, atoms[XIM_ATOM_XIM_SERVERS],
+                                XCB_ATOM_ATOM, 32, 1,
                                 &atoms[XIM_ATOM_SERVER_NAME]);
         } else {
             /*
-            * We always need to generate the PropertyNotify to the Root Window
-            */
-            xcb_change_property(im->conn,
-                                XCB_PROP_MODE_PREPEND,
-                                im->screen->root,
-                                atoms[XIM_ATOM_XIM_SERVERS],
-                                XCB_ATOM_ATOM,
-                                32,
-                                0,
-                                data);
+             * We always need to generate the PropertyNotify to the Root Window
+             */
+            xcb_change_property(im->conn, XCB_PROP_MODE_PREPEND,
+                                im->screen->root, atoms[XIM_ATOM_XIM_SERVERS],
+                                XCB_ATOM_ATOM, 32, 0, data);
         }
 
-        xcb_get_selection_owner_reply_t* owner_reply = xcb_get_selection_owner_reply(im->conn,
-                                                                                     xcb_get_selection_owner(im->conn, atoms[XIM_ATOM_SERVER_NAME]),
-                                                                                     NULL);
+        xcb_get_selection_owner_reply_t *owner_reply =
+            xcb_get_selection_owner_reply(
+                im->conn,
+                xcb_get_selection_owner(im->conn, atoms[XIM_ATOM_SERVER_NAME]),
+                NULL);
         if (owner_reply) {
             xcb_window_t owner = owner_reply->owner;
             free(owner_reply);
             result = owner == im->serverWindow;
         }
         xcb_flush(im->conn);
-    } while(0);
+    } while (0);
     free(reply);
 
     return result;
 }
 
-bool xcb_im_open_im(xcb_im_t* im)
-{
+bool xcb_im_open_im(xcb_im_t *im) {
     if (!_xcb_im_init(im)) {
         return false;
     }
@@ -345,16 +347,16 @@ bool xcb_im_open_im(xcb_im_t* im)
     return true;
 }
 
-xcb_im_client_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_window)
-{
-    xcb_im_client_t* client;
+xcb_im_client_t *_xcb_im_new_client(xcb_im_t *im, xcb_window_t client_window) {
+    xcb_im_client_t *client;
     int new_connect_id = 0;
     if (im->free_list) {
         client = im->free_list;
         // save as a cache, since we want to memset the item from free list
         new_connect_id = client->connect_id;
-        xcb_im_client_t* dup = NULL;
-        HASH_FIND(hh1, im->clients_by_id, &new_connect_id, sizeof(uint16_t), dup);
+        xcb_im_client_t *dup = NULL;
+        HASH_FIND(hh1, im->clients_by_id, &new_connect_id, sizeof(uint16_t),
+                  dup);
         if (dup) {
             DebugLog("Bug in implementation");
             return NULL;
@@ -366,8 +368,9 @@ xcb_im_client_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_window)
         while (new_connect_id == 0) {
             new_connect_id = ++im->connect_id;
         }
-        xcb_im_client_t* dup = NULL;
-        HASH_FIND(hh1, im->clients_by_id, &new_connect_id, sizeof(uint16_t), dup);
+        xcb_im_client_t *dup = NULL;
+        HASH_FIND(hh1, im->clients_by_id, &new_connect_id, sizeof(uint16_t),
+                  dup);
         if (dup) {
             DebugLog("overflow! too many clients");
             return NULL;
@@ -378,8 +381,8 @@ xcb_im_client_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_window)
 
     list_init(&client->queue);
 
-    xcb_window_t w = xcb_generate_id (im->conn);
-    xcb_im_client_t* dup = NULL;
+    xcb_window_t w = xcb_generate_id(im->conn);
+    xcb_im_client_t *dup = NULL;
     HASH_FIND(hh2, im->clients_by_win, &w, sizeof(xcb_window_t), dup);
     if (dup) {
         DebugLog("duplicate XID, Bug in XCB?");
@@ -388,11 +391,10 @@ xcb_im_client_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_window)
         return NULL;
     }
 
-    xcb_create_window (im->conn, XCB_COPY_FROM_PARENT, w, im->default_screen->root,
-                       0, 0, 1, 1, 1,
-                       XCB_WINDOW_CLASS_INPUT_OUTPUT,
-                       im->default_screen->root_visual,
-                       0, NULL);
+    xcb_create_window(im->conn, XCB_COPY_FROM_PARENT, w,
+                      im->default_screen->root, 0, 0, 1, 1, 1,
+                      XCB_WINDOW_CLASS_INPUT_OUTPUT,
+                      im->default_screen->root_visual, 0, NULL);
 
     client->client_win = client_window;
     client->accept_win = w;
@@ -400,21 +402,20 @@ xcb_im_client_t* _xcb_im_new_client(xcb_im_t* im, xcb_window_t client_window)
     HASH_ADD(hh1, im->clients_by_id, connect_id, sizeof(int), client);
     HASH_ADD(hh2, im->clients_by_win, accept_win, sizeof(xcb_window_t), client);
 
-
-    _xcb_change_event_mask(im->conn, client_window, XCB_EVENT_MASK_STRUCTURE_NOTIFY, false);
+    _xcb_change_event_mask(im->conn, client_window,
+                           XCB_EVENT_MASK_STRUCTURE_NOTIFY, false);
 
     return client;
 }
 
-xcb_im_input_context_t* _xcb_im_new_input_context(xcb_im_t* im,
-                                                  xcb_im_client_t* client)
-{
+xcb_im_input_context_t *_xcb_im_new_input_context(xcb_im_t *im,
+                                                  xcb_im_client_t *client) {
     uint16_t icid = 0;
-    xcb_im_input_context_t* ic = NULL;
+    xcb_im_input_context_t *ic = NULL;
     if (client->ic_free_list) {
         ic = client->ic_free_list;
         icid = ic->id;
-        xcb_im_input_context_t* dup = NULL;
+        xcb_im_input_context_t *dup = NULL;
         HASH_FIND(hh, client->input_contexts, &icid, sizeof(uint16_t), dup);
         if (dup) {
             DebugLog("Bug in implementation");
@@ -428,7 +429,7 @@ xcb_im_input_context_t* _xcb_im_new_input_context(xcb_im_t* im,
         while (icid == 0) {
             icid = ++client->icid;
         }
-        xcb_im_input_context_t* dup = NULL;
+        xcb_im_input_context_t *dup = NULL;
         HASH_FIND(hh, client->input_contexts, &icid, sizeof(uint16_t), dup);
         if (dup) {
             DebugLog("overflow! too many clients");
@@ -447,14 +448,14 @@ xcb_im_input_context_t* _xcb_im_new_input_context(xcb_im_t* im,
     return ic;
 }
 
-bool _xcb_im_filter_xconnect_message(xcb_im_t* im, xcb_generic_event_t* event)
-{
+bool _xcb_im_filter_xconnect_message(xcb_im_t *im, xcb_generic_event_t *event) {
     do {
         if ((event->response_type & ~0x80) != XCB_CLIENT_MESSAGE) {
             break;
         }
 
-        xcb_client_message_event_t* clientmessage = (xcb_client_message_event_t*) event;
+        xcb_client_message_event_t *clientmessage =
+            (xcb_client_message_event_t *)event;
         if (clientmessage->window != im->serverWindow) {
             break;
         }
@@ -471,7 +472,7 @@ bool _xcb_im_filter_xconnect_message(xcb_im_t* im, xcb_generic_event_t* event)
         if (!client) {
             break;
         }
-        if (major_version != 0  ||  minor_version != 0) {
+        if (major_version != 0 || minor_version != 0) {
             major_version = minor_version = 0;
             /* Only supporting only-CM & Property-with-CM method */
         }
@@ -487,23 +488,25 @@ bool _xcb_im_filter_xconnect_message(xcb_im_t* im, xcb_generic_event_t* event)
         ev.data.data32[1] = major_version;
         ev.data.data32[2] = minor_version;
         ev.data.data32[3] = XCB_XIM_CM_DATA_SIZE;
-        xcb_send_event(im->conn, false, client_window, XCB_EVENT_MASK_NO_EVENT, (char*) &ev);
+        xcb_send_event(im->conn, false, client_window, XCB_EVENT_MASK_NO_EVENT,
+                       (char *)&ev);
         xcb_flush(im->conn);
 
         return true;
-    } while(0);
+    } while (0);
 
     return false;
 }
 
-bool _xcb_im_filter_selection_request(xcb_im_t* im, xcb_generic_event_t* event)
-{
+bool _xcb_im_filter_selection_request(xcb_im_t *im,
+                                      xcb_generic_event_t *event) {
     do {
         if ((event->response_type & ~0x80) != XCB_SELECTION_REQUEST) {
             break;
         }
 
-        xcb_selection_request_event_t* selection_request = (xcb_selection_request_event_t*) event;
+        xcb_selection_request_event_t *selection_request =
+            (xcb_selection_request_event_t *)event;
         if (selection_request->owner != im->serverWindow) {
             break;
         }
@@ -514,7 +517,7 @@ bool _xcb_im_filter_selection_request(xcb_im_t* im, xcb_generic_event_t* event)
         char buf[LOCALES_BUFSIZE];
         if (selection_request->target == im->atoms[XIM_ATOM_LOCALES]) {
             snprintf(buf, LOCALES_BUFSIZE - 2, "@locale=%s", im->locale);
-            buf[LOCALES_BUFSIZE-1] = 0;
+            buf[LOCALES_BUFSIZE - 1] = 0;
         } else if (selection_request->target == im->atoms[XIM_ATOM_TRANSPORT]) {
             strcpy(buf, "@transport=X/");
         } else {
@@ -522,14 +525,10 @@ bool _xcb_im_filter_selection_request(xcb_im_t* im, xcb_generic_event_t* event)
         }
         DebugLog("requestor:%u\n", selection_request->requestor);
         DebugLog("buf:%s\n", buf);
-        xcb_change_property(im->conn,
-                            XCB_PROP_MODE_REPLACE,
-                            selection_request->requestor,
-                            selection_request->target,
-                            selection_request->target,
-                            8,
-                            strlen(buf),
-                            (unsigned char*)buf);
+        xcb_change_property(
+            im->conn, XCB_PROP_MODE_REPLACE, selection_request->requestor,
+            selection_request->target, selection_request->target, 8,
+            strlen(buf), (unsigned char *)buf);
 
         xcb_selection_notify_event_t ev;
         memset(&ev, 0, sizeof(ev));
@@ -540,37 +539,36 @@ bool _xcb_im_filter_selection_request(xcb_im_t* im, xcb_generic_event_t* event)
         ev.target = selection_request->target;
         ev.time = selection_request->time;
         ev.property = selection_request->property;
-        xcb_send_event(im->conn, false, ev.requestor, XCB_EVENT_MASK_NO_EVENT, (char*) &ev);
+        xcb_send_event(im->conn, false, ev.requestor, XCB_EVENT_MASK_NO_EVENT,
+                       (char *)&ev);
         xcb_flush(im->conn);
 
         return true;
-    } while(0);
+    } while (0);
 
     return false;
 }
 
-static uint8_t* _xcb_im_read_message(xcb_im_t* im,
+static uint8_t *_xcb_im_read_message(xcb_im_t *im,
                                      xcb_client_message_event_t *ev,
-                                     xcb_im_client_t* client,
-                                     xcb_im_packet_header_fr_t* hdr)
-{
+                                     xcb_im_client_t *client,
+                                     xcb_im_packet_header_fr_t *hdr) {
     if (ev->format == 8) {
         if (client->byte_order == '?') {
             // major_opcode
             if (ev->data.data8[0] != XCB_XIM_CONNECT) {
-                return NULL;  /* can do nothing */
+                return NULL; /* can do nothing */
             }
             client->byte_order = ev->data.data8[XCB_IM_HEADER_SIZE];
         }
     }
-    return _xcb_read_xim_message(im->conn, client->accept_win, ev, hdr, client->byte_order != im->byte_order);
+    return _xcb_read_xim_message(im->conn, client->accept_win, ev, hdr,
+                                 client->byte_order != im->byte_order);
 }
 
-void _xcb_im_handle_message(xcb_im_t* im,
-                            xcb_im_client_t* client,
-                            const xcb_im_packet_header_fr_t* hdr,
-                            uint8_t* data)
-{
+void _xcb_im_handle_message(xcb_im_t *im, xcb_im_client_t *client,
+                            const xcb_im_packet_header_fr_t *hdr,
+                            uint8_t *data) {
     switch (hdr->major_opcode) {
     case XCB_XIM_CONNECT:
         DebugLog("-- XIM_CONNECT\n");
@@ -685,27 +683,29 @@ void _xcb_im_handle_message(xcb_im_t* im,
     /*endswitch*/
 }
 
-bool _xcb_im_filter_client(xcb_im_t* im, xcb_generic_event_t* event)
-{
+bool _xcb_im_filter_client(xcb_im_t *im, xcb_generic_event_t *event) {
     do {
         if ((event->response_type & ~0x80) != XCB_CLIENT_MESSAGE) {
             break;
         }
 
-        xcb_client_message_event_t* clientmessage = (xcb_client_message_event_t*) event;
+        xcb_client_message_event_t *clientmessage =
+            (xcb_client_message_event_t *)event;
 
         if (clientmessage->type != im->atoms[XIM_ATOM_XIM_PROTOCOL]) {
             break;
         }
 
-        xcb_im_client_t* client = NULL;
-        HASH_FIND(hh2, im->clients_by_win, &clientmessage->window, sizeof(xcb_window_t), client);
+        xcb_im_client_t *client = NULL;
+        HASH_FIND(hh2, im->clients_by_win, &clientmessage->window,
+                  sizeof(xcb_window_t), client);
         if (!client) {
             break;
         }
 
         xcb_im_packet_header_fr_t hdr;
-        uint8_t* message = _xcb_im_read_message(im, clientmessage, client, &hdr);
+        uint8_t *message =
+            _xcb_im_read_message(im, clientmessage, client, &hdr);
         if (message) {
             _xcb_im_handle_message(im, client, &hdr, message);
             free(message);
@@ -713,21 +713,21 @@ bool _xcb_im_filter_client(xcb_im_t* im, xcb_generic_event_t* event)
 
         return true;
 
-    } while(0);
+    } while (0);
 
     return false;
 }
 
-bool _xcb_im_filter_destroy_window(xcb_im_t* im, xcb_generic_event_t* event)
-{
+bool _xcb_im_filter_destroy_window(xcb_im_t *im, xcb_generic_event_t *event) {
     do {
         if ((event->response_type & ~0x80) != XCB_DESTROY_NOTIFY) {
             break;
         }
 
-        xcb_destroy_notify_event_t* destroy_notify = (xcb_destroy_notify_event_t*) event;
+        xcb_destroy_notify_event_t *destroy_notify =
+            (xcb_destroy_notify_event_t *)event;
 
-        xcb_im_client_t* client = im->clients_by_win;
+        xcb_im_client_t *client = im->clients_by_win;
         while (client && client->client_win != destroy_notify->window) {
             client = client->hh1.next;
         }
@@ -738,44 +738,41 @@ bool _xcb_im_filter_destroy_window(xcb_im_t* im, xcb_generic_event_t* event)
         _xcb_im_destroy_client(im, client);
 
         return true;
-    } while(0);
+    } while (0);
 
     return false;
 }
 
-bool xcb_im_filter_event(xcb_im_t* im, xcb_generic_event_t* event)
-{
-    return _xcb_im_filter_xconnect_message(im, event)
-        || _xcb_im_filter_selection_request(im, event)
-        || _xcb_im_filter_client(im, event)
-        || _xcb_im_filter_destroy_window(im, event);
+bool xcb_im_filter_event(xcb_im_t *im, xcb_generic_event_t *event) {
+    return _xcb_im_filter_xconnect_message(im, event) ||
+           _xcb_im_filter_selection_request(im, event) ||
+           _xcb_im_filter_client(im, event) ||
+           _xcb_im_filter_destroy_window(im, event);
 }
 
-void xcb_im_close_im(xcb_im_t* im)
-{
-    xcb_atom_t* atoms = im->atoms;
-    xcb_get_property_cookie_t cookie = xcb_get_property(im->conn,
-                                                        false,
-                                                        im->screen->root,
-                                                        atoms[XIM_ATOM_XIM_SERVERS],
-                                                        XCB_ATOM_ATOM,
-                                                        0L,
-                                                        1000000L);
+void xcb_im_close_im(xcb_im_t *im) {
+    xcb_atom_t *atoms = im->atoms;
+    xcb_get_property_cookie_t cookie = xcb_get_property(
+        im->conn, false, im->screen->root, atoms[XIM_ATOM_XIM_SERVERS],
+        XCB_ATOM_ATOM, 0L, 1000000L);
 
-    xcb_get_property_reply_t* reply = xcb_get_property_reply(im->conn, cookie, NULL);
+    xcb_get_property_reply_t *reply =
+        xcb_get_property_reply(im->conn, cookie, NULL);
     bool found = false;
     do {
         if (!reply) {
             break;
         }
-        if (reply->type != XCB_ATOM_NONE && (reply->type != XCB_ATOM_ATOM || reply->format != 32)) {
+        if (reply->type != XCB_ATOM_NONE &&
+            (reply->type != XCB_ATOM_ATOM || reply->format != 32)) {
             break;
         }
-        uint32_t* data = xcb_get_property_value(reply);
+        uint32_t *data = xcb_get_property_value(reply);
         if (!data) {
             break;
         }
-        uint32_t length = xcb_get_property_value_length(reply) / sizeof(uint32_t);
+        uint32_t length =
+            xcb_get_property_value_length(reply) / sizeof(uint32_t);
         uint32_t i;
         for (i = 0; i < length; i++) {
             if (data[i] == atoms[XIM_ATOM_SERVER_NAME]) {
@@ -788,35 +785,25 @@ void xcb_im_close_im(xcb_im_t* im)
             for (i = i + 1; i < length; i++) {
                 data[i - 1] = data[i];
             }
-            xcb_change_property(im->conn,
-                                XCB_PROP_MODE_REPLACE,
-                                im->screen->root,
-                                atoms[XIM_ATOM_XIM_SERVERS],
-                                XCB_ATOM_ATOM,
-                                32,
-                                length - 1,
-                                data);
+            xcb_change_property(im->conn, XCB_PROP_MODE_REPLACE,
+                                im->screen->root, atoms[XIM_ATOM_XIM_SERVERS],
+                                XCB_ATOM_ATOM, 32, length - 1, data);
         } else {
             /*
-            * We always need to generate the PropertyNotify to the Root Window
-            */
-            xcb_change_property(im->conn,
-                                XCB_PROP_MODE_PREPEND,
-                                im->screen->root,
-                                atoms[XIM_ATOM_XIM_SERVERS],
-                                XCB_ATOM_ATOM,
-                                32,
-                                0,
-                                data);
+             * We always need to generate the PropertyNotify to the Root Window
+             */
+            xcb_change_property(im->conn, XCB_PROP_MODE_PREPEND,
+                                im->screen->root, atoms[XIM_ATOM_XIM_SERVERS],
+                                XCB_ATOM_ATOM, 32, 0, data);
         }
-    } while(0);
+    } while (0);
     free(reply);
     while (im->clients_by_id) {
         _xcb_im_destroy_client(im, im->clients_by_id);
     }
 
     while (im->free_list) {
-        xcb_im_client_t* p = im->free_list;
+        xcb_im_client_t *p = im->free_list;
         // TODO: might need to free more?
         im->free_list = im->free_list->hh1.next;
         free(p);
@@ -825,8 +812,7 @@ void xcb_im_close_im(xcb_im_t* im)
     im->connect_id = 0;
 }
 
-void xcb_im_destroy(xcb_im_t* im)
-{
+void xcb_im_destroy(xcb_im_t *im) {
     free(im->locale);
     free(im->serverName);
     _free_encodings(&im->encodings);
@@ -836,35 +822,39 @@ void xcb_im_destroy(xcb_im_t* im)
     free(im);
 }
 
-void xcb_im_forward_event(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_key_press_event_t* event)
-{
+void xcb_im_forward_event(xcb_im_t *im, xcb_im_input_context_t *ic,
+                          xcb_key_press_event_t *event) {
     xcb_im_forward_event_fr_t frame;
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
     frame.flag = XCB_XIM_SYNCHRONOUS;
     frame.sequence_number = event->sequence;
-    xcb_im_client_t* client = ic->client;
+    xcb_im_client_t *client = ic->client;
     client->sync = true;
 
-    const size_t length = 8 /* xcb_im_forward_event_fr_size(&frame) */ + sizeof(xcb_key_press_event_t);
+    const size_t length = 8 /* xcb_im_forward_event_fr_size(&frame) */ +
+                          sizeof(xcb_key_press_event_t);
     uint8_t data[XCB_IM_HEADER_SIZE + length];
-    _xcb_write_xim_message_header(data, XCB_XIM_FORWARD_EVENT, 0, length, client->byte_order != im->byte_order);
-    uint8_t* p = xcb_im_forward_event_fr_write(&frame, data + XCB_IM_HEADER_SIZE, client->byte_order != im->byte_order);
+    _xcb_write_xim_message_header(data, XCB_XIM_FORWARD_EVENT, 0, length,
+                                  client->byte_order != im->byte_order);
+    uint8_t *p =
+        xcb_im_forward_event_fr_write(&frame, data + XCB_IM_HEADER_SIZE,
+                                      client->byte_order != im->byte_order);
     memcpy(p, event, sizeof(xcb_key_press_event_t));
 
-    (void) _xcb_im_send_message(im, client, data, length);
+    (void)_xcb_im_send_message(im, client, data, length);
 }
 
-
-void xcb_im_commit_string(xcb_im_t* im, xcb_im_input_context_t* ic, uint32_t flag, const char* str, uint32_t length, uint32_t keysym)
-{
+void xcb_im_commit_string(xcb_im_t *im, xcb_im_input_context_t *ic,
+                          uint32_t flag, const char *str, uint32_t length,
+                          uint32_t keysym) {
     if (!(flag & XCB_XIM_LOOKUP_KEYSYM) && (flag & XCB_XIM_LOOKUP_CHARS)) {
         xcb_im_commit_chars_fr_t frame;
         frame.input_method_ID = ic->client->connect_id;
         frame.input_context_ID = ic->id;
         frame.byte_length_of_committed_string = length;
         frame.flag = flag | XCB_XIM_SYNCHRONOUS;
-        frame.committed_string = (uint8_t*) str;
+        frame.committed_string = (uint8_t *)str;
         _xcb_im_send_frame(im, ic->client, frame, false);
     } else {
         xcb_im_commit_both_fr_t frame;
@@ -872,32 +862,30 @@ void xcb_im_commit_string(xcb_im_t* im, xcb_im_input_context_t* ic, uint32_t fla
         frame.input_context_ID = ic->id;
         frame.byte_length_of_committed_string = length;
         frame.flag = flag | XCB_XIM_SYNCHRONOUS;
-        frame.committed_string = (uint8_t*) str;
+        frame.committed_string = (uint8_t *)str;
         frame.keysym = keysym;
         _xcb_im_send_frame(im, ic->client, frame, false);
     }
 }
 
-void xcb_im_preedit_start(xcb_im_t* im, xcb_im_input_context_t* ic)
-{
-    if (im->onKeys.nKeys == 0  &&  im->offKeys.nKeys == 0) {
+void xcb_im_preedit_start(xcb_im_t *im, xcb_im_input_context_t *ic) {
+    if (im->onKeys.nKeys == 0 && im->offKeys.nKeys == 0) {
         return;
     }
 
-    _xcb_im_set_event_mask(im, ic->client, ic->id, im->event_mask, ~im->event_mask);
+    _xcb_im_set_event_mask(im, ic->client, ic->id, im->event_mask,
+                           ~im->event_mask);
 }
 
-void xcb_im_preedit_end(xcb_im_t* im, xcb_im_input_context_t* ic)
-{
-    if (im->onKeys.nKeys == 0  &&  im->offKeys.nKeys == 0) {
+void xcb_im_preedit_end(xcb_im_t *im, xcb_im_input_context_t *ic) {
+    if (im->onKeys.nKeys == 0 && im->offKeys.nKeys == 0) {
         return;
     }
 
     _xcb_im_set_event_mask(im, ic->client, ic->id, 0, 0);
 }
 
-void xcb_im_sync_xlib(xcb_im_t* im, xcb_im_input_context_t* ic)
-{
+void xcb_im_sync_xlib(xcb_im_t *im, xcb_im_input_context_t *ic) {
     im->sync = true;
     xcb_im_sync_fr_t frame;
     frame.input_method_ID = ic->client->connect_id;
@@ -906,47 +894,50 @@ void xcb_im_sync_xlib(xcb_im_t* im, xcb_im_input_context_t* ic)
     _xcb_im_send_frame(im, ic->client, frame, false);
 }
 
-bool _xcb_im_get_input_styles_attr(xcb_im_t* im, xcb_im_client_t* client, xcb_im_ximattribute_fr_t* attr)
-{
+bool _xcb_im_get_input_styles_attr(xcb_im_t *im, xcb_im_client_t *client,
+                                   xcb_im_ximattribute_fr_t *attr) {
     xcb_im_input_styles_fr_t fr;
     memset(&fr, 0, sizeof(fr));
     fr.XIMStyle_list.size = im->inputStyles.nStyles;
     if (im->inputStyles.nStyles) {
-        if ((fr.XIMStyle_list.items = calloc(im->inputStyles.nStyles, sizeof(xcb_im_inputstyle_fr_t))) == NULL) {
+        if ((fr.XIMStyle_list.items = calloc(im->inputStyles.nStyles,
+                                             sizeof(xcb_im_inputstyle_fr_t))) ==
+            NULL) {
             return false;
         }
-        for (size_t j = 0; j < im->inputStyles.nStyles; j ++) {
+        for (size_t j = 0; j < im->inputStyles.nStyles; j++) {
             fr.XIMStyle_list.items[j].inputstyle = im->inputStyles.styles[j];
         }
     }
 
     size_t frame_size = xcb_im_input_styles_fr_size(&fr);
-    if ((attr->value = malloc(frame_size)) != NULL) {;
+    if ((attr->value = malloc(frame_size)) != NULL) {
+        ;
         attr->value_length = frame_size;
-        xcb_im_input_styles_fr_write(&fr, attr->value, client->byte_order != im->byte_order);
+        xcb_im_input_styles_fr_write(&fr, attr->value,
+                                     client->byte_order != im->byte_order);
     }
     xcb_im_input_styles_fr_free(&fr);
     return attr->value != NULL;
 }
 
-const xcb_im_default_ic_attr_t* _xcb_im_default_ic_attr_entry(xcb_im_t* im,
-                                                              uint32_t id)
-{
+const xcb_im_default_ic_attr_t *_xcb_im_default_ic_attr_entry(xcb_im_t *im,
+                                                              uint32_t id) {
     if (id >= ARRAY_SIZE(im->id2attr)) {
         return NULL;
     }
-    xcb_im_xicattr_fr_t* attr = (xcb_im_xicattr_fr_t*) im->id2attr[id];
-    if ((attr < im->icattr) || (attr >= im->icattr + ARRAY_SIZE(Default_ICattr))) {
+    xcb_im_xicattr_fr_t *attr = (xcb_im_xicattr_fr_t *)im->id2attr[id];
+    if ((attr < im->icattr) ||
+        (attr >= im->icattr + ARRAY_SIZE(Default_ICattr))) {
         return NULL;
     }
 
     return &Default_ICattr[attr - im->icattr];
 }
 
-void _xcb_im_destroy_ic(xcb_im_t* im,
-                        xcb_im_input_context_t* ic) {
+void _xcb_im_destroy_ic(xcb_im_t *im, xcb_im_input_context_t *ic) {
 
-    xcb_im_client_t* client = ic->client;
+    xcb_im_client_t *client = ic->client;
 
     if (im->callback) {
         xcb_im_packet_header_fr_t hdr;
@@ -966,9 +957,7 @@ void _xcb_im_destroy_ic(xcb_im_t* im,
     client->ic_free_list = ic;
 }
 
-void _xcb_im_destroy_client(xcb_im_t* im,
-                            xcb_im_client_t* client)
-{
+void _xcb_im_destroy_client(xcb_im_t *im, xcb_im_client_t *client) {
     xcb_im_packet_header_fr_t hdr;
     hdr.length = 0;
     hdr.major_opcode = XCB_XIM_DISCONNECT;
@@ -991,7 +980,7 @@ void _xcb_im_destroy_client(xcb_im_t* im,
     xcb_destroy_window(im->conn, client->accept_win);
 
     while (client->ic_free_list) {
-        xcb_im_input_context_t* p = client->ic_free_list;
+        xcb_im_input_context_t *p = client->ic_free_list;
         // TODO: mind need to free more?
         client->ic_free_list = client->ic_free_list->hh.next;
         free(p);
@@ -1001,9 +990,9 @@ void _xcb_im_destroy_client(xcb_im_t* im,
     im->free_list = client;
 }
 
-
-void _xcb_im_set_event_mask(xcb_im_t* im, xcb_im_client_t* client, uint32_t icid, uint32_t forward_event_mask, uint32_t sync_mask)
-{
+void _xcb_im_set_event_mask(xcb_im_t *im, xcb_im_client_t *client,
+                            uint32_t icid, uint32_t forward_event_mask,
+                            uint32_t sync_mask) {
     xcb_im_set_event_mask_fr_t frame;
     frame.forward_event_mask = forward_event_mask;
     frame.synchronous_event_mask = sync_mask;
@@ -1012,9 +1001,10 @@ void _xcb_im_set_event_mask(xcb_im_t* im, xcb_im_client_t* client, uint32_t icid
     _xcb_im_send_frame(im, client, frame, false);
 }
 
-void _xcb_im_add_queue(xcb_im_t* im, xcb_im_client_t* client, uint16_t icid, const xcb_im_packet_header_fr_t* hdr, xcb_im_forward_event_fr_t* frame, uint8_t* data)
-{
-    xcb_im_queue_t* item = malloc(sizeof(xcb_im_queue_t));
+void _xcb_im_add_queue(xcb_im_t *im, xcb_im_client_t *client, uint16_t icid,
+                       const xcb_im_packet_header_fr_t *hdr,
+                       xcb_im_forward_event_fr_t *frame, uint8_t *data) {
+    xcb_im_queue_t *item = malloc(sizeof(xcb_im_queue_t));
     if (!item) {
         return;
     }
@@ -1024,30 +1014,29 @@ void _xcb_im_add_queue(xcb_im_t* im, xcb_im_client_t* client, uint16_t icid, con
     memcpy(&item->hdr, hdr, sizeof(xcb_im_packet_header_fr_t));
     memcpy(&item->frame, frame, sizeof(xcb_im_forward_event_fr_t));
 
-
     list_append(&item->list, &client->queue);
 }
 
-void _xcb_im_process_queue(xcb_im_t* im, xcb_im_client_t* client)
-{
-    while (!client->sync && !list_is_empty(&client->queue))
-    {
-        xcb_im_queue_t* item = list_container_of(client->queue.next, xcb_im_queue_t, list);
+void _xcb_im_process_queue(xcb_im_t *im, xcb_im_client_t *client) {
+    while (!client->sync && !list_is_empty(&client->queue)) {
+        xcb_im_queue_t *item =
+            list_container_of(client->queue.next, xcb_im_queue_t, list);
         list_remove(&item->list);
 
-        xcb_im_input_context_t* ic = NULL;
-        HASH_FIND(hh, client->input_contexts, &item->icid, sizeof(uint16_t), ic);
+        xcb_im_input_context_t *ic = NULL;
+        HASH_FIND(hh, client->input_contexts, &item->icid, sizeof(uint16_t),
+                  ic);
         if (ic) {
             if (im->callback) {
-                im->callback(im, client, ic, &item->hdr, &item->frame, &item->event, im->user_data);
+                im->callback(im, client, ic, &item->hdr, &item->frame,
+                             &item->event, im->user_data);
             }
         }
         free(item);
     }
 }
 
-void xcb_im_geometry_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
-{
+void xcb_im_geometry_callback(xcb_im_t *im, xcb_im_input_context_t *ic) {
     xcb_im_geometry_fr_t frame;
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
@@ -1055,8 +1044,7 @@ void xcb_im_geometry_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
     _xcb_im_send_frame(im, ic->client, frame, false);
 }
 
-void xcb_im_preedit_start_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
-{
+void xcb_im_preedit_start_callback(xcb_im_t *im, xcb_im_input_context_t *ic) {
     xcb_im_preedit_start_fr_t frame;
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
@@ -1064,24 +1052,23 @@ void xcb_im_preedit_start_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
     _xcb_im_send_frame(im, ic->client, frame, false);
 }
 
-void xcb_im_preedit_draw_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_preedit_draw_fr_t* frame)
-{
+void xcb_im_preedit_draw_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
+                                  xcb_im_preedit_draw_fr_t *frame) {
     frame->input_method_ID = ic->client->connect_id;
     frame->input_context_ID = ic->id;
 
     _xcb_im_send_frame(im, ic->client, *frame, false);
 }
 
-void xcb_im_preedit_caret_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_preedit_caret_fr_t* frame)
-{
+void xcb_im_preedit_caret_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
+                                   xcb_im_preedit_caret_fr_t *frame) {
     frame->input_method_ID = ic->client->connect_id;
     frame->input_context_ID = ic->id;
 
     _xcb_im_send_frame(im, ic->client, *frame, false);
 }
 
-void xcb_im_preedit_done_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
-{
+void xcb_im_preedit_done_callback(xcb_im_t *im, xcb_im_input_context_t *ic) {
     xcb_im_preedit_done_fr_t frame;
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
@@ -1089,8 +1076,7 @@ void xcb_im_preedit_done_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
     _xcb_im_send_frame(im, ic->client, frame, false);
 }
 
-void xcb_im_status_start_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
-{
+void xcb_im_status_start_callback(xcb_im_t *im, xcb_im_input_context_t *ic) {
     xcb_im_status_start_fr_t frame;
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
@@ -1098,8 +1084,7 @@ void xcb_im_status_start_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
     _xcb_im_send_frame(im, ic->client, frame, false);
 }
 
-void xcb_im_status_done_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
-{
+void xcb_im_status_done_callback(xcb_im_t *im, xcb_im_input_context_t *ic) {
     xcb_im_status_done_fr_t frame;
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
@@ -1107,8 +1092,8 @@ void xcb_im_status_done_callback(xcb_im_t* im, xcb_im_input_context_t* ic)
     _xcb_im_send_frame(im, ic->client, frame, false);
 }
 
-void xcb_im_status_draw_text_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_status_draw_text_fr_t* frame)
-{
+void xcb_im_status_draw_text_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
+                                      xcb_im_status_draw_text_fr_t *frame) {
     frame->input_method_ID = ic->client->connect_id;
     frame->input_context_ID = ic->id;
     frame->type = XCB_IM_TextType;
@@ -1116,8 +1101,9 @@ void xcb_im_status_draw_text_callback(xcb_im_t* im, xcb_im_input_context_t* ic, 
     _xcb_im_send_frame(im, ic->client, *frame, false);
 }
 
-void xcb_im_status_draw_bitmap_callback(xcb_im_t* im, xcb_im_input_context_t* ic, xcb_im_status_draw_bitmap_fr_t* frame)
-{
+void xcb_im_status_draw_bitmap_callback(xcb_im_t *im,
+                                        xcb_im_input_context_t *ic,
+                                        xcb_im_status_draw_bitmap_fr_t *frame) {
     frame->input_method_ID = ic->client->connect_id;
     frame->input_context_ID = ic->id;
     frame->type = XCB_IM_BitmapType;
@@ -1126,35 +1112,35 @@ void xcb_im_status_draw_bitmap_callback(xcb_im_t* im, xcb_im_input_context_t* ic
 }
 
 // length is the body without header size in byte
-bool _xcb_im_send_message(xcb_im_t* im,
-                          xcb_im_client_t* client,
-                          uint8_t* data, size_t length)
-{
+bool _xcb_im_send_message(xcb_im_t *im, xcb_im_client_t *client, uint8_t *data,
+                          size_t length) {
     char atomName[64];
-    int len = sprintf(atomName, "_server%u_%u", client->connect_id, im->sequence++);
-    return _xcb_send_xim_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], client->client_win,
-                                 data, length, atomName, len);
+    int len =
+        sprintf(atomName, "_server%u_%u", client->connect_id, im->sequence++);
+    return _xcb_send_xim_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL],
+                                 client->client_win, data, length, atomName,
+                                 len);
 }
 
-void _xcb_im_send_error_message(xcb_im_t* im,
-                                xcb_im_client_t* client)
-{
-    _xcb_send_xim_error_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], client->client_win, im->byte_order != client->byte_order);
+void _xcb_im_send_error_message(xcb_im_t *im, xcb_im_client_t *client) {
+    _xcb_send_xim_error_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL],
+                                client->client_win,
+                                im->byte_order != client->byte_order);
 }
 
-bool xcb_im_support_extension(xcb_im_t* im, uint16_t major_code, uint16_t minor_code)
-{
-    for (size_t i = 0 ; i < ARRAY_SIZE(im->extension); i++) {
-        if (im->extension[i].extension_major_opcode == major_code
-         && im->extension[i].extension_minor_opcode == minor_code) {
+bool xcb_im_support_extension(xcb_im_t *im, uint16_t major_code,
+                              uint16_t minor_code) {
+    for (size_t i = 0; i < ARRAY_SIZE(im->extension); i++) {
+        if (im->extension[i].extension_major_opcode == major_code &&
+            im->extension[i].extension_minor_opcode == minor_code) {
             return true;
         }
     }
     return false;
 }
 
-void xcb_im_input_context_set_data(xcb_im_input_context_t* ic, void* data, xcb_im_free_function free_data_function)
-{
+void xcb_im_input_context_set_data(xcb_im_input_context_t *ic, void *data,
+                                   xcb_im_free_function free_data_function) {
     if (ic->free_data_function) {
         ic->free_data_function(ic->data);
     }
@@ -1163,42 +1149,38 @@ void xcb_im_input_context_set_data(xcb_im_input_context_t* ic, void* data, xcb_i
     ic->free_data_function = free_data_function;
 }
 
-void* xcb_im_input_context_get_data(xcb_im_input_context_t* ic)
-{
+void *xcb_im_input_context_get_data(xcb_im_input_context_t *ic) {
     return ic->data;
 }
 
-xcb_window_t xcb_im_input_context_get_client_window(xcb_im_input_context_t* ic)
-{
+xcb_window_t
+xcb_im_input_context_get_client_window(xcb_im_input_context_t *ic) {
     return ic->client_win;
 }
 
-xcb_window_t xcb_im_input_context_get_focus_window(xcb_im_input_context_t* ic)
-{
+xcb_window_t xcb_im_input_context_get_focus_window(xcb_im_input_context_t *ic) {
     return ic->focus_win;
 }
 
-uint32_t xcb_im_input_context_get_input_style(xcb_im_input_context_t* ic)
-{
+uint32_t xcb_im_input_context_get_input_style(xcb_im_input_context_t *ic) {
     return ic->input_style;
 }
 
-const xcb_im_preedit_attr_t* xcb_im_input_context_get_preedit_attr(xcb_im_input_context_t* ic)
-{
+const xcb_im_preedit_attr_t *
+xcb_im_input_context_get_preedit_attr(xcb_im_input_context_t *ic) {
     return &ic->preedit;
 }
 
-uint32_t xcb_im_input_context_get_preedit_attr_mask(xcb_im_input_context_t* ic)
-{
+uint32_t
+xcb_im_input_context_get_preedit_attr_mask(xcb_im_input_context_t *ic) {
     return ic->preedit_mask;
 }
 
-const xcb_im_status_attr_t* xcb_im_input_context_get_status_attr(xcb_im_input_context_t* ic)
-{
+const xcb_im_status_attr_t *
+xcb_im_input_context_get_status_attr(xcb_im_input_context_t *ic) {
     return &ic->status;
 }
 
-uint32_t xcb_im_input_context_get_status_attr_mask(xcb_im_input_context_t* ic)
-{
+uint32_t xcb_im_input_context_get_status_attr_mask(xcb_im_input_context_t *ic) {
     return ic->status_mask;
 }
