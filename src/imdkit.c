@@ -242,6 +242,7 @@ bool _xcb_im_init(xcb_im_t *im) {
     im->init = _xcb_im_init_atoms(im->conn, ARRAY_SIZE(atom_names), atom_names,
                                   im->atoms);
     free(buf);
+    DebugLog("XIM basic init: %d\n", im->init);
 
     return im->init;
 }
@@ -298,6 +299,7 @@ bool _xcb_im_set_selection_owner(xcb_im_t *im) {
         }
 
         if (conflict) {
+            DebugLog("XIM server conflict %ld.\n", time(NULL));
             break;
         }
 
@@ -788,6 +790,7 @@ void xcb_im_close_im(xcb_im_t *im) {
             xcb_change_property(im->conn, XCB_PROP_MODE_REPLACE,
                                 im->screen->root, atoms[XIM_ATOM_XIM_SERVERS],
                                 XCB_ATOM_ATOM, 32, length - 1, data);
+            DebugLog("XIM Reset property. %ld\n", time(NULL));
         } else {
             /*
              * We always need to generate the PropertyNotify to the Root Window
