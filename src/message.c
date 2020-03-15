@@ -85,7 +85,6 @@ bool _xcb_send_xim_message(xcb_connection_t *conn, xcb_atom_t protocol_atom,
                                         atom, XCB_ATOM_STRING, 8, length, data);
         xcb_generic_error_t *error = NULL;
         if ((error = xcb_request_check(conn, cookie)) != NULL) {
-            DebugLog("Error code: %d", error->error_code);
             free(error);
         }
         event.format = 32;

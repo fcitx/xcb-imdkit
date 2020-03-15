@@ -513,6 +513,10 @@ xcb_xim_t *xcb_xim_create(xcb_connection_t *conn, int screen_id,
     return im;
 }
 
+void xcb_xim_set_log_handler(xcb_xim_t *im, void (*logger)(const char *, ...)) {
+    im->logger = logger;
+}
+
 bool _xcb_xim_open(xcb_xim_t *im) {
     im->connect_state.phase = XIM_CONNECT_FAIL;
     im->open_state = XIM_OPEN_INVALID;

@@ -222,6 +222,10 @@ xcb_im_t *xcb_im_create(xcb_connection_t *conn, int screen,
     return im;
 }
 
+void xcb_im_set_log_handler(xcb_im_t *im, void (*logger)(const char *, ...)) {
+    im->logger = logger;
+}
+
 bool _xcb_im_init(xcb_im_t *im) {
     if (im->init) {
         return true;

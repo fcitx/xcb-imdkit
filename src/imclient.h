@@ -108,6 +108,8 @@ typedef void (*xcb_xim_reset_ic_callback)(xcb_xim_t *im, xcb_xic_t ic,
 
 XCB_IMDKIT_EXPORT xcb_xim_t *xcb_xim_create(xcb_connection_t *conn,
                                             int screen_id, const char *imname);
+XCB_IMDKIT_EXPORT void
+xcb_xim_set_log_handler(xcb_xim_t *im, void (*logger)(const char *, ...));
 XCB_IMDKIT_EXPORT void xcb_xim_destroy(xcb_xim_t *im);
 XCB_IMDKIT_EXPORT bool xcb_xim_open(xcb_xim_t *im,
                                     xcb_xim_open_callback callback,

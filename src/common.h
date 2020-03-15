@@ -38,11 +38,12 @@
 #define XIM_LOCAL_CATEGORY "@locale="
 #define XIM_TRANSPORT_CATEGORY "@transport="
 
-#ifdef XIM_DEBUG
-#define DebugLog(S...) fprintf(stderr, S)
-#else
-#define DebugLog(S...)
-#endif
+#define DebugLog(S...)                                                         \
+    do {                                                                       \
+        if (im->logger) {                                                      \
+            im->logger(S);                                                     \
+        }                                                                      \
+    } while (0)
 
 /*
  * values for the type of XIMATTR & XICATTR

@@ -170,6 +170,8 @@ struct _xcb_xim_t {
     // some ic values
     xcb_window_t client_window;
     xcb_window_t focus_window;
+
+    void (*logger)(const char *, ...);
 };
 
 #define _xcb_xim_read_frame(FRAME, DATA, LEN, FAIL)                            \
