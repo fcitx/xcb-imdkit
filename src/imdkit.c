@@ -88,6 +88,7 @@ xcb_im_t *xcb_im_create(xcb_connection_t *conn, int screen,
     im->screen_id = screen;
     im->callback = callback;
     im->user_data = user_data;
+    im->use_sync_mode = true;
 
     if (!event_mask) {
         im->event_mask = XCB_EVENT_MASK_KEY_PRESS;
@@ -224,6 +225,10 @@ xcb_im_t *xcb_im_create(xcb_connection_t *conn, int screen,
 
 void xcb_im_set_log_handler(xcb_im_t *im, void (*logger)(const char *, ...)) {
     im->logger = logger;
+}
+
+void xcb_im_set_use_sync_mode(xcb_im_t *im, bool sync) {
+    im->use_sync_mode = sync;
 }
 
 bool _xcb_im_init(xcb_im_t *im) {
@@ -831,13 +836,17 @@ void xcb_im_destroy(xcb_im_t *im) {
 
 void xcb_im_forward_event(xcb_im_t *im, xcb_im_input_context_t *ic,
                           xcb_key_press_event_t *event) {
+    xcb_im_client_t *client = ic->client;
     xcb_im_forward_event_fr_t frame;
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
-    frame.flag = XCB_XIM_SYNCHRONOUS;
     frame.sequence_number = event->sequence;
-    xcb_im_client_t *client = ic->client;
-    client->sync = true;
+    if (im->use_sync_mode) {
+        frame.flag = XCB_XIM_SYNCHRONOUS;
+        client->sync = true;
+    } else {
+        frame.flag = 0;
+    }
 
     const size_t length = 8 /* xcb_im_forward_event_fr_size(&frame) */ +
                           sizeof(xcb_key_press_event_t);
@@ -860,7 +869,10 @@ void xcb_im_commit_string(xcb_im_t *im, xcb_im_input_context_t *ic,
         frame.input_method_ID = ic->client->connect_id;
         frame.input_context_ID = ic->id;
         frame.byte_length_of_committed_string = length;
-        frame.flag = flag | XCB_XIM_SYNCHRONOUS;
+        frame.flag = flag;
+        if (im->use_sync_mode) {
+            frame.flag |= XCB_XIM_SYNCHRONOUS;
+        }
         frame.committed_string = (uint8_t *)str;
         _xcb_im_send_frame(im, ic->client, frame, false);
     } else {
@@ -868,7 +880,10 @@ void xcb_im_commit_string(xcb_im_t *im, xcb_im_input_context_t *ic,
         frame.input_method_ID = ic->client->connect_id;
         frame.input_context_ID = ic->id;
         frame.byte_length_of_committed_string = length;
-        frame.flag = flag | XCB_XIM_SYNCHRONOUS;
+        frame.flag = flag;
+        if (im->use_sync_mode) {
+            frame.flag |= XCB_XIM_SYNCHRONOUS;
+        }
         frame.committed_string = (uint8_t *)str;
         frame.keysym = keysym;
         _xcb_im_send_frame(im, ic->client, frame, false);

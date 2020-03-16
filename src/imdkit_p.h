@@ -247,6 +247,7 @@ struct _xcb_im_t {
     void *user_data;
     bool sync;
     void (*logger)(const char *, ...);
+    bool use_sync_mode;
 };
 
 typedef union _xcb_im_ic_attr_value_t {
