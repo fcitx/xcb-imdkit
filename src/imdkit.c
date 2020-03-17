@@ -89,6 +89,7 @@ xcb_im_t *xcb_im_create(xcb_connection_t *conn, int screen,
     im->callback = callback;
     im->user_data = user_data;
     im->use_sync_mode = true;
+    im->use_sync_event = false;
 
     if (!event_mask) {
         im->event_mask = XCB_EVENT_MASK_KEY_PRESS;
@@ -229,6 +230,10 @@ void xcb_im_set_log_handler(xcb_im_t *im, void (*logger)(const char *, ...)) {
 
 void xcb_im_set_use_sync_mode(xcb_im_t *im, bool sync) {
     im->use_sync_mode = sync;
+}
+
+void xcb_im_set_use_sync_event(xcb_im_t *im, bool sync) {
+    im->use_sync_event = sync;
 }
 
 bool _xcb_im_init(xcb_im_t *im) {
@@ -895,8 +900,10 @@ void xcb_im_preedit_start(xcb_im_t *im, xcb_im_input_context_t *ic) {
         return;
     }
 
+    uint32_t sync_event_mask = im->use_sync_event ? 0 : im->event_mask;
+    sync_event_mask = ~sync_event_mask;
     _xcb_im_set_event_mask(im, ic->client, ic->id, im->event_mask,
-                           ~im->event_mask);
+                           sync_event_mask);
 }
 
 void xcb_im_preedit_end(xcb_im_t *im, xcb_im_input_context_t *ic) {

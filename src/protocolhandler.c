@@ -249,7 +249,7 @@ void _xcb_im_parse_ic_value(xcb_im_t *im, xcb_im_input_context_t *ic, void *p,
     case XimType_XRectangle: {
         xcb_rectangle_t *result = p;
         xcb_im_xrectangle_fr_t fr;
-        _xcb_im_read_frame(im, (xcb_im_client_t *)ic->client, fr, data, length);
+        _xcb_im_read_frame(im, ic->client, fr, data, length);
         result->x = fr.x;
         result->y = fr.y;
         result->height = fr.height;
@@ -259,7 +259,7 @@ void _xcb_im_parse_ic_value(xcb_im_t *im, xcb_im_input_context_t *ic, void *p,
     case XimType_XPoint: {
         xcb_point_t *result = p;
         xcb_im_xpoint_fr_t fr;
-        _xcb_im_read_frame(im, (xcb_im_client_t *)ic->client, fr, data, length);
+        _xcb_im_read_frame(im, ic->client, fr, data, length);
         result->x = fr.x;
         result->y = fr.y;
         break;
@@ -356,8 +356,10 @@ void _xcb_im_handle_create_ic(xcb_im_t *im, xcb_im_client_t *client,
 
         _xcb_im_send_frame(im, client, reply_frame, true);
         if (im->onKeys.nKeys == 0 && im->offKeys.nKeys == 0) {
+            uint32_t sync_event_mask = im->use_sync_event ? 0 : im->event_mask;
+            sync_event_mask = ~sync_event_mask;
             _xcb_im_set_event_mask(im, client, reply_frame.input_context_ID,
-                                   im->event_mask, ~im->event_mask);
+                                   im->event_mask, sync_event_mask);
         }
         xcb_im_create_ic_fr_free(&frame);
         return;
@@ -727,6 +729,14 @@ void _xcb_im_handle_forward_event(xcb_im_t *im, xcb_im_client_t *client,
             if (im->callback) {
                 im->callback(im, client, ic, hdr, &frame, &key_event,
                              im->user_data);
+            }
+
+            if (im->use_sync_event) {
+                xcb_im_sync_reply_fr_t reply_frame;
+                reply_frame.input_method_ID = frame.input_method_ID;
+                reply_frame.input_context_ID = frame.input_context_ID;
+
+                _xcb_im_send_frame(im, client, reply_frame, true);
             }
         }
     } while (0);

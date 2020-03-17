@@ -107,6 +107,7 @@ xcb_im_create(xcb_connection_t *conn, int screen, xcb_window_t serverWindow,
 XCB_IMDKIT_EXPORT void
 xcb_im_set_log_handler(xcb_im_t *im, void (*logger)(const char *, ...));
 XCB_IMDKIT_EXPORT void xcb_im_set_use_sync_mode(xcb_im_t *im, bool sync);
+XCB_IMDKIT_EXPORT void xcb_im_set_use_sync_event(xcb_im_t *im, bool sync);
 XCB_IMDKIT_EXPORT bool xcb_im_open_im(xcb_im_t *im);
 XCB_IMDKIT_EXPORT bool xcb_im_filter_event(xcb_im_t *im,
                                            xcb_generic_event_t *event);
