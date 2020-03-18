@@ -100,9 +100,12 @@ bool _xcb_send_xim_message(xcb_connection_t *conn, xcb_atom_t protocol_atom,
         for (size_t i = length; i < XCB_XIM_CM_DATA_SIZE; i++)
             event.data.data8[i] = 0;
     }
-    xcb_send_event(conn, false, window, XCB_EVENT_MASK_NO_EVENT,
-                   (const char *)&event);
-    xcb_flush(conn);
+    xcb_void_cookie_t send_event_cookie = xcb_send_event_checked(
+        conn, false, window, XCB_EVENT_MASK_NO_EVENT, (const char *)&event);
+    xcb_generic_error_t *error = NULL;
+    if ((error = xcb_request_check(conn, send_event_cookie)) != NULL) {
+        free(error);
+    }
     return true;
 }
 
