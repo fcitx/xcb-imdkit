@@ -162,19 +162,21 @@ uint8_t *_xcb_read_xim_message(xcb_connection_t *conn, xcb_window_t window,
                 length = reply->value_len;
 
             // make length into byte
-            if (reply->format == 16)
+            if (reply->format == 16) {
                 length *= 2;
-            else if (reply->format == 32)
+            } else if (reply->format == 32) {
                 length *= 4;
+            }
 
             uint8_t_read(&hdr->major_opcode, &rec, &length, swap);
             uint8_t_read(&hdr->minor_opcode, &rec, &length, swap);
             uint16_t_read(&hdr->length, &rec, &length, swap);
 
+            size_t buffer_size = ((size_t)hdr->length) * 4;
             // check message is well formed
-            if (hdr->length * 4 <= length) {
+            if (buffer_size <= length) {
                 /* if hit, it might be an error */
-                p = malloc(hdr->length * 4);
+                p = malloc(buffer_size);
             }
         } while (0);
 

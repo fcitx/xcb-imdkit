@@ -282,6 +282,10 @@ void _xcb_im_parse_nested_ic_values(xcb_im_t *im, xcb_im_input_context_t *ic,
             return;
         }
 
+        if (fr.attribute_ID >= ARRAY_SIZE(im->id2attr)) {
+            continue;
+        }
+
         const xcb_im_default_ic_attr_t *entry =
             _xcb_im_default_ic_attr_entry(im, fr.attribute_ID);
         if (!entry || offsets[fr.attribute_ID] < 0) {
