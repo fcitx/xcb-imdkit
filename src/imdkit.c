@@ -14,17 +14,20 @@
  */
 #include "imdkit.h"
 #include "common.h"
+#include "imdkit_p.h"
+#include "list.h"
 #include "message.h"
-#include "parser.h"
 #include "protocolhandler.h"
 #include "uthash.h"
 #include "ximproto.h"
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <time.h>
 #include <xcb/xcb.h>
-#include <xcb/xcb_atom.h>
 #include <xcb/xcb_aux.h>
 #include <xcb/xproto.h>
 

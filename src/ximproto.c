@@ -15,6 +15,8 @@
 
 #include "ximproto.h"
 #include "parser.h"
+#include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 void xcb_im_ximattr_fr_read(xcb_im_ximattr_fr_t *frame, uint8_t **data,

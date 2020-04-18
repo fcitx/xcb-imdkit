@@ -16,6 +16,7 @@
 #define CLIENTPROTOCOLHANDLER_H
 #include "imclient.h"
 #include "ximproto.h"
+#include <stdint.h>
 
 void _xcb_xim_handle_open_reply(xcb_xim_t *im,
                                 const xcb_im_packet_header_fr_t *hdr,

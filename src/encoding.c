@@ -13,9 +13,7 @@
  *
  */
 #include "encoding.h"
-#include "common.h"
 #include "xlibi18n/XlcPubI.h"
-#include <string.h>
 
 #define _CONVERT_BUFSIZE 2048
 

@@ -14,10 +14,14 @@
  */
 #ifndef _XCB_IMDKIT_IMCLIENT_H_
 #define _XCB_IMDKIT_IMCLIENT_H_
+
 #include "ximcommon.h"
 #include "ximproto.h"
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <xcb/xcb.h>
+#include <xcb/xproto.h>
 
 XCB_IMDKIT_DECL_BEGIN
 

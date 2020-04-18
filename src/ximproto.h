@@ -17,15 +17,10 @@
 #define XIMPROTO_H
 
 #include "ximcommon.h"
-#include <stdbool.h>
+#include "ximproto-gen.h" // IWYU pragma: export
 #include <stdint.h>
-#include <stdlib.h>
 
 XCB_IMDKIT_DECL_BEGIN
-
-typedef uint8_t *xcb_im_bytearray_t;
-
-#include "ximproto-gen.h"
 
 #define XCB_IM_HEADER_SIZE 4
 

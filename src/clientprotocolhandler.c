@@ -16,6 +16,11 @@
 #include "common.h"
 #include "imclient_p.h"
 #include "parser.h"
+#include "uthash.h"
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <xcb/xproto.h>
 
 bool _xcb_xim_send_query_extension(xcb_xim_t *im) {
     xcb_im_query_extension_fr_t frame;

@@ -17,8 +17,10 @@
 
 #include "ximproto.h"
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <xcb/xcb.h>
+#include <xcb/xproto.h>
 
 // some atom name
 #define XIM_SERVERS "XIM_SERVERS"

@@ -14,8 +14,15 @@
  */
 
 #include "protocolhandler.h"
-#include "message.h"
+#include "common.h"
+#include "imdkit_p.h"
 #include "parser.h"
+#include "uthash.h"
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <xcb/xproto.h>
 
 void _xcb_im_handle_connect(xcb_im_t *im, xcb_im_client_t *client,
                             const xcb_im_packet_header_fr_t *hdr,

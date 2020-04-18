@@ -18,10 +18,9 @@
 #include "ximcommon.h"
 #include "ximproto.h"
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 #include <xcb/xcb.h>
+#include <xcb/xproto.h>
 
 XCB_IMDKIT_DECL_BEGIN
 

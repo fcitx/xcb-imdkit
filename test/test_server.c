@@ -14,11 +14,17 @@
  */
 #include "encoding.h"
 #include "imdkit.h"
+#include "ximproto.h"
 #include <assert.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_keysyms.h>
+#include <xcb/xproto.h>
 
 #define TEST_STRING "hello world你好世界켐ㅇㄹ貴方元気？☺"
 

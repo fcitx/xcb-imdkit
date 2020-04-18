@@ -1,3 +1,30 @@
+/*
+ * (C) Copyright 2014-2020 Weng Xuetian <wengxt@gmail.com>
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser General Public License
+ * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-2.1.html
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ */
+
+#ifndef XIMPROTO_GEN_H
+#define XIMPROTO_GEN_H
+
+#include "ximcommon.h"
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+XCB_IMDKIT_DECL_BEGIN
+
+typedef uint8_t *xcb_im_bytearray_t;
+
 typedef struct _xcb_im_ximattr_fr_t
 {
     uint16_t attribute_ID;
@@ -1363,3 +1390,8 @@ uint8_t* xcb_im_ext_move_fr_write(xcb_im_ext_move_fr_t *frame, uint8_t *data, bo
 void xcb_im_ext_move_fr_free(xcb_im_ext_move_fr_t *frame);
 #define xcb_im_ext_move_fr_size(ARG...) (((void)(ARG)), (8))
 
+XCB_IMDKIT_DECL_END
+
+#endif
+
+// IWYU pragma: private, include "ximproto.h"

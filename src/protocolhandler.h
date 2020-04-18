@@ -17,7 +17,8 @@
 #define PROTOCOLHANDLER_H
 
 #include "imdkit.h"
-#include "imdkit_p.h"
+#include "ximproto.h"
+#include <stdint.h>
 
 void _xcb_im_handle_connect(xcb_im_t *im, xcb_im_client_t *client,
                             const xcb_im_packet_header_fr_t *hdr,

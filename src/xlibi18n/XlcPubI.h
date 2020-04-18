@@ -26,7 +26,7 @@
 #ifndef _XLCPUBLICI_H_
 #define _XLCPUBLICI_H_
 
-#include "XlcPublic.h"
+#include "XlcPublic.h" // IWYU pragma: export
 
 /* Fills into a freshly created XlcCharSet the fields that can be inferred
    from the ESC sequence. These are side, char_size, set_size. */

@@ -15,11 +15,14 @@
 #include "imclient.h"
 #include "ximproto.h"
 #include <assert.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
+#include <xcb/xproto.h>
 
 xcb_connection_t *connection;
 xcb_window_t w;

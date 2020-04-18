@@ -17,7 +17,10 @@
 #define MESSAGE_H
 #include "ximproto.h"
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <xcb/xcb.h>
+#include <xcb/xproto.h>
 
 // Return a new alloc xim message. length is the content size without header
 // size.

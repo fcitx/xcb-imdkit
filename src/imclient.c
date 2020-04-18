@@ -16,10 +16,13 @@
 #include "clientprotocolhandler.h"
 #include "common.h"
 #include "imclient_p.h"
+#include "list.h"
 #include "message.h"
 #include "parser.h"
+#include "uthash.h"
 #include "ximproto.h"
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <xcb/xcb.h>
