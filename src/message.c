@@ -31,13 +31,14 @@ uint8_t *_xcb_new_xim_message(uint8_t major_opcode, uint8_t minor_opcode,
     return message;
 }
 
-void _xcb_write_xim_message_header(uint8_t *message, uint8_t major_opcode,
-                                   uint8_t minor_opcode, size_t length,
-                                   bool swap) {
+uint8_t *_xcb_write_xim_message_header(uint8_t *message, uint8_t major_opcode,
+                                       uint8_t minor_opcode, size_t length,
+                                       bool swap) {
     uint16_t p_len = length / 4;
     message = uint8_t_write(&major_opcode, message, swap);
     message = uint8_t_write(&minor_opcode, message, swap);
     message = uint16_t_write(&p_len, message, swap);
+    return message;
 }
 
 // length is the body without header size in byte

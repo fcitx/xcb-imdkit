@@ -19,12 +19,15 @@
 #include <stdbool.h>
 #include <xcb/xcb.h>
 
+// Return a new alloc xim message. length is the content size without header
+// size.
 uint8_t *_xcb_new_xim_message(uint8_t major_opcode, uint8_t minor_opcode,
                               size_t length, bool swap);
 
-void _xcb_write_xim_message_header(uint8_t *message, uint8_t major_opcode,
-                                   uint8_t minor_opcode, size_t length,
-                                   bool swap);
+// Write xim message header and return the pointer to content.
+uint8_t *_xcb_write_xim_message_header(uint8_t *message, uint8_t major_opcode,
+                                       uint8_t minor_opcode, size_t length,
+                                       bool swap);
 
 // length is the body without header size in byte
 bool _xcb_send_xim_message(xcb_connection_t *conn, xcb_atom_t protocol_atom,

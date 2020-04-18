@@ -74,6 +74,11 @@ void _xcb_xim_handle_open_reply(xcb_xim_t *im,
     // construct a name based attr table
     for (uint32_t i = 0; i < frame.IM_attribute_supported.size; i++) {
         xcb_im_ximattr_fr_t *subframe = &frame.IM_attribute_supported.items[i];
+
+        if (subframe->length_of_im_attribute == 0) {
+            continue;
+        }
+
         xcb_xim_imattr_table_t *imattr = NULL;
         HASH_FIND(hh, im->imattr, subframe->im_attribute,
                   subframe->length_of_im_attribute, imattr);
@@ -86,7 +91,7 @@ void _xcb_xim_handle_open_reply(xcb_xim_t *im,
         imattr->attr.type_of_the_value = subframe->type_of_the_value;
         imattr->attr.length_of_im_attribute = subframe->length_of_im_attribute;
         imattr->attr.im_attribute =
-            malloc((imattr->attr.length_of_im_attribute + 1) * sizeof(char));
+            malloc((imattr->attr.length_of_im_attribute + 1) * sizeof(uint8_t));
         imattr->attr.im_attribute[imattr->attr.length_of_im_attribute] = 0;
         memcpy(imattr->attr.im_attribute, subframe->im_attribute,
                imattr->attr.length_of_im_attribute);
@@ -96,6 +101,9 @@ void _xcb_xim_handle_open_reply(xcb_xim_t *im,
     }
     for (uint32_t i = 0; i < frame.IC_attribute_supported.size; i++) {
         xcb_im_xicattr_fr_t *subframe = &frame.IC_attribute_supported.items[i];
+        if (subframe->length_of_ic_attribute == 0) {
+            continue;
+        }
         xcb_xim_icattr_table_t *icattr = NULL;
         HASH_FIND(hh, im->icattr, subframe->ic_attribute,
                   subframe->length_of_ic_attribute, icattr);
@@ -108,7 +116,7 @@ void _xcb_xim_handle_open_reply(xcb_xim_t *im,
         icattr->attr.type_of_the_value = subframe->type_of_the_value;
         icattr->attr.length_of_ic_attribute = subframe->length_of_ic_attribute;
         icattr->attr.ic_attribute =
-            malloc((icattr->attr.length_of_ic_attribute + 1) * sizeof(char));
+            malloc((icattr->attr.length_of_ic_attribute + 1) * sizeof(uint8_t));
         icattr->attr.ic_attribute[icattr->attr.length_of_ic_attribute] = 0;
         memcpy(icattr->attr.ic_attribute, subframe->ic_attribute,
                icattr->attr.length_of_ic_attribute);

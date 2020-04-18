@@ -1103,7 +1103,9 @@ xcb_xim_nested_list xcb_xim_create_nested_list(xcb_xim_t *im, ...) {
         }
         va_end(var);
         if (round == 0) {
-            data = malloc(totalSize);
+            if (totalSize) {
+                data = malloc(totalSize);
+            }
             if (!data) {
                 flag = true;
             } else {
@@ -1351,22 +1353,26 @@ bool xcb_xim_set_ic_values(xcb_xim_t *im, xcb_xic_t ic,
         return false;
     }
 
+    va_list var;
+    va_start(var, user_data);
+    size_t attr_size = _xcb_xim_check_valist(im, var);
+    va_end(var);
+    if (!attr_size) {
+        return false;
+    }
+
     xcb_xim_request_queue_t *queue =
         _xcb_xim_new_request(im, XCB_XIM_SET_IC_VALUES, 0, callback, user_data);
     if (!queue) {
         return false;
     }
 
-    va_list var;
-    va_start(var, user_data);
     queue->frame.set_ic_values.input_method_ID = im->connect_id;
     queue->frame.set_ic_values.input_context_ID = ic;
-    queue->frame.set_ic_values.ic_attribute.size =
-        _xcb_xim_check_valist(im, var);
+    queue->frame.set_ic_values.ic_attribute.size = attr_size;
     queue->frame.set_ic_values.ic_attribute.items =
         calloc(queue->frame.set_ic_values.ic_attribute.size,
                sizeof(xcb_im_xicattribute_fr_t));
-    va_end(var);
 
     if (!queue->frame.set_ic_values.ic_attribute.items) {
         free(queue);

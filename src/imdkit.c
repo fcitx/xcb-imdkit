@@ -856,12 +856,12 @@ void xcb_im_forward_event(xcb_im_t *im, xcb_im_input_context_t *ic,
     const size_t length = 8 /* xcb_im_forward_event_fr_size(&frame) */ +
                           sizeof(xcb_key_press_event_t);
     uint8_t data[XCB_IM_HEADER_SIZE + length];
-    _xcb_write_xim_message_header(data, XCB_XIM_FORWARD_EVENT, 0, length,
-                                  client->byte_order != im->byte_order);
-    uint8_t *p =
-        xcb_im_forward_event_fr_write(&frame, data + XCB_IM_HEADER_SIZE,
+    uint8_t *content =
+        _xcb_write_xim_message_header(data, XCB_XIM_FORWARD_EVENT, 0, length,
                                       client->byte_order != im->byte_order);
-    memcpy(p, event, sizeof(xcb_key_press_event_t));
+    content = xcb_im_forward_event_fr_write(
+        &frame, content, client->byte_order != im->byte_order);
+    memcpy(content, event, sizeof(xcb_key_press_event_t));
 
     (void)_xcb_im_send_message(im, client, data, length);
 }
