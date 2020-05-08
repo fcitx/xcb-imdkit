@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 #
-# This is a ugly code generate script, which is intended to be used
-# against i18nIMProto.c in IMdkit
-# it will generate all serialization code against xim protocol frame
+# (C) SPDX-FileCopyrightText: 2014 Weng Xuetian <wengxt@gmail.com>
+#
+# SPDX-License-Identifier: LGPL-2.1-only
+#
 
+"""
+This is a ugly code generate script, which is intended to be used
+against i18nIMProto.c in IMdkit
+it will generate all serialization code against xim protocol frame
+"""
 import fileinput
 import collections
 import sys
