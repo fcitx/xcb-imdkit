@@ -1,5 +1,5 @@
 /*
- * (C) SPDX-FileCopyrightText: 2014-2020 Weng Xuetian <wengxt@gmail.com>
+ * SPDX-FileCopyrightText: 2014-2020 Weng Xuetian <wengxt@gmail.com>
  *
  * SPDX-License-Identifier: LGPL-2.1-only
  *

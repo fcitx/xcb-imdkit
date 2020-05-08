@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# (C) SPDX-FileCopyrightText: 2014 Weng Xuetian <wengxt@gmail.com>
+# SPDX-FileCopyrightText: 2014 Weng Xuetian <wengxt@gmail.com>
 #
 # SPDX-License-Identifier: LGPL-2.1-only
 #
