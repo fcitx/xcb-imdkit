@@ -171,6 +171,12 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t *im, xcb_im_client_t *client,
     reply_frame.index_of_the_encoding_determined = i;
     reply_frame.category_of_the_encoding_determined = 0;
 
+    if (im->callback) {
+        im->callback(im, client, NULL, hdr, &frame,
+                     &reply_frame.index_of_the_encoding_determined,
+                     im->user_data);
+    }
+
     _xcb_im_send_frame(im, client, reply_frame, true);
 }
 
