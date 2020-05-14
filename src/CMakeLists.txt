@@ -22,7 +22,7 @@ set_target_properties(xcb-imdkit PROPERTIES
 
 target_link_libraries(xcb-imdkit
                       PUBLIC XCB::XCB
-                      PRIVATE XCB::UTIL)
+                      PRIVATE XCB::UTIL UTHash::UTHash)
 
 configure_file(xcb-imdkit.pc.in ${CMAKE_CURRENT_BINARY_DIR}/xcb-imdkit.pc @ONLY)
 

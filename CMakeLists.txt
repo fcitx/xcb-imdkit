@@ -12,6 +12,15 @@ include(ECMSetupVersion)
 include(ECMGenerateHeaders)
 include(uninstall)
 
+find_package(UTHash)
+
+if (NOT TARGET UTHash::UTHash)
+    add_library(UTHash::UTHash INTERFACE IMPORTED )
+    set_target_properties(UTHash::UTHash PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/uthash"
+    )
+endif()
+
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD_REQUIRED TRUE)
 set(CMAKE_C_STANDARD 11)
