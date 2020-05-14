@@ -74,8 +74,8 @@ typedef struct _xcb_im_xpcs_fr_t
 
 typedef struct _xcb_im_ext_fr_t
 {
-    uint16_t extension_major_opcode;
-    uint16_t extension_minor_opcode;
+    uint8_t extension_major_opcode;
+    uint8_t extension_minor_opcode;
     uint16_t length_of_extension_name;
     xcb_im_bytearray_t extension_name;
 } xcb_im_ext_fr_t;

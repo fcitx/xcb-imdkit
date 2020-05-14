@@ -1299,7 +1299,7 @@ bool xcb_xim_get_ic_values(xcb_xim_t *im, xcb_xic_t ic,
     }
 
     queue->frame.get_ic_values.input_method_ID = im->connect_id;
-    queue->frame.get_ic_values.input_context_ID = im->connect_id;
+    queue->frame.get_ic_values.input_context_ID = ic;
     queue->frame.get_ic_values.ic_attribute.size = count;
     queue->frame.get_ic_values.ic_attribute.items =
         calloc(count, sizeof(uint16_t));

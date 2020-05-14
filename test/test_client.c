@@ -7,6 +7,7 @@
 #include "imclient.h"
 #include "ximproto.h"
 #include <assert.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -46,7 +47,7 @@ void get_ic_values_callback(xcb_xim_t *im, xcb_xic_t ic,
                             xcb_im_get_ic_values_reply_fr_t *reply,
                             void *user_data) {
     fprintf(stderr, "get ic %d done\n", ic);
-    // xcb_xim_destroy_ic(im, ic, destroy_ic_callback, NULL);
+    xcb_xim_destroy_ic(im, ic, destroy_ic_callback, NULL);
     xcb_key_press_event_t event;
     memset(&event, 0, sizeof(event));
     event.root = screen->root;
@@ -128,6 +129,13 @@ void open_callback(xcb_xim_t *im, void *user_data) {
                           XCB_XIM_XNQueryInputStyle, NULL);
 }
 
+void logger(const char *fmt, ...) {
+    va_list argp;
+    va_start(argp, fmt);
+    vprintf(fmt, argp);
+    va_end(argp);
+}
+
 int main(int argc, char *argv[]) {
     /* Open the connection to the X server */
 
@@ -139,9 +147,10 @@ int main(int argc, char *argv[]) {
         return false;
     }
     xcb_xim_t *im =
-        xcb_xim_create(connection, screen_default_nbr, "@im=test_server");
+        xcb_xim_create(connection, screen_default_nbr, "@im=fcitx5");
 
     xcb_xim_set_im_callback(im, &callback, NULL);
+    xcb_xim_set_log_handler(im, logger);
     assert(xcb_xim_open(im, open_callback, true, NULL));
 
     xcb_generic_event_t *event;

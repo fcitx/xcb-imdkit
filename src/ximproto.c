@@ -342,11 +342,11 @@ void xcb_im_ext_fr_read(xcb_im_ext_fr_t *frame, uint8_t **data, size_t *len,
                         bool swap) {
     memset(frame, 0, sizeof(*frame));
     uint8_t *start = *data;
-    uint16_t_read(&frame->extension_major_opcode, data, len, swap);
+    uint8_t_read(&frame->extension_major_opcode, data, len, swap);
     if (!*data) {
         return;
     }
-    uint16_t_read(&frame->extension_minor_opcode, data, len, swap);
+    uint8_t_read(&frame->extension_minor_opcode, data, len, swap);
     if (!*data) {
         return;
     }
@@ -367,8 +367,8 @@ void xcb_im_ext_fr_read(xcb_im_ext_fr_t *frame, uint8_t **data, size_t *len,
 
 uint8_t *xcb_im_ext_fr_write(xcb_im_ext_fr_t *frame, uint8_t *data, bool swap) {
     uint8_t *start = data;
-    data = uint16_t_write(&frame->extension_major_opcode, data, swap);
-    data = uint16_t_write(&frame->extension_minor_opcode, data, swap);
+    data = uint8_t_write(&frame->extension_major_opcode, data, swap);
+    data = uint8_t_write(&frame->extension_minor_opcode, data, swap);
     data = uint16_t_write(&frame->length_of_extension_name, data, swap);
     data = xcb_im_bytearray_t_write(
         &frame->extension_name, frame->length_of_extension_name, data, swap);

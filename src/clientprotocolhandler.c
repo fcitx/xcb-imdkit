@@ -135,12 +135,16 @@ void _xcb_xim_handle_query_extension_reply(xcb_xim_t *im,
     xcb_im_query_extension_reply_fr_t frame;
     bool fail;
     _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
-    if (fail) {
-        return;
-    }
 
     do {
         if (frame.input_method_ID != im->connect_id) {
+            break;
+        }
+        // There are some wrong implementation around that use a different wire
+        // format, thus do not hard fail on this.
+        if (fail) {
+            im->extensions = NULL;
+            im->nExtensions = 0;
             break;
         }
 
@@ -159,9 +163,9 @@ void _xcb_xim_handle_query_extension_reply(xcb_xim_t *im,
                 frame.list_of_extensions_supported_by_th.items[i]
                     .extension_minor_opcode;
         }
-
-        _xcb_xim_send_encoding_negotiation(im);
     } while (0);
+
+    _xcb_xim_send_encoding_negotiation(im);
     xcb_im_query_extension_reply_fr_free(&frame);
 }
 
