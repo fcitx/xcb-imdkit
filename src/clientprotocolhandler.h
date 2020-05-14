@@ -76,7 +76,6 @@ void _xcb_xim_handle_status_done(xcb_xim_t *im,
 void _xcb_xim_handle_close_reply(xcb_xim_t *im,
                                  const xcb_im_packet_header_fr_t *hdr,
                                  uint8_t *data);
-void _xcb_xim_handle_error(xcb_xim_t *im, const xcb_im_packet_header_fr_t *hdr,
-                           uint8_t *data);
+void _xcb_xim_handle_error(xcb_xim_t *im, uint8_t *data);
 
 #endif // CLIENTPROTOCOLHANDLER_H

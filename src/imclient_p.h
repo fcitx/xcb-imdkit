@@ -156,6 +156,7 @@ struct _xcb_xim_t {
     list_head queue;
     size_t nExtensions;
     bool auto_connect;
+    // Indicate whether we need a recheck on the new server.
     bool recheck;
     bool yield_recheck;
 

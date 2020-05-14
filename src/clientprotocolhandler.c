@@ -140,11 +140,12 @@ void _xcb_xim_handle_query_extension_reply(xcb_xim_t *im,
         if (frame.input_method_ID != im->connect_id) {
             break;
         }
+        free(im->extensions);
+        im->extensions = NULL;
+        im->nExtensions = 0;
         // There are some wrong implementation around that use a different wire
         // format, thus do not hard fail on this.
         if (fail) {
-            im->extensions = NULL;
-            im->nExtensions = 0;
             break;
         }
 
@@ -166,7 +167,9 @@ void _xcb_xim_handle_query_extension_reply(xcb_xim_t *im,
     } while (0);
 
     _xcb_xim_send_encoding_negotiation(im);
-    xcb_im_query_extension_reply_fr_free(&frame);
+    if (!fail) {
+        xcb_im_query_extension_reply_fr_free(&frame);
+    }
 }
 
 void _xcb_xim_handle_encoding_negotiation_reply(
@@ -803,8 +806,7 @@ void _xcb_xim_handle_sync(xcb_xim_t *im, const xcb_im_packet_header_fr_t *hdr,
     xcb_im_sync_fr_free(&frame);
 }
 
-void _xcb_xim_handle_error(xcb_xim_t *im, const xcb_im_packet_header_fr_t *hdr,
-                           uint8_t *data) {
+void _xcb_xim_handle_error(xcb_xim_t *im, uint8_t *data) {
     if (im->open_state == XIM_OPEN_DONE) {
         if (im->current) {
             _xcb_xim_process_fail_callback(im, im->current);

@@ -466,6 +466,7 @@ bool _xcb_xim_get_servers(xcb_xim_t *im) {
         if (items <= 0) {
             break;
         }
+        free(im->server_atoms);
         xcb_atom_t *server_atoms = xcb_get_property_value(reply);
         im->server_atoms = calloc(items, sizeof(xcb_atom_t));
         memcpy(im->server_atoms, server_atoms, items * sizeof(xcb_atom_t));
@@ -645,7 +646,7 @@ void _xcb_xim_handle_message(xcb_xim_t *im,
         break;
     case XCB_XIM_ERROR:
         DebugLog("-- XIM_ERROR\n");
-        _xcb_xim_handle_error(im, hdr, data);
+        _xcb_xim_handle_error(im, data);
         break;
     }
 }
