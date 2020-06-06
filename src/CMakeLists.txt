@@ -16,7 +16,7 @@ target_include_directories(xcb-imdkit
 set_target_properties(xcb-imdkit PROPERTIES
                       VERSION 0.1
                       SOVERSION 0
-                      COMPILE_FLAGS "-fvisibility=hidden"
+                      C_VISIBILITY_PRESET hidden
                       LINK_FLAGS "-Wl,--no-undefined"
                       EXPORT_NAME XCBImdkit)
 
