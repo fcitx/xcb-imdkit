@@ -555,6 +555,7 @@ size_t xcb_im_fontset_fr_size(xcb_im_fontset_fr_t *frame) {
 
 void xcb_im_fontset_fr_free(xcb_im_fontset_fr_t *frame) {}
 
+// This function is manually modified to match XIM protocol.
 void xcb_im_input_styles_fr_read(xcb_im_input_styles_fr_t *frame,
                                  uint8_t **data, size_t *len, bool swap) {
     memset(frame, 0, sizeof(*frame));
@@ -566,6 +567,7 @@ void xcb_im_input_styles_fr_read(xcb_im_input_styles_fr_t *frame,
         return;
     }
     counter = counter16;
+    counter *= sizeof(xcb_im_inputstyle_fr_t);
     *data = (uint8_t *)align_to_4((uintptr_t)*data, *data - start, len);
     if (!*data) {
         return;
@@ -578,6 +580,7 @@ void xcb_im_input_styles_fr_read(xcb_im_input_styles_fr_t *frame,
     }
     frame->XIMStyle_list.items = NULL;
     frame->XIMStyle_list.size = 0;
+
     while (counter != 0) {
         void *temp = realloc(frame->XIMStyle_list.items,
                              (frame->XIMStyle_list.size + 1) *
@@ -593,18 +596,24 @@ void xcb_im_input_styles_fr_read(xcb_im_input_styles_fr_t *frame,
         if (!*data) {
             return;
         }
-        frame->XIMStyle_list.size++;
+        frame->XIMStyle_list.size += 1;
+    }
+
+    // If size doesn't match.
+    if (frame->XIMStyle_list.size != counter16) {
+        free(frame->XIMStyle_list.items);
+        frame->XIMStyle_list.size = 0;
+        frame->XIMStyle_list.items = NULL;
+        *data = NULL;
+        return;
     }
 }
 
+// This function is manually modified to match XIM protocol.
 uint8_t *xcb_im_input_styles_fr_write(xcb_im_input_styles_fr_t *frame,
                                       uint8_t *data, bool swap) {
     uint8_t *start = data;
-    uint16_t counter16 = 0;
-    counter16 = 0;
-    for (uint32_t i = 0; i < frame->XIMStyle_list.size; i++) {
-        counter16 += xcb_im_inputstyle_fr_size(&frame->XIMStyle_list.items[i]);
-    }
+    uint16_t counter16 = frame->XIMStyle_list.size;
     data = uint16_t_write(&counter16, data, swap);
     data = (uint8_t *)align_to_4((uintptr_t)data, data - start, NULL);
     for (uint32_t i = 0; i < frame->XIMStyle_list.size; i++) {

@@ -936,7 +936,6 @@ bool _xcb_im_get_input_styles_attr(xcb_im_t *im, xcb_im_client_t *client,
 
     size_t frame_size = xcb_im_input_styles_fr_size(&fr);
     if ((attr->value = malloc(frame_size)) != NULL) {
-        ;
         attr->value_length = frame_size;
         xcb_im_input_styles_fr_write(&fr, attr->value,
                                      client->byte_order != im->byte_order);
