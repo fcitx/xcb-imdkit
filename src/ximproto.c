@@ -378,8 +378,8 @@ uint8_t *xcb_im_ext_fr_write(xcb_im_ext_fr_t *frame, uint8_t *data, bool swap) {
 
 size_t xcb_im_ext_fr_size(xcb_im_ext_fr_t *frame) {
     size_t size = 0;
-    size += 2;
-    size += 2;
+    size += 1;
+    size += 1;
     size += 2;
     size += frame->length_of_extension_name;
     size = align_to_4(size, size, NULL);
