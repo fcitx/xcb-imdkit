@@ -575,9 +575,9 @@ void xcb_im_input_styles_fr_read(xcb_im_input_styles_fr_t *frame,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->XIMStyle_list.items = NULL;
     frame->XIMStyle_list.size = 0;
 
@@ -768,9 +768,9 @@ void xcb_im_connect_fr_read(xcb_im_connect_fr_t *frame, uint8_t **data,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->client_auth_protocol_names.items = NULL;
     frame->client_auth_protocol_names.size = 0;
     while (counter != 0) {
@@ -997,9 +997,9 @@ void xcb_im_auth_setup_fr_read(xcb_im_auth_setup_fr_t *frame, uint8_t **data,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->server_auth_protocol_names.items = NULL;
     frame->server_auth_protocol_names.size = 0;
     while (counter != 0) {
@@ -1140,9 +1140,8 @@ void xcb_im_open_reply_fr_read(xcb_im_open_reply_fr_t *frame, uint8_t **data,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
     frame->IM_attribute_supported.items = NULL;
     frame->IM_attribute_supported.size = 0;
     while (counter != 0) {
@@ -1174,9 +1173,8 @@ void xcb_im_open_reply_fr_read(xcb_im_open_reply_fr_t *frame, uint8_t **data,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
     frame->IC_attribute_supported.items = NULL;
     frame->IC_attribute_supported.size = 0;
     while (counter != 0) {
@@ -1328,9 +1326,9 @@ void xcb_im_register_triggerkeys_fr_read(
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->on_keys_list.items = NULL;
     frame->on_keys_list.size = 0;
     while (counter != 0) {
@@ -1358,9 +1356,9 @@ void xcb_im_register_triggerkeys_fr_read(
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->off_keys_list.items = NULL;
     frame->off_keys_list.size = 0;
     while (counter != 0) {
@@ -1555,9 +1553,9 @@ void xcb_im_encoding_negotiation_fr_read(
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->supported_list_of_encoding_in_IM_library.items = NULL;
     frame->supported_list_of_encoding_in_IM_library.size = 0;
     while (counter != 0) {
@@ -1595,9 +1593,9 @@ void xcb_im_encoding_negotiation_fr_read(
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->list_of_encodings_supported_in_th.items = NULL;
     frame->list_of_encodings_supported_in_th.size = 0;
     while (counter != 0) {
@@ -1753,9 +1751,9 @@ void xcb_im_query_extension_fr_read(xcb_im_query_extension_fr_t *frame,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->extensions_supported_by_the_IM_library.items = NULL;
     frame->extensions_supported_by_the_IM_library.size = 0;
     while (counter != 0) {
@@ -1847,9 +1845,9 @@ void xcb_im_query_extension_reply_fr_read(
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->list_of_extensions_supported_by_th.items = NULL;
     frame->list_of_extensions_supported_by_th.size = 0;
     while (counter != 0) {
@@ -1936,9 +1934,9 @@ void xcb_im_get_im_values_fr_read(xcb_im_get_im_values_fr_t *frame,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->im_attribute_id.items = NULL;
     frame->im_attribute_id.size = 0;
     while (counter != 0) {
@@ -2009,9 +2007,9 @@ void xcb_im_get_im_values_reply_fr_read(xcb_im_get_im_values_reply_fr_t *frame,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->im_attribute_returned.items = NULL;
     frame->im_attribute_returned.size = 0;
     while (counter != 0) {
@@ -2091,9 +2089,9 @@ void xcb_im_create_ic_fr_read(xcb_im_create_ic_fr_t *frame, uint8_t **data,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->ic_attributes.items = NULL;
     frame->ic_attributes.size = 0;
     while (counter != 0) {
@@ -2243,9 +2241,9 @@ void xcb_im_set_ic_values_fr_read(xcb_im_set_ic_values_fr_t *frame,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->ic_attribute.items = NULL;
     frame->ic_attribute.size = 0;
     while (counter != 0) {
@@ -2354,9 +2352,9 @@ void xcb_im_get_ic_values_fr_read(xcb_im_get_ic_values_fr_t *frame,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->ic_attribute.items = NULL;
     frame->ic_attribute.size = 0;
     while (counter != 0) {
@@ -2436,9 +2434,9 @@ void xcb_im_get_ic_values_reply_fr_read(xcb_im_get_ic_values_reply_fr_t *frame,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->ic_attribute.items = NULL;
     frame->ic_attribute.size = 0;
     while (counter != 0) {
@@ -2663,9 +2661,9 @@ void xcb_im_commit_fr_read(xcb_im_commit_fr_t *frame, uint8_t **data,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->keysym.items = NULL;
     frame->keysym.size = 0;
     while (counter != 0) {
@@ -3075,9 +3073,9 @@ void xcb_im_str_conversion_reply_fr_read(
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->feedback_array.items = NULL;
     frame->feedback_array.size = 0;
     while (counter != 0) {
@@ -3247,9 +3245,9 @@ void xcb_im_preedit_draw_fr_read(xcb_im_preedit_draw_fr_t *frame,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->feedback_array.items = NULL;
     frame->feedback_array.size = 0;
     while (counter != 0) {
@@ -3472,9 +3470,9 @@ void xcb_im_status_draw_text_fr_read(xcb_im_status_draw_text_fr_t *frame,
     if (counter > *len) {
         *data = NULL;
         return;
-    } else {
-        *len -= counter;
     }
+    *len -= counter;
+
     frame->feedback_array.items = NULL;
     frame->feedback_array.size = 0;
     while (counter != 0) {

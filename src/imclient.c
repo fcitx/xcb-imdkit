@@ -68,14 +68,16 @@ bool _xcb_xim_check_transport(xcb_xim_t *im, char *address, char **trans_addr) {
         *trans_addr = pp;
 
         // find first non / , character
-        for (p = pp; (*p != '/') && (*p != ',') && (*p); p++)
+        for (p = pp; (*p != '/') && (*p != ',') && (*p); p++) {
             ;
+        }
         if (*p == ',') {
             pp = p + 1;
             continue;
         }
-        if (!(*p))
+        if (!(*p)) {
             return false;
+        }
 
         if ((p - pp) == strlen("X") && (0 == strncmp(pp, "X", strlen("X")))) {
             break;
@@ -83,8 +85,9 @@ bool _xcb_xim_check_transport(xcb_xim_t *im, char *address, char **trans_addr) {
         pp = p + 1;
     }
     pp = p + 1;
-    for (p = pp; (*p != ',') && (*p); p++)
+    for (p = pp; (*p != ',') && (*p); p++) {
         ;
+    }
     if (*p) {
         *p = '\0';
     }

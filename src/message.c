@@ -83,15 +83,17 @@ bool _xcb_send_xim_message(xcb_connection_t *conn, xcb_atom_t protocol_atom,
         event.format = 32;
         event.data.data32[0] = length;
         event.data.data32[1] = atom;
-        for (size_t i = 2; i < ARRAY_SIZE(event.data.data32); i++)
+        for (size_t i = 2; i < ARRAY_SIZE(event.data.data32); i++) {
             event.data.data32[i] = 0;
+        }
     } else {
         event.format = 8;
 
         memcpy(event.data.data8, data, length);
         /* Clear unused field with NULL */
-        for (size_t i = length; i < XCB_XIM_CM_DATA_SIZE; i++)
+        for (size_t i = length; i < XCB_XIM_CM_DATA_SIZE; i++) {
             event.data.data8[i] = 0;
+        }
     }
     xcb_void_cookie_t send_event_cookie = xcb_send_event_checked(
         conn, false, window, XCB_EVENT_MASK_NO_EVENT, (const char *)&event);
@@ -151,8 +153,9 @@ uint8_t *_xcb_read_xim_message(xcb_connection_t *conn, xcb_window_t window,
 
             rec = xcb_get_property_value(reply);
 
-            if (length != reply->value_len)
+            if (length != reply->value_len) {
                 length = reply->value_len;
+            }
 
             // make length into byte
             if (reply->format == 16) {

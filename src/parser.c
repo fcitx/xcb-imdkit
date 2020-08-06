@@ -99,9 +99,8 @@ uintptr_t align_to_4(uintptr_t ptr, uintptr_t len, size_t *remain) {
     if (remain) {
         if (*remain < diff) {
             return 0;
-        } else {
-            *remain -= diff;
         }
+        *remain -= diff;
     }
     return ptr + diff;
 }
@@ -111,9 +110,8 @@ uintptr_t align_to_2(uintptr_t ptr, uintptr_t len, size_t *remain) {
     if (remain) {
         if (*remain < diff) {
             return 0;
-        } else {
-            *remain -= diff;
         }
+        *remain -= diff;
     }
     return ptr + diff;
 }

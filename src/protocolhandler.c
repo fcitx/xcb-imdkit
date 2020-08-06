@@ -35,7 +35,6 @@ void _xcb_im_handle_connect(xcb_im_t *im, xcb_im_client_t *client,
         frame.client_minor_protocol_version;
 
     _xcb_im_send_frame(im, client, reply_frame, true);
-    return;
 }
 
 static void _xcb_im_send_trigger_key(xcb_im_t *im, xcb_im_client_t *client) {
@@ -93,7 +92,6 @@ void _xcb_im_handle_close(xcb_im_t *im, xcb_im_client_t *client,
     xcb_im_close_reply_fr_t reply_frame;
     reply_frame.input_method_ID = frame.input_method_ID;
     _xcb_im_send_frame(im, client, reply_frame, true);
-    return;
 }
 
 void _xcb_im_handle_query_extension(xcb_im_t *im, xcb_im_client_t *client,
@@ -376,7 +374,6 @@ void _xcb_im_handle_create_ic(xcb_im_t *im, xcb_im_client_t *client,
     // error
     xcb_im_create_ic_fr_free(&frame);
     _xcb_im_send_error_message(im, client);
-    return;
 }
 
 void _xcb_im_handle_destroy_ic(xcb_im_t *im, xcb_im_client_t *client,
@@ -411,7 +408,6 @@ void _xcb_im_handle_destroy_ic(xcb_im_t *im, xcb_im_client_t *client,
     // error
     xcb_im_destroy_ic_fr_free(&frame);
     _xcb_im_send_error_message(im, client);
-    return;
 }
 
 void _xcb_im_handle_set_ic_values(xcb_im_t *im, xcb_im_client_t *client,
@@ -450,7 +446,6 @@ void _xcb_im_handle_set_ic_values(xcb_im_t *im, xcb_im_client_t *client,
     // error
     xcb_im_set_ic_values_fr_free(&frame);
     _xcb_im_send_error_message(im, client);
-    return;
 }
 
 uint32_t _xcb_im_get_nested_ic_values(xcb_im_t *im, xcb_im_input_context_t *ic,
@@ -585,7 +580,6 @@ void _xcb_im_handle_get_ic_values(xcb_im_t *im, xcb_im_client_t *client,
     // error
     xcb_im_get_ic_values_fr_free(&frame);
     _xcb_im_send_error_message(im, client);
-    return;
 }
 
 void _xcb_im_handle_set_ic_focus(xcb_im_t *im, xcb_im_client_t *client,

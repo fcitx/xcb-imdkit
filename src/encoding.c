@@ -37,8 +37,9 @@ int indirect_convert(void **from, size_t *from_left, void **to, size_t *to_left,
         cs_left = sizeof(buf);
 
         ret = tocs(&state, from, from_left, &cs, &cs_left, &charset);
-        if (ret < 0)
+        if (ret < 0) {
             break;
+        }
 
         unconv_num += ret;
 
