@@ -110,9 +110,9 @@ XCB_IMDKIT_EXPORT void xcb_xim_destroy(xcb_xim_t *im);
 XCB_IMDKIT_EXPORT bool xcb_xim_open(xcb_xim_t *im,
                                     xcb_xim_open_callback callback,
                                     bool auto_connect, void *user_data);
-XCB_IMDKIT_EXPORT void xcb_xim_set_im_callback(xcb_xim_t *im,
-                                               xcb_xim_im_callback *callbacks,
-                                               void *user_data);
+XCB_IMDKIT_EXPORT void
+xcb_xim_set_im_callback(xcb_xim_t *im, const xcb_xim_im_callback *callbacks,
+                        void *user_data);
 XCB_IMDKIT_EXPORT bool xcb_xim_filter_event(xcb_xim_t *im,
                                             xcb_generic_event_t *event);
 XCB_IMDKIT_EXPORT xcb_xim_trigger_key_type_t xcb_xim_check_trigger_key(

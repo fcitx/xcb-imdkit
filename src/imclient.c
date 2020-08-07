@@ -1480,7 +1480,8 @@ bool xcb_xim_reset_ic(xcb_xim_t *im, xcb_xic_t ic,
     return true;
 }
 
-void xcb_xim_set_im_callback(xcb_xim_t *im, xcb_xim_im_callback *callbacks,
+void xcb_xim_set_im_callback(xcb_xim_t *im,
+                             const xcb_xim_im_callback *callbacks,
                              void *user_data) {
     memcpy(&im->im_callback, callbacks, sizeof(xcb_xim_im_callback));
     im->user_data = user_data;
