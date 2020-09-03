@@ -1,3 +1,16 @@
+ecm_setup_version(
+   PROJECT
+   VARIABLE_PREFIX XCB_IMDKIT
+   VERSION_HEADER "${CMAKE_CURRENT_BINARY_DIR}/xcb-imdkit_version.h"
+   PACKAGE_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/XCBImdkitConfigVersion.cmake"
+   SOVERSION 0
+   )
+
+configure_package_config_file(
+   "${CMAKE_CURRENT_SOURCE_DIR}/XCBImdkitConfig.cmake.in"
+   "${CMAKE_CURRENT_BINARY_DIR}/XCBImdkitConfig.cmake"
+   INSTALL_DESTINATION  ${CMAKECONFIG_INSTALL_DIR}
+   )
 
 add_library(xcb-imdkit SHARED
 parser.c ximproto.c imdkit.c protocolhandler.c message.c common.c imclient.c clientprotocolhandler.c
@@ -14,8 +27,8 @@ target_include_directories(xcb-imdkit
                            INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_FULL_INCLUDEDIR}>)
 
 set_target_properties(xcb-imdkit PROPERTIES
-                      VERSION 0.1
-                      SOVERSION 0
+                      VERSION ${XCB_IMDKIT_VERSION}
+                      SOVERSION ${XCB_IMDKIT_SOVERSION}
                       C_VISIBILITY_PRESET hidden
                       LINK_FLAGS "-Wl,--no-undefined"
                       EXPORT_NAME XCBImdkit)
@@ -30,3 +43,18 @@ install(TARGETS xcb-imdkit EXPORT XCBImdkitLibraryTargets LIBRARY DESTINATION "$
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/xcb-imdkit.pc
   DESTINATION "${CMAKE_INSTALL_LIBDATADIR}/pkgconfig")
 install(FILES imdkit.h ximcommon.h ximproto.h ximproto-gen.h imclient.h encoding.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/xcb-imdkit")
+
+
+install (
+   EXPORT XCBImdkitLibraryTargets
+   DESTINATION "${CMAKECONFIG_INSTALL_DIR}"
+   FILE XCBImdkitLibraryTargets.cmake
+   NAMESPACE XCBImdkit::
+   )
+
+install (
+   FILES "${CMAKE_CURRENT_BINARY_DIR}/XCBImdkitConfig.cmake"
+         "${CMAKE_CURRENT_BINARY_DIR}/XCBImdkitConfigVersion.cmake"
+   DESTINATION "${CMAKECONFIG_INSTALL_DIR}"
+   COMPONENT Devel
+   )
