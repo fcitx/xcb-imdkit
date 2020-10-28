@@ -87,6 +87,23 @@ typedef void (*xcb_im_callback)(xcb_im_t *im, xcb_im_client_t *client,
 
 typedef void (*xcb_im_free_function)(void *memory);
 
+/**
+ * Create a XIM server.
+ *
+ * @param conn xcb connection to be used.
+ * @param screen xcb screen to be used.
+ * @param serverWindow A server window.
+ * @param serverName server name, need to be consistent with XMODIFIERS
+ * @param locale locale supported. You may want to use XCB_IM_ALL_LOCALES.
+ * @param inputStyles XIM Styles supported by XIM server.
+ * @param onKeysList Trigger on key to send to client.
+ * @param offKeysList Trigger off key to send to cilent.
+ * @param encodingList XIM encoding list.
+ * @param event_mask if 0, XCB_EVENT_MASK_KEY_PRESS will be used.
+ * @param callback Callback function
+ * @param user_data user data to callback function.
+ * @return xcb_im_t*
+ */
 XCB_IMDKIT_EXPORT xcb_im_t *
 xcb_im_create(xcb_connection_t *conn, int screen, xcb_window_t serverWindow,
               const char *serverName, const char *locale,
@@ -95,42 +112,202 @@ xcb_im_create(xcb_connection_t *conn, int screen, xcb_window_t serverWindow,
               const xcb_im_trigger_keys_t *offKeysList,
               const xcb_im_encodings_t *encodingList, uint32_t event_mask,
               xcb_im_callback callback, void *user_data);
+
+/**
+ * @brief Set a logger handler.
+ *
+ * @param im XIM server.
+ * @param logger logger function.
+ */
 XCB_IMDKIT_EXPORT void
 xcb_im_set_log_handler(xcb_im_t *im, void (*logger)(const char *, ...));
+
+/**
+ * Whether to use sync mode, it will affect certain behavior of XIM.
+ *
+ * Forward event and commit string behavior will be changed. If sync mode is
+ * true, every request need to be replied with sync_reply. The library is still
+ * working under async mode, just no more request will be send to client.
+ *
+ * @param im XIM server
+ * @param sync sync mode or not.
+ */
 XCB_IMDKIT_EXPORT void xcb_im_set_use_sync_mode(xcb_im_t *im, bool sync);
+
+/**
+ * Set whether the event defined by event mask is handled in a synchronous way.
+ *
+ * @param im XIM server
+ * @param sync sync on event or not.
+ */
 XCB_IMDKIT_EXPORT void xcb_im_set_use_sync_event(xcb_im_t *im, bool sync);
+
+/**
+ * Start a XIM server synchronously.
+ *
+ * It only does the minimum initialization and try to grab the server name. When
+ * it fails, it means there might be another server with the same name running.
+ *
+ * To finish the initialization, you will need to use xcb_im_filter_event on all
+ * the event recevied.
+ *
+ * You may also call this function again if it fails or after xcb_im_close_im.
+ *
+ * @param im XIM server.
+ * @return whether XIM server is started successfully.
+ */
 XCB_IMDKIT_EXPORT bool xcb_im_open_im(xcb_im_t *im);
+
+/**
+ * Handle XIM related event, most relevant event will be client message.
+ *
+ * @param im XIM server
+ * @param event X event.
+ * @return Whether the event is handled by XIM.
+ */
 XCB_IMDKIT_EXPORT bool xcb_im_filter_event(xcb_im_t *im,
                                            xcb_generic_event_t *event);
+
+/**
+ * Shutdown the XIM server and free all the resources.
+ *
+ * @param im XIM server
+ *
+ * @see xcb_im_open_im
+ */
 XCB_IMDKIT_EXPORT void xcb_im_close_im(xcb_im_t *im);
+/**
+ * Destroy the XIM server.
+ *
+ * xcb_im_close_im need to be called if it is opened successfully.
+ *
+ * @param im XIM server.
+ */
 XCB_IMDKIT_EXPORT void xcb_im_destroy(xcb_im_t *im);
+
+/**
+ * Send a key event to the client.
+ *
+ * @param im XIM server
+ * @param ic Input context.
+ * @param event key event.
+ */
 XCB_IMDKIT_EXPORT void xcb_im_forward_event(xcb_im_t *im,
                                             xcb_im_input_context_t *ic,
                                             xcb_key_press_event_t *event);
+
+/**
+ * Commit a string to the client.
+ *
+ * @param im XIM server
+ * @param ic Input Context
+ * @param flag a bit flag of xcb_xim_lookup_flags_t, XCB_XIM_LOOKUP_CHARS is the
+ * most common value to be used.
+ * @param str string to be committed, encoding is usually COMPOUND_TEXT.
+ * @param length byte length of the string
+ * @param keysym key symbol.
+ *
+ * @see xcb_xim_lookup_flags_t
+ * @see xcb_utf8_to_compound_text
+ */
 XCB_IMDKIT_EXPORT void xcb_im_commit_string(xcb_im_t *im,
                                             xcb_im_input_context_t *ic,
                                             uint32_t flag, const char *str,
                                             uint32_t length, uint32_t keysym);
+
+/**
+ * Start geometry negotiation, if XIMStyle has XIMPreeditArea or XIMStatusArea
+ * set.
+ *
+ * This is rarely used nowadays. Xlib doesn't have relevant code for it.
+ *
+ * @param im XIM server
+ * @param ic Input context
+ */
 XCB_IMDKIT_EXPORT void xcb_im_geometry_callback(xcb_im_t *im,
                                                 xcb_im_input_context_t *ic);
+
+/**
+ * Sends XIM_PREEDIT_START message to call the XIMPreeditStartCallback function.
+ *
+ * @param im XIM server
+ * @param ic Input context
+ */
 XCB_IMDKIT_EXPORT void
 xcb_im_preedit_start_callback(xcb_im_t *im, xcb_im_input_context_t *ic);
+
+/**
+ * Sends XIM_PREEDIT_DRAW message to call the XIMPreeditDrawCallback function.
+ *
+ * @param im XIM server
+ * @param ic Input context
+ * @param frame information about preedit string.
+ */
 XCB_IMDKIT_EXPORT void
 xcb_im_preedit_draw_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
                              xcb_im_preedit_draw_fr_t *frame);
+
+/**
+ * Sends XIM_PREEDIT_CARET message to call the PreeditCaretCallback function.
+ *
+ * @param im XIM server
+ * @param ic Input context
+ * @param frame information about preedit caret.
+ */
 XCB_IMDKIT_EXPORT void
 xcb_im_preedit_caret_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
                               xcb_im_preedit_caret_fr_t *frame);
+
+/**
+ * sends XIM_PREEDIT_DONE message to call the XIMPreeditDoneCallback function.
+ *
+ * This should only be called after calling xcb_im_preedit_start_callback.
+ *
+ * @param im XIM server
+ * @param ic Input context
+ */
 XCB_IMDKIT_EXPORT void xcb_im_preedit_done_callback(xcb_im_t *im,
                                                     xcb_im_input_context_t *ic);
+
+/**
+ * Sends XIM_STATUS_START message to call the XIMStatusStartCallback function.
+ *
+ * @param im XIM server
+ * @param ic Input context
+ */
 XCB_IMDKIT_EXPORT void xcb_im_status_start_callback(xcb_im_t *im,
                                                     xcb_im_input_context_t *ic);
+
+/**
+ * Sends XIM_STATUS_DRAW message to call the XIMStatusDrawCallback function with
+ * text.
+ *
+ * @param im XIM server
+ * @param ic Input context
+ * @param frame text to be drawn by client.
+ */
 XCB_IMDKIT_EXPORT void
 xcb_im_status_draw_text_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
                                  xcb_im_status_draw_text_fr_t *frame);
+
+/**
+ * Sends XIM_STATUS_DRAW message to call the XIMStatusDrawCallback function with
+ * bitmap.
+ *
+ * @param im XIM server
+ * @param ic Input context
+ * @param frame bitmap to be drawn by client.
+ */
 XCB_IMDKIT_EXPORT void
 xcb_im_status_draw_bitmap_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
                                    xcb_im_status_draw_bitmap_fr_t *frame);
+
+/**
+ * Sends XIM_STATUS_DONE message to call the XIMStatusDoneCallback function.
+ *
+ * @param im XIM server
+ * @param ic Input context
+ */
 XCB_IMDKIT_EXPORT void xcb_im_status_done_callback(xcb_im_t *im,
                                                    xcb_im_input_context_t *ic);
 XCB_IMDKIT_EXPORT void xcb_im_preedit_start(xcb_im_t *im,

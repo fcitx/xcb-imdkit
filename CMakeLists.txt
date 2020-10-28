@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${C
 option(USE_SYSTEM_UTHASH "Enable system utash" On)
 
 include(CheckFunctionExists)
-include(ECMPackageConfigHelpers)
+include(CMakePackageConfigHelpers)
 include(ECMSetupVersion)
 include(ECMGenerateHeaders)
 include(uninstall)

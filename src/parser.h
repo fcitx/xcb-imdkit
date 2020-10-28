@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef _XCB_IMDKIT_PARSE_H_
-#define _XCB_IMDKIT_PARSE_H_
+#ifndef _XCB_IMDKIT_PARSER_H_
+#define _XCB_IMDKIT_PARSER_H_
 
 #include <stdbool.h>
 #include <stdint.h>
