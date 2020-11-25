@@ -138,7 +138,6 @@ void logger(const char *fmt, ...) {
 
 int main(int argc, char *argv[]) {
     /* Open the connection to the X server */
-
     int screen_default_nbr;
     connection = xcb_connect(NULL, &screen_default_nbr);
     screen = xcb_aux_get_screen(connection, screen_default_nbr);
@@ -147,7 +146,7 @@ int main(int argc, char *argv[]) {
         return false;
     }
     xcb_xim_t *im =
-        xcb_xim_create(connection, screen_default_nbr, "@im=fcitx5");
+        xcb_xim_create(connection, screen_default_nbr, "@im=test_server");
 
     xcb_xim_set_im_callback(im, &callback, NULL);
     xcb_xim_set_log_handler(im, logger);

@@ -482,6 +482,10 @@ void _xcb_xim_handle_forward_event(xcb_xim_t *im,
             im->im_callback.forward_event(im, frame.input_context_ID,
                                           &key_event, im->user_data);
         }
+
+        if (frame.flag & XCB_XIM_SYNCHRONOUS) {
+            _xcb_xim_sync(im, frame.input_context_ID);
+        }
     } while (0);
     xcb_im_forward_event_fr_free(&frame);
 }
@@ -517,6 +521,10 @@ void _xcb_xim_handle_commit(xcb_xim_t *im, const xcb_im_packet_header_fr_t *hdr,
                     frame.byte_length_of_committed_string, &frame.keysym, 1,
                     im->user_data);
             }
+
+            if (flag & XCB_XIM_SYNCHRONOUS) {
+                _xcb_xim_sync(im, frame.input_context_ID);
+            }
         } while (0);
         xcb_im_commit_both_fr_free(&frame);
     } else if ((flag & XCB_XIM_LOOKUP_BOTH) == XCB_XIM_LOOKUP_CHARS) {
@@ -538,6 +546,10 @@ void _xcb_xim_handle_commit(xcb_xim_t *im, const xcb_im_packet_header_fr_t *hdr,
                     (char *)frame.committed_string,
                     frame.byte_length_of_committed_string, NULL, 0,
                     im->user_data);
+            }
+
+            if (flag & XCB_XIM_SYNCHRONOUS) {
+                _xcb_xim_sync(im, frame.input_context_ID);
             }
         } while (0);
         xcb_im_commit_chars_fr_free(&frame);

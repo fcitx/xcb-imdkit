@@ -1017,7 +1017,9 @@ void _xcb_xim_process_queue(xcb_xim_t *im) {
             list_container_of((im->queue).next, xcb_xim_request_queue_t, list);
         list_remove(&request->list);
         if (_xcb_xim_send_request_frame(im, request)) {
-            im->current = request;
+            if (request->major_code != XCB_XIM_FORWARD_EVENT) {
+                im->current = request;
+            }
         } else {
             _xcb_xim_process_fail_callback(im, request);
             _xcb_xim_request_free(request);
