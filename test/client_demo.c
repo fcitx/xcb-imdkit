@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  */
+#include "encoding.h"
+#include "imclient.h"
+#include "ximproto.h"
 #include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -11,9 +14,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <xcb-imdkit/encoding.h>
-#include <xcb-imdkit/imclient.h>
-#include <xcb-imdkit/ximproto.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
 #include <xcb/xproto.h>
