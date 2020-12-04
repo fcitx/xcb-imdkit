@@ -81,9 +81,9 @@ typedef struct _xcb_xim_im_callback {
 } xcb_xim_im_callback;
 
 typedef enum _xcb_xim_trigger_key_type_t {
-    XCB_XIM_IS_NOT_TRIGGER,
-    XCB_XIM_TRIGGER_ON_KEY,
-    XCB_XIM_TRIGGER_OFF_KEY,
+    XCB_XIM_IS_NOT_TRIGGER  = 0,
+    XCB_XIM_TRIGGER_ON_KEY  = 1 << 0,
+    XCB_XIM_TRIGGER_OFF_KEY = 1 << 1,
 } xcb_xim_trigger_key_type_t;
 
 typedef void (*xcb_xim_open_callback)(xcb_xim_t *im, void *user_data);
@@ -116,7 +116,8 @@ xcb_xim_set_im_callback(xcb_xim_t *im, const xcb_xim_im_callback *callbacks,
 XCB_IMDKIT_EXPORT bool xcb_xim_filter_event(xcb_xim_t *im,
                                             xcb_generic_event_t *event);
 XCB_IMDKIT_EXPORT xcb_xim_trigger_key_type_t xcb_xim_check_trigger_key(
-    xcb_xim_t *im, xcb_keysym_t keysym, uint32_t modifier, uint32_t *idx);
+    xcb_xim_t *im, xcb_keysym_t keysym, uint32_t modifier, uint32_t *idxOn,
+    uint32_t *idxOff);
 XCB_IMDKIT_EXPORT bool xcb_xim_trigger_notify(xcb_xim_t *im, xcb_xic_t ic,
                                               uint32_t idx, bool off);
 XCB_IMDKIT_EXPORT bool

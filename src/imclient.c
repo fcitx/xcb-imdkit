@@ -804,24 +804,28 @@ bool xcb_xim_trigger_notify(xcb_xim_t *im, xcb_xic_t ic, uint32_t idx,
 xcb_xim_trigger_key_type_t xcb_xim_check_trigger_key(xcb_xim_t *im,
                                                      xcb_keysym_t keysym,
                                                      uint32_t modifier,
-                                                     uint32_t *idx) {
+                                                     uint32_t *idxOn,
+                                                     uint32_t *idxOff) {
+    xcb_xim_trigger_key_type_t trigger_key_type = XCB_XIM_IS_NOT_TRIGGER;
     for (uint32_t i = 0; i < im->onKeys.nKeys; i++) {
         if (im->onKeys.keys[i].keysym == keysym &&
             (modifier & im->onKeys.keys[i].modifier_mask) ==
                 im->onKeys.keys[i].modifier) {
-            *idx = i;
-            return XCB_XIM_TRIGGER_ON_KEY;
+            *idxOn = i;
+            trigger_key_type |= XCB_XIM_TRIGGER_ON_KEY;
+            break;
         }
     }
     for (uint32_t i = 0; i < im->offKeys.nKeys; i++) {
         if (im->offKeys.keys[i].keysym == keysym &&
             (modifier & im->offKeys.keys[i].modifier_mask) ==
                 im->offKeys.keys[i].modifier) {
-            *idx = i;
-            return XCB_XIM_TRIGGER_OFF_KEY;
+            *idxOff = i;
+            trigger_key_type |= XCB_XIM_TRIGGER_OFF_KEY;
+            break;
         }
     }
-    return XCB_XIM_IS_NOT_TRIGGER;
+    return trigger_key_type;
 }
 
 void xcb_xim_destroy(xcb_xim_t *im) {
