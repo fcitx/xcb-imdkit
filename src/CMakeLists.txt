@@ -3,7 +3,7 @@ ecm_setup_version(
    VARIABLE_PREFIX XCB_IMDKIT
    VERSION_HEADER "${CMAKE_CURRENT_BINARY_DIR}/xcb-imdkit_version.h"
    PACKAGE_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/XCBImdkitConfigVersion.cmake"
-   SOVERSION 0
+   SOVERSION 1
    )
 
 configure_package_config_file(
