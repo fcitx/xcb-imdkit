@@ -15,7 +15,7 @@
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
-XCB_IMDKIT_DECL_BEGIN
+XCBIMDKIT_DECL_BEGIN
 
 typedef struct _xcb_xim_t xcb_xim_t;
 typedef uint16_t xcb_xic_t;
@@ -102,56 +102,67 @@ typedef void (*xcb_xim_reset_ic_callback)(xcb_xim_t *im, xcb_xic_t ic,
                                           xcb_im_reset_ic_reply_fr_t *reply,
                                           void *user_data);
 
-XCB_IMDKIT_EXPORT xcb_xim_t *xcb_xim_create(xcb_connection_t *conn,
-                                            int screen_id, const char *imname);
-XCB_IMDKIT_EXPORT void
+XCBIMDKIT_EXPORT xcb_xim_t *xcb_xim_create(xcb_connection_t *conn,
+                                           int screen_id, const char *imname);
+XCBIMDKIT_EXPORT void
 xcb_xim_set_log_handler(xcb_xim_t *im, void (*logger)(const char *, ...));
-XCB_IMDKIT_EXPORT void xcb_xim_destroy(xcb_xim_t *im);
-XCB_IMDKIT_EXPORT bool xcb_xim_open(xcb_xim_t *im,
-                                    xcb_xim_open_callback callback,
-                                    bool auto_connect, void *user_data);
-XCB_IMDKIT_EXPORT void
+XCBIMDKIT_EXPORT void xcb_xim_destroy(xcb_xim_t *im);
+XCBIMDKIT_EXPORT bool xcb_xim_open(xcb_xim_t *im,
+                                   xcb_xim_open_callback callback,
+                                   bool auto_connect, void *user_data);
+XCBIMDKIT_EXPORT void
 xcb_xim_set_im_callback(xcb_xim_t *im, const xcb_xim_im_callback *callbacks,
                         void *user_data);
-XCB_IMDKIT_EXPORT bool xcb_xim_filter_event(xcb_xim_t *im,
-                                            xcb_generic_event_t *event);
-XCB_IMDKIT_EXPORT xcb_xim_trigger_key_type_t xcb_xim_check_trigger_key(
-    xcb_xim_t *im, xcb_keysym_t keysym, uint32_t modifier, uint32_t *idx);
-XCB_IMDKIT_EXPORT bool xcb_xim_trigger_notify(xcb_xim_t *im, xcb_xic_t ic,
-                                              uint32_t idx, bool off);
-XCB_IMDKIT_EXPORT bool
+XCBIMDKIT_EXPORT bool xcb_xim_filter_event(xcb_xim_t *im,
+                                           xcb_generic_event_t *event);
+
+XCBIMDKIT_DEPRECATED_EXPORT xcb_xim_trigger_key_type_t
+xcb_xim_check_trigger_key(xcb_xim_t *im, xcb_keysym_t keysym, uint32_t modifier,
+                          uint32_t *idx);
+XCBIMDKIT_EXPORT bool xcb_xim_check_trigger_on_key(xcb_xim_t *im,
+                                                   xcb_keysym_t keysym,
+                                                   uint32_t modifier,
+                                                   uint32_t *idx);
+XCBIMDKIT_EXPORT bool xcb_xim_check_trigger_off_key(xcb_xim_t *im,
+                                                    xcb_keysym_t keysym,
+                                                    uint32_t modifier,
+                                                    uint32_t *idx);
+XCBIMDKIT_EXPORT bool xcb_xim_trigger_notify(xcb_xim_t *im, xcb_xic_t ic,
+                                             uint32_t idx, bool off);
+
+XCBIMDKIT_EXPORT bool
 xcb_xim_get_im_values(xcb_xim_t *im, xcb_xim_get_im_values_callback callback,
                       void *user_data, ...);
-XCB_IMDKIT_EXPORT xcb_xim_nested_list xcb_xim_create_nested_list(xcb_xim_t *im,
-                                                                 ...);
-XCB_IMDKIT_EXPORT bool xcb_xim_create_ic(xcb_xim_t *im,
-                                         xcb_xim_create_ic_callback callback,
-                                         void *user_data, ...);
-XCB_IMDKIT_EXPORT bool
+XCBIMDKIT_EXPORT xcb_xim_nested_list xcb_xim_create_nested_list(xcb_xim_t *im,
+                                                                ...);
+XCBIMDKIT_EXPORT bool xcb_xim_create_ic(xcb_xim_t *im,
+                                        xcb_xim_create_ic_callback callback,
+                                        void *user_data, ...);
+XCBIMDKIT_EXPORT bool
 xcb_xim_get_ic_values(xcb_xim_t *im, xcb_xic_t ic,
                       xcb_xim_get_ic_values_callback callback, void *user_data,
                       ...);
-XCB_IMDKIT_EXPORT bool
+XCBIMDKIT_EXPORT bool
 xcb_xim_set_ic_values(xcb_xim_t *im, xcb_xic_t ic,
                       xcb_xim_set_ic_values_callback callback, void *user_data,
                       ...);
-XCB_IMDKIT_EXPORT bool xcb_xim_set_ic_focus(xcb_xim_t *im, xcb_xic_t ic);
-XCB_IMDKIT_EXPORT bool xcb_xim_unset_ic_focus(xcb_xim_t *im, xcb_xic_t ic);
-XCB_IMDKIT_EXPORT bool xcb_xim_forward_event(xcb_xim_t *im, xcb_xic_t ic,
-                                             xcb_key_press_event_t *event);
-XCB_IMDKIT_EXPORT bool xcb_xim_reset_ic(xcb_xim_t *im, xcb_xic_t ic,
-                                        xcb_xim_reset_ic_callback callback,
-                                        void *user_data);
-XCB_IMDKIT_EXPORT bool xcb_xim_destroy_ic(xcb_xim_t *im, xcb_xic_t ic,
-                                          xcb_xim_destroy_ic_callback callback,
-                                          void *user_data);
-XCB_IMDKIT_EXPORT void xcb_xim_close(xcb_xim_t *im);
-XCB_IMDKIT_EXPORT bool xcb_xim_support_extension(xcb_xim_t *im,
-                                                 uint16_t major_code,
-                                                 uint16_t minor_code);
-XCB_IMDKIT_EXPORT bool xcb_xim_ext_move(xcb_xim_t *im, xcb_xic_t ic, int16_t x,
-                                        int16_t y);
+XCBIMDKIT_EXPORT bool xcb_xim_set_ic_focus(xcb_xim_t *im, xcb_xic_t ic);
+XCBIMDKIT_EXPORT bool xcb_xim_unset_ic_focus(xcb_xim_t *im, xcb_xic_t ic);
+XCBIMDKIT_EXPORT bool xcb_xim_forward_event(xcb_xim_t *im, xcb_xic_t ic,
+                                            xcb_key_press_event_t *event);
+XCBIMDKIT_EXPORT bool xcb_xim_reset_ic(xcb_xim_t *im, xcb_xic_t ic,
+                                       xcb_xim_reset_ic_callback callback,
+                                       void *user_data);
+XCBIMDKIT_EXPORT bool xcb_xim_destroy_ic(xcb_xim_t *im, xcb_xic_t ic,
+                                         xcb_xim_destroy_ic_callback callback,
+                                         void *user_data);
+XCBIMDKIT_EXPORT void xcb_xim_close(xcb_xim_t *im);
+XCBIMDKIT_EXPORT bool xcb_xim_support_extension(xcb_xim_t *im,
+                                                uint16_t major_code,
+                                                uint16_t minor_code);
+XCBIMDKIT_EXPORT bool xcb_xim_ext_move(xcb_xim_t *im, xcb_xic_t ic, int16_t x,
+                                       int16_t y);
 
-XCB_IMDKIT_DECL_END
+XCBIMDKIT_DECL_END
 
 #endif // _XCB_IMDKIT_IMCLIENT_H_

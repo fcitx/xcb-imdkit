@@ -13,7 +13,7 @@ configure_package_config_file(
    )
 
 set(XCB_IMDKIT_HEADERS
-    imdkit.h ximcommon.h ximproto.h ximproto-gen.h imclient.h encoding.h
+    imdkit.h ximcommon.h ximproto.h ximproto-gen.h imclient.h encoding.h "${CMAKE_CURRENT_BINARY_DIR}/xcbimdkit_export.h"
 )
 
 add_library(xcb-imdkit SHARED
@@ -24,10 +24,13 @@ xlibi18n/lcUTF8.c
 xlibi18n/lcCharSet.c
 )
 
+generate_export_header(xcb-imdkit BASE_NAME XCBImdkit)
+
 add_library(XCBImdkit::XCBImdkit ALIAS xcb-imdkit)
 
 target_include_directories(xcb-imdkit
                            PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                                  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                            INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_FULL_INCLUDEDIR}>)
 
 set_target_properties(xcb-imdkit PROPERTIES

@@ -12,7 +12,7 @@
 #include "ximproto-gen.h" // IWYU pragma: export
 #include <stdint.h>
 
-XCB_IMDKIT_DECL_BEGIN
+XCBIMDKIT_DECL_BEGIN
 
 #define XCB_IM_HEADER_SIZE 4
 
@@ -161,6 +161,6 @@ typedef struct _xcb_im_trigger_keys_t {
     xcb_im_ximtriggerkey_fr_t *keys;
 } xcb_im_trigger_keys_t;
 
-XCB_IMDKIT_DECL_END
+XCBIMDKIT_DECL_END
 
 #endif // XIMPROTO_H

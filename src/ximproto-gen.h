@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-XCB_IMDKIT_DECL_BEGIN
+XCBIMDKIT_DECL_BEGIN
 
 typedef uint8_t *xcb_im_bytearray_t;
 
@@ -1382,7 +1382,7 @@ uint8_t* xcb_im_ext_move_fr_write(xcb_im_ext_move_fr_t *frame, uint8_t *data, bo
 void xcb_im_ext_move_fr_free(xcb_im_ext_move_fr_t *frame);
 #define xcb_im_ext_move_fr_size(ARG...) (((void)(ARG)), (8))
 
-XCB_IMDKIT_DECL_END
+XCBIMDKIT_DECL_END
 
 #endif
 

@@ -18,7 +18,7 @@ static size_t get_buf_size(size_t length) {
     return length;
 }
 
-XCB_IMDKIT_EXPORT
+XCBIMDKIT_EXPORT
 void xcb_compound_text_init() { _XlcInitCTInfo(); }
 
 int indirect_convert(void **from, size_t *from_left, void **to, size_t *to_left,
@@ -65,7 +65,7 @@ int indirect_convert(void **from, size_t *from_left, void **to, size_t *to_left,
     return unconv_num;
 }
 
-XCB_IMDKIT_EXPORT
+XCBIMDKIT_EXPORT
 char *xcb_utf8_to_compound_text(const char *utf8, size_t len,
                                 size_t *lenghtOut) {
     size_t buf_len = get_buf_size(len) + 1;
@@ -95,7 +95,7 @@ char *xcb_utf8_to_compound_text(const char *utf8, size_t len,
     return result;
 }
 
-XCB_IMDKIT_EXPORT
+XCBIMDKIT_EXPORT
 char *xcb_compound_text_to_utf8(const char *compound_text, size_t len,
                                 size_t *lenghtOut) {
     size_t buf_len = get_buf_size(len) + 1;

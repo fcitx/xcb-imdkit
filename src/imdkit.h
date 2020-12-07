@@ -14,7 +14,7 @@
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
-XCB_IMDKIT_DECL_BEGIN
+XCBIMDKIT_DECL_BEGIN
 
 /*
  * `C' and `no' are additional one which cannot be obtained from modern
@@ -104,7 +104,7 @@ typedef void (*xcb_im_free_function)(void *memory);
  * @param user_data user data to callback function.
  * @return xcb_im_t*
  */
-XCB_IMDKIT_EXPORT xcb_im_t *
+XCBIMDKIT_EXPORT xcb_im_t *
 xcb_im_create(xcb_connection_t *conn, int screen, xcb_window_t serverWindow,
               const char *serverName, const char *locale,
               const xcb_im_styles_t *inputStyles,
@@ -119,8 +119,8 @@ xcb_im_create(xcb_connection_t *conn, int screen, xcb_window_t serverWindow,
  * @param im XIM server.
  * @param logger logger function.
  */
-XCB_IMDKIT_EXPORT void
-xcb_im_set_log_handler(xcb_im_t *im, void (*logger)(const char *, ...));
+XCBIMDKIT_EXPORT void xcb_im_set_log_handler(xcb_im_t *im,
+                                             void (*logger)(const char *, ...));
 
 /**
  * Whether to use sync mode, it will affect certain behavior of XIM.
@@ -132,7 +132,7 @@ xcb_im_set_log_handler(xcb_im_t *im, void (*logger)(const char *, ...));
  * @param im XIM server
  * @param sync sync mode or not.
  */
-XCB_IMDKIT_EXPORT void xcb_im_set_use_sync_mode(xcb_im_t *im, bool sync);
+XCBIMDKIT_EXPORT void xcb_im_set_use_sync_mode(xcb_im_t *im, bool sync);
 
 /**
  * Set whether the event defined by event mask is handled in a synchronous way.
@@ -140,7 +140,7 @@ XCB_IMDKIT_EXPORT void xcb_im_set_use_sync_mode(xcb_im_t *im, bool sync);
  * @param im XIM server
  * @param sync sync on event or not.
  */
-XCB_IMDKIT_EXPORT void xcb_im_set_use_sync_event(xcb_im_t *im, bool sync);
+XCBIMDKIT_EXPORT void xcb_im_set_use_sync_event(xcb_im_t *im, bool sync);
 
 /**
  * Start a XIM server synchronously.
@@ -156,7 +156,7 @@ XCB_IMDKIT_EXPORT void xcb_im_set_use_sync_event(xcb_im_t *im, bool sync);
  * @param im XIM server.
  * @return whether XIM server is started successfully.
  */
-XCB_IMDKIT_EXPORT bool xcb_im_open_im(xcb_im_t *im);
+XCBIMDKIT_EXPORT bool xcb_im_open_im(xcb_im_t *im);
 
 /**
  * Handle XIM related event, most relevant event will be client message.
@@ -165,8 +165,8 @@ XCB_IMDKIT_EXPORT bool xcb_im_open_im(xcb_im_t *im);
  * @param event X event.
  * @return Whether the event is handled by XIM.
  */
-XCB_IMDKIT_EXPORT bool xcb_im_filter_event(xcb_im_t *im,
-                                           xcb_generic_event_t *event);
+XCBIMDKIT_EXPORT bool xcb_im_filter_event(xcb_im_t *im,
+                                          xcb_generic_event_t *event);
 
 /**
  * Shutdown the XIM server and free all the resources.
@@ -175,7 +175,7 @@ XCB_IMDKIT_EXPORT bool xcb_im_filter_event(xcb_im_t *im,
  *
  * @see xcb_im_open_im
  */
-XCB_IMDKIT_EXPORT void xcb_im_close_im(xcb_im_t *im);
+XCBIMDKIT_EXPORT void xcb_im_close_im(xcb_im_t *im);
 /**
  * Destroy the XIM server.
  *
@@ -183,7 +183,7 @@ XCB_IMDKIT_EXPORT void xcb_im_close_im(xcb_im_t *im);
  *
  * @param im XIM server.
  */
-XCB_IMDKIT_EXPORT void xcb_im_destroy(xcb_im_t *im);
+XCBIMDKIT_EXPORT void xcb_im_destroy(xcb_im_t *im);
 
 /**
  * Send a key event to the client.
@@ -192,9 +192,9 @@ XCB_IMDKIT_EXPORT void xcb_im_destroy(xcb_im_t *im);
  * @param ic Input context.
  * @param event key event.
  */
-XCB_IMDKIT_EXPORT void xcb_im_forward_event(xcb_im_t *im,
-                                            xcb_im_input_context_t *ic,
-                                            xcb_key_press_event_t *event);
+XCBIMDKIT_EXPORT void xcb_im_forward_event(xcb_im_t *im,
+                                           xcb_im_input_context_t *ic,
+                                           xcb_key_press_event_t *event);
 
 /**
  * Commit a string to the client.
@@ -210,10 +210,10 @@ XCB_IMDKIT_EXPORT void xcb_im_forward_event(xcb_im_t *im,
  * @see xcb_xim_lookup_flags_t
  * @see xcb_utf8_to_compound_text
  */
-XCB_IMDKIT_EXPORT void xcb_im_commit_string(xcb_im_t *im,
-                                            xcb_im_input_context_t *ic,
-                                            uint32_t flag, const char *str,
-                                            uint32_t length, uint32_t keysym);
+XCBIMDKIT_EXPORT void xcb_im_commit_string(xcb_im_t *im,
+                                           xcb_im_input_context_t *ic,
+                                           uint32_t flag, const char *str,
+                                           uint32_t length, uint32_t keysym);
 
 /**
  * Start geometry negotiation, if XIMStyle has XIMPreeditArea or XIMStatusArea
@@ -224,8 +224,8 @@ XCB_IMDKIT_EXPORT void xcb_im_commit_string(xcb_im_t *im,
  * @param im XIM server
  * @param ic Input context
  */
-XCB_IMDKIT_EXPORT void xcb_im_geometry_callback(xcb_im_t *im,
-                                                xcb_im_input_context_t *ic);
+XCBIMDKIT_EXPORT void xcb_im_geometry_callback(xcb_im_t *im,
+                                               xcb_im_input_context_t *ic);
 
 /**
  * Sends XIM_PREEDIT_START message to call the XIMPreeditStartCallback function.
@@ -233,8 +233,8 @@ XCB_IMDKIT_EXPORT void xcb_im_geometry_callback(xcb_im_t *im,
  * @param im XIM server
  * @param ic Input context
  */
-XCB_IMDKIT_EXPORT void
-xcb_im_preedit_start_callback(xcb_im_t *im, xcb_im_input_context_t *ic);
+XCBIMDKIT_EXPORT void xcb_im_preedit_start_callback(xcb_im_t *im,
+                                                    xcb_im_input_context_t *ic);
 
 /**
  * Sends XIM_PREEDIT_DRAW message to call the XIMPreeditDrawCallback function.
@@ -243,7 +243,7 @@ xcb_im_preedit_start_callback(xcb_im_t *im, xcb_im_input_context_t *ic);
  * @param ic Input context
  * @param frame information about preedit string.
  */
-XCB_IMDKIT_EXPORT void
+XCBIMDKIT_EXPORT void
 xcb_im_preedit_draw_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
                              xcb_im_preedit_draw_fr_t *frame);
 
@@ -254,7 +254,7 @@ xcb_im_preedit_draw_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
  * @param ic Input context
  * @param frame information about preedit caret.
  */
-XCB_IMDKIT_EXPORT void
+XCBIMDKIT_EXPORT void
 xcb_im_preedit_caret_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
                               xcb_im_preedit_caret_fr_t *frame);
 
@@ -266,8 +266,8 @@ xcb_im_preedit_caret_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
  * @param im XIM server
  * @param ic Input context
  */
-XCB_IMDKIT_EXPORT void xcb_im_preedit_done_callback(xcb_im_t *im,
-                                                    xcb_im_input_context_t *ic);
+XCBIMDKIT_EXPORT void xcb_im_preedit_done_callback(xcb_im_t *im,
+                                                   xcb_im_input_context_t *ic);
 
 /**
  * Sends XIM_STATUS_START message to call the XIMStatusStartCallback function.
@@ -275,8 +275,8 @@ XCB_IMDKIT_EXPORT void xcb_im_preedit_done_callback(xcb_im_t *im,
  * @param im XIM server
  * @param ic Input context
  */
-XCB_IMDKIT_EXPORT void xcb_im_status_start_callback(xcb_im_t *im,
-                                                    xcb_im_input_context_t *ic);
+XCBIMDKIT_EXPORT void xcb_im_status_start_callback(xcb_im_t *im,
+                                                   xcb_im_input_context_t *ic);
 
 /**
  * Sends XIM_STATUS_DRAW message to call the XIMStatusDrawCallback function with
@@ -286,7 +286,7 @@ XCB_IMDKIT_EXPORT void xcb_im_status_start_callback(xcb_im_t *im,
  * @param ic Input context
  * @param frame text to be drawn by client.
  */
-XCB_IMDKIT_EXPORT void
+XCBIMDKIT_EXPORT void
 xcb_im_status_draw_text_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
                                  xcb_im_status_draw_text_fr_t *frame);
 
@@ -298,7 +298,7 @@ xcb_im_status_draw_text_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
  * @param ic Input context
  * @param frame bitmap to be drawn by client.
  */
-XCB_IMDKIT_EXPORT void
+XCBIMDKIT_EXPORT void
 xcb_im_status_draw_bitmap_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
                                    xcb_im_status_draw_bitmap_fr_t *frame);
 
@@ -308,37 +308,37 @@ xcb_im_status_draw_bitmap_callback(xcb_im_t *im, xcb_im_input_context_t *ic,
  * @param im XIM server
  * @param ic Input context
  */
-XCB_IMDKIT_EXPORT void xcb_im_status_done_callback(xcb_im_t *im,
-                                                   xcb_im_input_context_t *ic);
-XCB_IMDKIT_EXPORT void xcb_im_preedit_start(xcb_im_t *im,
-                                            xcb_im_input_context_t *ic);
-XCB_IMDKIT_EXPORT void xcb_im_preedit_end(xcb_im_t *im,
-                                          xcb_im_input_context_t *ic);
-XCB_IMDKIT_EXPORT void xcb_im_sync_xlib(xcb_im_t *im,
-                                        xcb_im_input_context_t *ic);
-XCB_IMDKIT_EXPORT bool xcb_im_support_extension(xcb_im_t *im,
-                                                uint16_t major_code,
-                                                uint16_t minor_code);
-XCB_IMDKIT_EXPORT void
+XCBIMDKIT_EXPORT void xcb_im_status_done_callback(xcb_im_t *im,
+                                                  xcb_im_input_context_t *ic);
+XCBIMDKIT_EXPORT void xcb_im_preedit_start(xcb_im_t *im,
+                                           xcb_im_input_context_t *ic);
+XCBIMDKIT_EXPORT void xcb_im_preedit_end(xcb_im_t *im,
+                                         xcb_im_input_context_t *ic);
+XCBIMDKIT_EXPORT void xcb_im_sync_xlib(xcb_im_t *im,
+                                       xcb_im_input_context_t *ic);
+XCBIMDKIT_EXPORT bool xcb_im_support_extension(xcb_im_t *im,
+                                               uint16_t major_code,
+                                               uint16_t minor_code);
+XCBIMDKIT_EXPORT void
 xcb_im_input_context_set_data(xcb_im_input_context_t *ic, void *data,
                               xcb_im_free_function free_data_function);
-XCB_IMDKIT_EXPORT void *
+XCBIMDKIT_EXPORT void *
 xcb_im_input_context_get_data(xcb_im_input_context_t *ic);
-XCB_IMDKIT_EXPORT uint32_t
+XCBIMDKIT_EXPORT uint32_t
 xcb_im_input_context_get_input_style(xcb_im_input_context_t *ic);
-XCB_IMDKIT_EXPORT xcb_window_t
+XCBIMDKIT_EXPORT xcb_window_t
 xcb_im_input_context_get_client_window(xcb_im_input_context_t *ic);
-XCB_IMDKIT_EXPORT xcb_window_t
+XCBIMDKIT_EXPORT xcb_window_t
 xcb_im_input_context_get_focus_window(xcb_im_input_context_t *ic);
-XCB_IMDKIT_EXPORT const xcb_im_preedit_attr_t *
+XCBIMDKIT_EXPORT const xcb_im_preedit_attr_t *
 xcb_im_input_context_get_preedit_attr(xcb_im_input_context_t *ic);
-XCB_IMDKIT_EXPORT const xcb_im_status_attr_t *
+XCBIMDKIT_EXPORT const xcb_im_status_attr_t *
 xcb_im_input_context_get_status_attr(xcb_im_input_context_t *ic);
-XCB_IMDKIT_EXPORT uint32_t
+XCBIMDKIT_EXPORT uint32_t
 xcb_im_input_context_get_preedit_attr_mask(xcb_im_input_context_t *ic);
-XCB_IMDKIT_EXPORT uint32_t
+XCBIMDKIT_EXPORT uint32_t
 xcb_im_input_context_get_status_attr_mask(xcb_im_input_context_t *ic);
 
-XCB_IMDKIT_DECL_END
+XCBIMDKIT_DECL_END
 
 #endif // _XCB_IMDKIT_IMDKIT_H_

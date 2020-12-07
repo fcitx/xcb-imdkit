@@ -8,21 +8,21 @@
 #ifndef XIMCOMMON_H
 #define XIMCOMMON_H
 
-#define XCB_IMDKIT_EXPORT __attribute__((visibility("default")))
+#include "xcbimdkit_export.h"
 
-#ifndef XCB_IMDKIT_DECL_BEGIN
+#ifndef XCBIMDKIT_DECL_BEGIN
 #ifdef __cplusplus
-#define XCB_IMDKIT_DECL_BEGIN extern "C" {
+#define XCBIMDKIT_DECL_BEGIN extern "C" {
 #else
-#define XCB_IMDKIT_DECL_BEGIN
+#define XCBIMDKIT_DECL_BEGIN
 #endif
 #endif
 
-#ifndef XCB_IMDKIT_DECL_END
+#ifndef XCBIMDKIT_DECL_END
 #ifdef __cplusplus
-#define XCB_IMDKIT_DECL_END }
+#define XCBIMDKIT_DECL_END }
 #else
-#define XCB_IMDKIT_DECL_END
+#define XCBIMDKIT_DECL_END
 #endif
 #endif
 
