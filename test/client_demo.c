@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 
     xcb_xim_set_im_callback(im, &callback, NULL);
     xcb_xim_set_log_handler(im, logger);
-    xcb_xim_set_use_compound_text(im, false);
+    xcb_xim_set_use_compound_text(im, true);
     xcb_xim_set_use_utf8_string(im, true);
 
     // Open connection to XIM server.
