@@ -31,11 +31,15 @@ void forward_event(xcb_xim_t *im, xcb_xic_t ic, xcb_key_press_event_t *event,
 void commit_string(xcb_xim_t *im, xcb_xic_t ic, uint32_t flag, char *str,
                    uint32_t length, uint32_t *keysym, size_t nKeySym,
                    void *user_data) {
-    size_t newLength = 0;
-    char *utf8 = xcb_compound_text_to_utf8(str, length, &newLength);
-    if (utf8) {
-        int l = newLength;
-        fprintf(stderr, "key commit: %.*s\n", l, utf8);
+    if (xcb_xim_get_encoding(im) == XCB_XIM_UTF8_STRING) {
+        fprintf(stderr, "key commit utf8: %.*s\n", length, str);
+    } else if (xcb_xim_get_encoding(im) == XCB_XIM_COMPOUND_TEXT) {
+        size_t newLength = 0;
+        char *utf8 = xcb_compound_text_to_utf8(str, length, &newLength);
+        if (utf8) {
+            int l = newLength;
+            fprintf(stderr, "key commit: %.*s\n", l, utf8);
+        }
     }
 }
 
@@ -88,6 +92,8 @@ int main(int argc, char *argv[]) {
 
     xcb_xim_set_im_callback(im, &callback, NULL);
     xcb_xim_set_log_handler(im, logger);
+    xcb_xim_set_use_compound_text(im, false);
+    xcb_xim_set_use_utf8_string(im, true);
 
     // Open connection to XIM server.
     xcb_xim_open(im, open_callback, true, NULL);

@@ -37,12 +37,23 @@ bool _xcb_xim_send_query_extension(xcb_xim_t *im) {
 
 bool _xcb_xim_send_encoding_negotiation(xcb_xim_t *im) {
     xcb_im_encoding_negotiation_fr_t frame;
-    xcb_im_str_fr_t compound;
-    compound.length_of_string = strlen("COMPOUND_TEXT");
-    compound.string = (uint8_t *)"COMPOUND_TEXT";
+    xcb_im_str_fr_t encodings[2];
+
+    int idx = 0;
+    if (im->use_compound_text) {
+        encodings[idx].length_of_string = strlen("COMPOUND_TEXT");
+        encodings[idx].string = (uint8_t *)"COMPOUND_TEXT";
+        idx++;
+    }
+    if (im->use_utf8_string) {
+        encodings[idx].length_of_string = strlen("UTF8_STRING");
+        encodings[idx].string = (uint8_t *)"UTF8_STRING";
+        idx++;
+    }
+
     frame.input_method_ID = im->connect_id;
-    frame.supported_list_of_encoding_in_IM_library.size = 1;
-    frame.supported_list_of_encoding_in_IM_library.items = &compound;
+    frame.supported_list_of_encoding_in_IM_library.size = idx;
+    frame.supported_list_of_encoding_in_IM_library.items = encodings;
     frame.list_of_encodings_supported_in_th.size = 0;
     frame.list_of_encodings_supported_in_th.items = 0;
 
@@ -185,13 +196,23 @@ void _xcb_xim_handle_encoding_negotiation_reply(
     }
 
     do {
+        xcb_xim_encoding_t encodings[2] = {XCB_XIM_COMPOUND_TEXT,
+                                           XCB_XIM_COMPOUND_TEXT};
+        size_t nEncodings = 0;
+        if (im->use_compound_text) {
+            encodings[nEncodings++] = XCB_XIM_COMPOUND_TEXT;
+        }
+        if (im->use_utf8_string) {
+            encodings[nEncodings++] = XCB_XIM_UTF8_STRING;
+        }
         // we only send compound
         if (frame.input_method_ID != im->connect_id &&
-            frame.index_of_the_encoding_determined != 0) {
+            frame.index_of_the_encoding_determined >= nEncodings) {
             break;
         }
 
         im->open_state = XIM_OPEN_DONE;
+        im->encoding = encodings[frame.index_of_the_encoding_determined];
 
         if (im->connect_state.callback) {
             im->connect_state.callback(im, im->connect_state.user_data);

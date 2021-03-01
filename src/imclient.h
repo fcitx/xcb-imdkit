@@ -86,6 +86,11 @@ typedef enum _xcb_xim_trigger_key_type_t {
     XCB_XIM_TRIGGER_OFF_KEY,
 } xcb_xim_trigger_key_type_t;
 
+typedef enum _xcb_xim_encoding_t {
+    XCB_XIM_COMPOUND_TEXT,
+    XCB_XIM_UTF8_STRING,
+} xcb_xim_encoding_t;
+
 typedef void (*xcb_xim_open_callback)(xcb_xim_t *im, void *user_data);
 typedef void (*xcb_xim_create_ic_callback)(xcb_xim_t *im, xcb_xic_t ic,
                                            void *user_data);
@@ -106,10 +111,17 @@ XCBIMDKIT_EXPORT xcb_xim_t *xcb_xim_create(xcb_connection_t *conn,
                                            int screen_id, const char *imname);
 XCBIMDKIT_EXPORT void
 xcb_xim_set_log_handler(xcb_xim_t *im, void (*logger)(const char *, ...));
+XCBIMDKIT_EXPORT void xcb_xim_set_use_compound_text(xcb_xim_t *im, bool enable);
+XCBIMDKIT_EXPORT void xcb_xim_set_use_utf8_string(xcb_xim_t *im, bool enable);
+XCBIMDKIT_EXPORT
+xcb_xim_encoding_t xcb_xim_get_encoding(xcb_xim_t *im);
 XCBIMDKIT_EXPORT void xcb_xim_destroy(xcb_xim_t *im);
 XCBIMDKIT_EXPORT bool xcb_xim_open(xcb_xim_t *im,
                                    xcb_xim_open_callback callback,
                                    bool auto_connect, void *user_data);
+XCBIMDKIT_EXPORT void
+xcb_xim_set_im_callback(xcb_xim_t *im, const xcb_xim_im_callback *callbacks,
+                        void *user_data);
 XCBIMDKIT_EXPORT void
 xcb_xim_set_im_callback(xcb_xim_t *im, const xcb_xim_im_callback *callbacks,
                         void *user_data);

@@ -165,6 +165,10 @@ struct _xcb_xim_t {
     xcb_window_t focus_window;
 
     void (*logger)(const char *, ...);
+
+    bool use_compound_text;
+    bool use_utf8_string;
+    xcb_xim_encoding_t encoding;
 };
 
 #define _xcb_xim_read_frame(FRAME, DATA, LEN, FAIL)                            \

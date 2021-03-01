@@ -161,6 +161,7 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t *im, xcb_im_client_t *client,
     // no match then we use 0.
     if (i == frame.supported_list_of_encoding_in_IM_library.size) {
         i = 0;
+        j = 0;
     }
 
     xcb_im_encoding_negotiation_fr_free(&frame);
@@ -169,10 +170,10 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t *im, xcb_im_client_t *client,
     reply_frame.index_of_the_encoding_determined = i;
     reply_frame.category_of_the_encoding_determined = 0;
 
+    uint16_t index = j;
+
     if (im->callback) {
-        im->callback(im, client, NULL, hdr, &frame,
-                     &reply_frame.index_of_the_encoding_determined,
-                     im->user_data);
+        im->callback(im, client, NULL, hdr, &frame, &index, im->user_data);
     }
 
     _xcb_im_send_frame(im, client, reply_frame, true);

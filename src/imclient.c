@@ -497,7 +497,6 @@ xcb_xim_t *xcb_xim_create(xcb_connection_t *conn, int screen_id,
     if (!imname) {
         imname = getenv("XMODIFIERS");
     }
-
     im->conn = conn;
     im->server_name = _xcb_xim_make_im_name(imname);
     im->screen_id = screen_id;
@@ -509,12 +508,26 @@ xcb_xim_t *xcb_xim_create(xcb_connection_t *conn, int screen_id,
     } else {
         im->byte_order = 'B';
     }
+
+    im->use_compound_text = true;
+    im->use_utf8_string = false;
+    im->encoding = XCB_XIM_COMPOUND_TEXT;
     return im;
 }
 
 void xcb_xim_set_log_handler(xcb_xim_t *im, void (*logger)(const char *, ...)) {
     im->logger = logger;
 }
+
+void xcb_xim_set_use_compound_text(xcb_xim_t *im, bool enable) {
+    im->use_compound_text = enable;
+}
+
+void xcb_xim_set_use_utf8_string(xcb_xim_t *im, bool enable) {
+    im->use_utf8_string = enable;
+}
+
+xcb_xim_encoding_t xcb_xim_get_encoding(xcb_xim_t *im) { return im->encoding; }
 
 bool _xcb_xim_open(xcb_xim_t *im) {
     im->connect_state.phase = XIM_CONNECT_FAIL;
