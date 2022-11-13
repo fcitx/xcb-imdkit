@@ -12,6 +12,43 @@
 #include <stdlib.h>
 #include <string.h>
 
+static uint32_t lookup_offset(xcb_im_property_offset_t **offsets,
+                              xcb_atom_t atom) {
+    if (!offsets) {
+        return 0;
+    }
+    xcb_im_property_offset_t *result = NULL;
+    HASH_FIND(hh, *offsets, &atom, sizeof(xcb_atom_t), result);
+    if (!result) {
+        return 0;
+    }
+    return result->offset;
+}
+
+static void set_offset(xcb_im_property_offset_t **offsets, xcb_atom_t atom,
+                       uint32_t offset) {
+    if (!offsets) {
+        return;
+    }
+    xcb_im_property_offset_t *result = NULL;
+    HASH_FIND(hh, *offsets, &atom, sizeof(xcb_atom_t), result);
+    if (!result) {
+        if (offset != 0) {
+            result = calloc(1, sizeof(xcb_im_property_offset_t));
+            result->atom = atom;
+            result->offset = offset;
+            HASH_ADD(hh, *offsets, atom, sizeof(xcb_atom_t), result);
+        }
+    } else {
+        if (offset == 0) {
+            HASH_DEL(*offsets, result);
+            free(result);
+        } else {
+            result->offset = offset;
+        }
+    }
+}
+
 uint8_t *_xcb_new_xim_message(uint8_t major_opcode, uint8_t minor_opcode,
                               size_t length, bool swap) {
     uint8_t *message = calloc(length + XCB_IM_HEADER_SIZE, 1);
@@ -114,6 +151,7 @@ void _xcb_send_xim_error_message(xcb_connection_t *conn,
 }
 
 uint8_t *_xcb_read_xim_message(xcb_connection_t *conn, xcb_window_t window,
+                               xcb_im_property_offset_t **offsets,
                                xcb_client_message_event_t *ev,
                                xcb_im_packet_header_fr_t *hdr, bool swap) {
     uint8_t *p = NULL;
@@ -138,8 +176,13 @@ uint8_t *_xcb_read_xim_message(xcb_connection_t *conn, xcb_window_t window,
         size_t length = ev->data.data32[0];
         xcb_atom_t atom = ev->data.data32[1];
 
-        xcb_get_property_cookie_t cookie = xcb_get_property(
-            conn, true, window, atom, XCB_ATOM_ANY, 0L, length);
+        uint32_t offset = lookup_offset(offsets, atom);
+        uint32_t end = offset + length;
+        uint32_t dword_begin = offset / 4;
+        uint32_t dword_end = (end + 3) / 4;
+        xcb_get_property_cookie_t cookie =
+            xcb_get_property(conn, true, window, atom, XCB_ATOM_ANY,
+                             dword_begin, dword_end - dword_begin);
 
         xcb_get_property_reply_t *reply =
             xcb_get_property_reply(conn, cookie, NULL);
@@ -151,17 +194,12 @@ uint8_t *_xcb_read_xim_message(xcb_connection_t *conn, xcb_window_t window,
                 return (unsigned char *)NULL;
             }
 
-            rec = xcb_get_property_value(reply);
+            rec = xcb_get_property_value(reply) + (offset % 4);
 
-            if (length != reply->value_len) {
-                length = reply->value_len;
-            }
-
-            // make length into byte
-            if (reply->format == 16) {
-                length *= 2;
-            } else if (reply->format == 32) {
-                length *= 4;
+            if (reply->bytes_after) {
+                set_offset(offsets, atom, offset + length);
+            } else {
+                set_offset(offsets, atom, 0);
             }
 
             uint8_t_read(&hdr->major_opcode, &rec, &length, swap);

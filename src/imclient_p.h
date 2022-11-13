@@ -137,6 +137,8 @@ struct _xcb_xim_t {
 
     xcb_window_t im_client_window;
 
+    xcb_im_property_offset_t *offsets;
+
     // _xcb_xim_connect_wait
     int major_code;
     int minor_code;

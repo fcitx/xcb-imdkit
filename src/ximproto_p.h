@@ -54,4 +54,6 @@
              : XCB_XIM_SYNC_REPLY, xcb_im_geometry_fr_t                        \
              : XCB_XIM_GEOMETRY)
 
+#define XCB_XIM_ATOM_ROTATION_SIZE 1024
+
 #endif // _XCB_IMDKIT_XIMPROTO_P_H_

@@ -11,8 +11,15 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <uthash.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
+
+typedef struct _xcb_im_property_offset_t {
+    xcb_atom_t atom;
+    uint32_t offset;
+    UT_hash_handle hh;
+} xcb_im_property_offset_t;
 
 // Return a new alloc xim message. length is the content size without header
 // size.
@@ -34,6 +41,7 @@ void _xcb_send_xim_error_message(xcb_connection_t *conn,
                                  bool swap);
 
 uint8_t *_xcb_read_xim_message(xcb_connection_t *conn, xcb_window_t window,
+                               xcb_im_property_offset_t **offsets,
                                xcb_client_message_event_t *ev,
                                xcb_im_packet_header_fr_t *hdr, bool swap);
 

@@ -573,8 +573,8 @@ static uint8_t *_xcb_im_read_message(xcb_im_t *im,
             client->byte_order = ev->data.data8[XCB_IM_HEADER_SIZE];
         }
     }
-    return _xcb_read_xim_message(im->conn, client->accept_win, ev, hdr,
-                                 client->byte_order != im->byte_order);
+    return _xcb_read_xim_message(im->conn, client->accept_win, &client->offsets,
+                                 ev, hdr, client->byte_order != im->byte_order);
 }
 
 void _xcb_im_handle_message(xcb_im_t *im, xcb_im_client_t *client,
@@ -1009,6 +1009,12 @@ void _xcb_im_destroy_client(xcb_im_t *im, xcb_im_client_t *client) {
         free(p);
     }
 
+    while (client->offsets) {
+        xcb_im_property_offset_t *p = client->offsets;
+        HASH_DEL(client->offsets, client->offsets);
+        free(p);
+    }
+
     client->hh1.next = im->free_list;
     im->free_list = client;
 }
@@ -1140,6 +1146,7 @@ bool _xcb_im_send_message(xcb_im_t *im, xcb_im_client_t *client, uint8_t *data,
     char atomName[64];
     int len =
         sprintf(atomName, "_server%u_%u", client->connect_id, im->sequence++);
+    im->sequence = (im->sequence + 1) % XCB_XIM_ATOM_ROTATION_SIZE;
     return _xcb_send_xim_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL],
                                  client->client_win, data, length, atomName,
                                  len);

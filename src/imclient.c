@@ -36,7 +36,8 @@ void _xcb_xim_close(xcb_xim_t *im);
 
 bool _xcb_xim_send_message(xcb_xim_t *im, uint8_t *data, size_t length) {
     char atomName[64];
-    int len = sprintf(atomName, "_client%u_%u", im->connect_id, im->sequence++);
+    int len = sprintf(atomName, "_client%u", im->sequence++);
+    im->sequence = (im->sequence + 1) % XCB_XIM_ATOM_ROTATION_SIZE;
     return _xcb_send_xim_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL],
                                  im->accept_win, data, length, atomName, len);
 }
@@ -301,7 +302,7 @@ _xcb_xim_connect_wait_reply(xcb_xim_t *im, xcb_generic_event_t *event) {
     }
 
     xcb_im_packet_header_fr_t hdr;
-    uint8_t *message = _xcb_read_xim_message(im->conn, im->accept_win,
+    uint8_t *message = _xcb_read_xim_message(im->conn, im->accept_win, NULL,
                                              client_message, &hdr, false);
 
     if (!message) {
@@ -685,8 +686,9 @@ bool _xcb_xim_filter_event(xcb_xim_t *im, xcb_generic_event_t *event) {
         }
 
         xcb_im_packet_header_fr_t hdr;
-        uint8_t *message = _xcb_read_xim_message(im->conn, im->im_client_window,
-                                                 clientmessage, &hdr, false);
+        uint8_t *message =
+            _xcb_read_xim_message(im->conn, im->im_client_window, &im->offsets,
+                                  clientmessage, &hdr, false);
         if (message) {
             _xcb_xim_handle_message(im, &hdr, message);
             free(message);
@@ -933,6 +935,12 @@ void _xcb_xim_close(xcb_xim_t *im) {
     list_entry_foreach_safe(item, xcb_xim_request_queue_t, &im->queue, list) {
         list_remove(&item->list);
         _xcb_xim_request_free(item);
+    }
+
+    while (im->offsets) {
+        xcb_im_property_offset_t *p = im->offsets;
+        HASH_DEL(im->offsets, im->offsets);
+        free(p);
     }
 }
 

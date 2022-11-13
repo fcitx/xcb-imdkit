@@ -147,6 +147,8 @@ struct _xcb_im_client_t {
     xcb_im_input_context_t *input_contexts;
     list_head queue;
 
+    xcb_im_property_offset_t *offsets;
+
     UT_hash_handle hh1;
     UT_hash_handle hh2;
 };
