@@ -43,13 +43,14 @@ void commit_string(xcb_xim_t *im, xcb_xic_t ic, uint32_t flag, char *str,
     }
 }
 
-void disconnected(xcb_xim_t* im, void* user_data) {
+void disconnected(xcb_xim_t *im, void *user_data) {
     fprintf(stderr, "Disconnected from input method server.\n");
     ic = 0;
 }
 
-xcb_xim_im_callback callback = {.forward_event = forward_event,
-                                .commit_string = commit_string,
+xcb_xim_im_callback callback = {
+    .forward_event = forward_event,
+    .commit_string = commit_string,
     .disconnected = disconnected,
 };
 
