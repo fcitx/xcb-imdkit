@@ -43,8 +43,15 @@ void commit_string(xcb_xim_t *im, xcb_xic_t ic, uint32_t flag, char *str,
     }
 }
 
+void disconnected(xcb_xim_t* im, void* user_data) {
+    fprintf(stderr, "Disconnected from input method server.\n");
+    ic = 0;
+}
+
 xcb_xim_im_callback callback = {.forward_event = forward_event,
-                                .commit_string = commit_string};
+                                .commit_string = commit_string,
+    .disconnected = disconnected,
+};
 
 void logger(const char *fmt, ...) {
     va_list argp;
@@ -111,6 +118,7 @@ int main(int argc, char *argv[]) {
 
     xcb_generic_event_t *event;
     while ((event = xcb_wait_for_event(connection))) {
+        logger("event_type=%d\n", (event->response_type & ~0x80));
         if (!xcb_xim_filter_event(im, event)) {
             // Forward event to input method if IC is created.
             if (ic && (((event->response_type & ~0x80) == XCB_KEY_PRESS) ||
