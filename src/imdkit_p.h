@@ -275,11 +275,16 @@ void _xcb_im_send_error_message(xcb_im_t *im, xcb_im_client_t *client);
 
 void _xcb_im_destroy_client(xcb_im_t *im, xcb_im_client_t *client);
 void _xcb_im_destroy_ic(xcb_im_t *im, xcb_im_input_context_t *ic);
-void _xcb_im_set_event_mask(xcb_im_t *im, xcb_im_client_t *client,
-                            uint32_t icid, uint32_t forward_event_mask,
-                            uint32_t sync_mask);
+void _xcb_im_send_set_event_mask(xcb_im_t *im, xcb_im_client_t *client,
+                                 uint32_t icid, uint32_t forward_event_mask,
+                                 uint32_t sync_mask);
+void _xcb_im_set_ic_event_mask(xcb_im_t *im, xcb_im_input_context_t *client);
+void _xcb_im_set_im_event_mask(xcb_im_t *im, xcb_im_client_t *ic);
 void _xcb_im_add_queue(xcb_im_t *im, xcb_im_client_t *client, uint16_t icid,
                        const xcb_im_packet_header_fr_t *hdr,
                        xcb_im_forward_event_fr_t *frame, uint8_t *data);
 void _xcb_im_process_queue(xcb_im_t *im, xcb_im_client_t *client);
+static inline bool _xcb_im_has_trigger_key(xcb_im_t *im) {
+    return im->onKeys.nKeys || im->offKeys.nKeys;
+}
 #endif // _XCB_IMDKIT_IMDKIT_P_H_

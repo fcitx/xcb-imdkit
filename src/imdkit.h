@@ -7,6 +7,7 @@
 #ifndef _XCB_IMDKIT_IMDKIT_H_
 #define _XCB_IMDKIT_IMDKIT_H_
 
+#include "xcbimdkit_export.h"
 #include "ximcommon.h"
 #include "ximproto.h"
 #include <stdbool.h>

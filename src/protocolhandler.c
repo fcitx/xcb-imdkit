@@ -63,10 +63,6 @@ void _xcb_im_handle_open(xcb_im_t *im, xcb_im_client_t *client,
     }
 
     xcb_im_open_fr_free(&frame);
-    /*endif*/
-    if (im->onKeys.nKeys || im->offKeys.nKeys) {
-        _xcb_im_send_trigger_key(im, client);
-    }
 
     xcb_im_open_reply_fr_t reply_frame;
     reply_frame.input_method_ID = client->connect_id;
@@ -76,6 +72,11 @@ void _xcb_im_handle_open(xcb_im_t *im, xcb_im_client_t *client,
     reply_frame.IC_attribute_supported.items = im->icattr;
 
     _xcb_im_send_frame(im, client, reply_frame, true);
+    if (_xcb_im_has_trigger_key(im)) {
+        _xcb_im_send_trigger_key(im, client);
+    } else {
+        _xcb_im_set_im_event_mask(im, client);
+    }
 }
 
 void _xcb_im_handle_close(xcb_im_t *im, xcb_im_client_t *client,
@@ -363,11 +364,8 @@ void _xcb_im_handle_create_ic(xcb_im_t *im, xcb_im_client_t *client,
         }
 
         _xcb_im_send_frame(im, client, reply_frame, true);
-        if (im->onKeys.nKeys == 0 && im->offKeys.nKeys == 0) {
-            uint32_t sync_event_mask = im->use_sync_event ? 0 : im->event_mask;
-            sync_event_mask = ~sync_event_mask;
-            _xcb_im_set_event_mask(im, client, reply_frame.input_context_ID,
-                                   im->event_mask, sync_event_mask);
+        if (!_xcb_im_has_trigger_key(im)) {
+            _xcb_im_set_ic_event_mask(im, ic);
         }
         xcb_im_create_ic_fr_free(&frame);
         return;
@@ -602,6 +600,9 @@ void _xcb_im_handle_set_ic_focus(xcb_im_t *im, xcb_im_client_t *client,
             break;
         }
 
+        if (!_xcb_im_has_trigger_key(im)) {
+            _xcb_im_set_ic_event_mask(im, ic);
+        }
         if (im->callback) {
             im->callback(im, client, ic, hdr, &frame, NULL, im->user_data);
         }
