@@ -188,34 +188,32 @@ uint8_t *_xcb_read_xim_message(xcb_connection_t *conn, xcb_window_t window,
             xcb_get_property_reply(conn, cookie, NULL);
         uint8_t *rec;
 
-        do {
-            if (!reply || reply->format == 0 || reply->length == 0) {
-                free(reply);
-                return (unsigned char *)NULL;
-            }
+        if (!reply || reply->format == 0 || reply->length == 0) {
+            free(reply);
+            return (unsigned char *)NULL;
+        }
 
-            rec = xcb_get_property_value(reply) + (offset % 4);
+        rec = xcb_get_property_value(reply) + (offset % 4);
 
-            if (reply->bytes_after) {
-                set_offset(offsets, atom, offset + length);
-            } else {
-                set_offset(offsets, atom, 0);
-            }
+        if (reply->bytes_after) {
+            set_offset(offsets, atom, offset + length);
+        } else {
+            set_offset(offsets, atom, 0);
+        }
 
-            uint8_t_read(&hdr->major_opcode, &rec, &length, swap);
-            uint8_t_read(&hdr->minor_opcode, &rec, &length, swap);
-            uint16_t_read(&hdr->length, &rec, &length, swap);
+        uint8_t_read(&hdr->major_opcode, &rec, &length, swap);
+        uint8_t_read(&hdr->minor_opcode, &rec, &length, swap);
+        uint16_t_read(&hdr->length, &rec, &length, swap);
 
-            size_t buffer_size = ((size_t)hdr->length) * 4;
-            // check message is well formed
-            if (buffer_size <= length) {
-                /* if hit, it might be an error */
-                p = malloc(buffer_size);
-            }
-        } while (0);
+        size_t buffer_size = ((size_t)hdr->length) * 4;
+        // check message is well formed
+        if (buffer_size <= length) {
+            /* if hit, it might be an error */
+            p = malloc(buffer_size);
+        }
 
         if (p) {
-            memcpy(p, rec, hdr->length * 4);
+            memcpy(p, rec, buffer_size);
         }
         free(reply);
     }
