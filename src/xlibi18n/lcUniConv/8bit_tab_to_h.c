@@ -121,10 +121,19 @@ int main (int argc, char *argv[])
 
     {
       char* fname = malloc(strlen(directory)+strlen(filename)+1);
-      strcpy(fname,directory); strcat(fname,filename);
-      f = fopen(fname,"w");
-      if (f == NULL)
+      if (fname == NULL) {
+        /* Memory allocation failed, handle the error */
         exit(1);
+      }
+      strcpy(fname,directory); 
+      strcat(fname,filename);
+      f = fopen(fname,"w");
+      if (f == NULL) {
+        /* Failed to open file, handle the error */
+        free(fname); // Free the allocated memory if fopen fails
+        exit(1);
+      }
+      free(fname); // Add this line to free the memory allocated to fname
     }
 
     fprintf(f, "\n");

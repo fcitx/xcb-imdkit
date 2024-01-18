@@ -99,6 +99,7 @@ void _xcb_im_handle_query_extension(xcb_im_t *im, xcb_im_client_t *client,
                                     const xcb_im_packet_header_fr_t *hdr,
                                     uint8_t *data) {
     xcb_im_query_extension_fr_t frame;
+    memset(&frame, 0, sizeof(frame));
     _xcb_im_read_frame_with_error(im, client, frame, data,
                                   XIM_MESSAGE_BYTES(hdr));
 
@@ -136,6 +137,7 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t *im, xcb_im_client_t *client,
                                          const xcb_im_packet_header_fr_t *hdr,
                                          uint8_t *data) {
     xcb_im_encoding_negotiation_fr_t frame;
+    memset(&frame, 0, sizeof(frame));
     _xcb_im_read_frame_with_error(im, client, frame, data,
                                   XIM_MESSAGE_BYTES(hdr));
 
