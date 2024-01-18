@@ -197,7 +197,6 @@ static const xcb_im_default_ic_attr_t Default_ICattr[] = {
 
 struct _xcb_im_t {
     xcb_connection_t *conn;
-    char byte_order;
     xcb_im_ximattr_fr_t imattr[ARRAY_SIZE(Default_IMattr)];
     xcb_im_xicattr_fr_t icattr[ARRAY_SIZE(Default_ICattr)];
     xcb_im_ext_fr_t extension[ARRAY_SIZE(Default_Extension)];
@@ -236,11 +235,13 @@ struct _xcb_im_t {
     xcb_screen_t *screen;
     xcb_screen_t *default_screen;
     uint32_t sequence;
-    bool init;
     xcb_im_callback callback;
     void *user_data;
-    bool sync;
     void (*logger)(const char *, ...);
+
+    uint8_t byte_order;
+    bool init;
+    bool sync;
     bool use_sync_mode;
     bool use_sync_event;
 };
