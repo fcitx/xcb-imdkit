@@ -24,7 +24,12 @@ jobs:
           cmake -S . -B build
       - name: Build
         run: |
-          cmake -B build --build
+          cmake --build build
       - name: Test
         run: |
           ctest --test-dir build
+      - name: Install
+        run: |
+          cmake --install build
+      - name: CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
