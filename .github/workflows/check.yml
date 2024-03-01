@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          sudo pacman -Syu --noconfirm base-devel cmake xcb-util  xcb-util-keysyms
+          pacman -Syu --noconfirm base-devel cmake xcb-util  xcb-util-keysyms
       - name: Check out
         uses: actions/checkout@v4
       - name: Configure
