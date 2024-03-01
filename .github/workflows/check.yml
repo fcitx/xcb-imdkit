@@ -13,10 +13,22 @@ jobs:
     name: Build and test
     runs-on: ubuntu-latest
     container: archlinux:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+        include:
+          - compiler: gcc
+            cxx_compiler: g++
+          - compiler: clang
+            cxx_compiler: clang++
+    env:
+      CC: ${{ matrix.compiler }}
+      CXX: ${{ matrix.cxx_compiler }}
     steps:
       - name: Install dependencies
         run: |
-          pacman -Syu --noconfirm base-devel cmake extra-cmake-modules xcb-util xcb-util-keysyms
+          pacman -Syu --noconfirm base-devel clang cmake extra-cmake-modules xcb-util xcb-util-keysyms
       - name: Check out
         uses: actions/checkout@v4
       - name: Init CodeQL
