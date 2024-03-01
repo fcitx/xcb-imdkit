@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+    pull_requuest:
+      branches:
+        - master
+
+jobs:
+  check:
+    name: Build and test
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo pacman -Syu --noconfirm base-devel cmake xcb-util  xcb-util-keysyms
+      - name: Check out
+        uses: actions/checkout@v4
+      - name: Configure
+        run: |
+          cmake -S . -B build
+      - name: Build
+        run: |
+          cmake -B build --build
+      - name: Test
+        run: |
+          ctest --test-dir build
