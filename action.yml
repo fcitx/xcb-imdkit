@@ -1,0 +1,26 @@
+name: 'Build and install xcb-imdkit'
+
+inputs:
+  path:
+    description: 'Path to source code'
+    default: 'xcb-imdkit'
+  install-prefix:
+    description: 'Install prefix'
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      repository: fcitx/xcb-imdkit
+      path: ${{ inputs.path }}
+    - name: Configure
+        run: |
+          cmake -S "${{ inputs.path }}" -B "${{ inputs.path }}"/build -DCMAKE_INSTALL_PREFIX="${{ inputs.install-prefix }}"
+    - name: Build
+      run: |
+        cmake --build "${{ inputs.path }}"/build
+    - name: Install
+      run: |
+        cmake --install "${{ inputs.path }}"/build
+
