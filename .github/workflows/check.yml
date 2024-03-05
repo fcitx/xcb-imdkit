@@ -33,10 +33,13 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: c
+      - uses: actions/checkout@v4
       - name: Build and Install
-        uses: ./xcb-imdkit
+        uses: .
+        with:
+          path: .
       - name: Test
         run: |
-          ctest --test-dir xcb-imdkit/build
+          ctest --test-dir build
       - name: CodeQL Analysis
         uses: github/codeql-action/analyze@v2

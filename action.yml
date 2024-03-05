@@ -6,6 +6,7 @@ inputs:
     default: 'xcb-imdkit'
   install-prefix:
     description: 'Install prefix'
+    default: 'out/install'
 
 runs:
   using: composite
@@ -14,6 +15,7 @@ runs:
       uses: actions/checkout@v4
       repository: fcitx/xcb-imdkit
       path: ${{ inputs.path }}
+      if: github.repository != 'fcitx/xcb-imdkit'
     - name: Configure
         run: |
           cmake -S "${{ inputs.path }}" -B "${{ inputs.path }}"/build -DCMAKE_INSTALL_PREFIX="${{ inputs.install-prefix }}"
