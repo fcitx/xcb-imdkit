@@ -34,7 +34,7 @@ jobs:
         with:
           languages: c
       - name: Build and Install
-        uses: ./
+        uses: ./xcb-imdkit
       - name: Test
         run: |
           ctest --test-dir xcb-imdkit/build
