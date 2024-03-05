@@ -12,10 +12,11 @@ runs:
   using: composite
   steps:
     - name: Checkout
-      uses: actions/checkout@v4
-      repository: fcitx/xcb-imdkit
-      path: ${{ inputs.path }}
       if: github.repository != 'fcitx/xcb-imdkit'
+      uses: actions/checkout@v4
+      with:
+        repository: fcitx/xcb-imdkit
+        path: ${{ inputs.path }}
     - name: Configure
         run: |
           cmake -S "${{ inputs.path }}" -B "${{ inputs.path }}"/build -DCMAKE_INSTALL_PREFIX="${{ inputs.install-prefix }}"
