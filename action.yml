@@ -18,8 +18,8 @@ runs:
         repository: fcitx/xcb-imdkit
         path: ${{ inputs.path }}
     - name: Configure
-        run: |
-          cmake -S "${{ inputs.path }}" -B "${{ inputs.path }}"/build -DCMAKE_INSTALL_PREFIX="${{ inputs.install-prefix }}"
+      run: |
+        cmake -S "${{ inputs.path }}" -B "${{ inputs.path }}"/build -DCMAKE_INSTALL_PREFIX="${{ inputs.install-prefix }}"
     - name: Build
       run: |
         cmake --build "${{ inputs.path }}"/build
