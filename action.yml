@@ -6,7 +6,7 @@ inputs:
     default: 'xcb-imdkit'
   install-prefix:
     description: 'Install prefix'
-    default: 'out/install'
+    default: '/opt/fcitx'
 
 runs:
   using: composite
