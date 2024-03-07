@@ -35,7 +35,7 @@ jobs:
           languages: c
       - uses: actions/checkout@v4
       - name: Build and Install
-        uses: fcitx/fcitx5-ci@master
+        uses: fcitx/github-actions@cmake
         with:
           path: .
       - name: Test
