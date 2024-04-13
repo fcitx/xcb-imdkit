@@ -134,6 +134,7 @@ struct _xcb_im_input_context_t {
     UT_hash_handle hh;
     void *data;
     xcb_im_free_function free_data_function;
+    uint16_t forward_event_sequence;
 };
 
 struct _xcb_im_client_t {

@@ -792,6 +792,7 @@ bool _xcb_xim_filter_property_changed(xcb_xim_t *im,
 
 bool xcb_xim_filter_event(xcb_xim_t *im, xcb_generic_event_t *event) {
     im->yield_recheck = false;
+    im->event_sequence = event->full_sequence;
     bool result = _xcb_xim_preconnect_im(im, event) ||
                   _xcb_xim_filter_event(im, event) ||
                   _xcb_xim_filter_destroy_window(im, event) ||
@@ -1485,7 +1486,11 @@ bool xcb_xim_unset_ic_focus(xcb_xim_t *im, xcb_xic_t ic) {
     return !fail;
 }
 
-bool xcb_xim_forward_event(xcb_xim_t *im, xcb_xic_t ic,
+bool xcb_xim_forward_event(xcb_xim_t *im, xcb_xic_t ic, xcb_key_press_event_t *event) {
+    return xcb_xim_forward_event_full(im, ic, (im->event_sequence >> 16), event);
+}
+
+bool xcb_xim_forward_event_full(xcb_xim_t *im, xcb_xic_t ic, uint16_t sequence,
                            xcb_key_press_event_t *event) {
     xcb_xim_request_queue_t *queue =
         _xcb_xim_new_request(im, XCB_XIM_FORWARD_EVENT, 0, NULL, NULL);
@@ -1496,7 +1501,7 @@ bool xcb_xim_forward_event(xcb_xim_t *im, xcb_xic_t ic,
     frame.input_method_ID = im->connect_id;
     frame.input_context_ID = ic;
     frame.flag = XCB_XIM_SYNCHRONOUS;
-    frame.sequence_number = event->sequence;
+    frame.sequence_number = sequence;
 
     const size_t length =
         xcb_im_forward_event_fr_size(&frame) + sizeof(xcb_key_press_event_t);

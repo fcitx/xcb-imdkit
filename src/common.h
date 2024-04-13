@@ -23,7 +23,7 @@
 
 #define ARRAY_SIZE(X) (sizeof(X) / sizeof(X[0]))
 
-#define XIM_MESSAGE_BYTES(hdr) ((hdr)->length * 4)
+#define XIM_MESSAGE_BYTES(hdr) ((hdr)->length * 4u)
 
 /*
  * categories in XIM_SERVERS

@@ -725,6 +725,7 @@ void _xcb_im_handle_forward_event(xcb_im_t *im, xcb_im_client_t *client,
         if (!ic) {
             break;
         }
+        ic->forward_event_sequence = frame.sequence_number;
         if (client->sync) {
             _xcb_im_add_queue(im, client, ic->id, hdr, &frame, data);
         } else {

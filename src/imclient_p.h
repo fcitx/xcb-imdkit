@@ -171,13 +171,15 @@ struct _xcb_xim_t {
     bool use_compound_text;
     bool use_utf8_string;
     xcb_xim_encoding_t encoding;
+
+    uint32_t event_sequence;
 };
 
 #define _xcb_xim_read_frame(FRAME, DATA, LEN, FAIL)                            \
     do {                                                                       \
         FAIL = false;                                                          \
         uint8_t *_data = DATA;                                                 \
-        size_t len = (LEN);                                                    \
+        size_t len = (size_t)(LEN);                                            \
         frame_read_func(FRAME)(&FRAME, &_data, &len, false);                   \
         if (!_data) {                                                          \
             frame_free_func(FRAME)(&FRAME);                                    \

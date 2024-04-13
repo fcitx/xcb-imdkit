@@ -836,11 +836,17 @@ void xcb_im_destroy(xcb_im_t *im) {
 
 void xcb_im_forward_event(xcb_im_t *im, xcb_im_input_context_t *ic,
                           xcb_key_press_event_t *event) {
+    xcb_im_forward_event_full(im, ic, ic->forward_event_sequence, event);
+}
+
+void xcb_im_forward_event_full(xcb_im_t *im, xcb_im_input_context_t *ic,
+                               uint16_t sequence,
+                               xcb_key_press_event_t *event) {
     xcb_im_client_t *client = ic->client;
     xcb_im_forward_event_fr_t frame;
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
-    frame.sequence_number = event->sequence;
+    frame.sequence_number = sequence;
     if (im->use_sync_mode) {
         frame.flag = XCB_XIM_SYNCHRONOUS;
         client->sync = true;

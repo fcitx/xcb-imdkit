@@ -162,6 +162,9 @@ XCBIMDKIT_EXPORT bool xcb_xim_set_ic_focus(xcb_xim_t *im, xcb_xic_t ic);
 XCBIMDKIT_EXPORT bool xcb_xim_unset_ic_focus(xcb_xim_t *im, xcb_xic_t ic);
 XCBIMDKIT_EXPORT bool xcb_xim_forward_event(xcb_xim_t *im, xcb_xic_t ic,
                                             xcb_key_press_event_t *event);
+XCBIMDKIT_EXPORT bool xcb_xim_forward_event_full(xcb_xim_t *im, xcb_xic_t ic,
+                                                 uint16_t sequence,
+                                                 xcb_key_press_event_t *event);
 XCBIMDKIT_EXPORT bool xcb_xim_reset_ic(xcb_xim_t *im, xcb_xic_t ic,
                                        xcb_xim_reset_ic_callback callback,
                                        void *user_data);
