@@ -1486,12 +1486,14 @@ bool xcb_xim_unset_ic_focus(xcb_xim_t *im, xcb_xic_t ic) {
     return !fail;
 }
 
-bool xcb_xim_forward_event(xcb_xim_t *im, xcb_xic_t ic, xcb_key_press_event_t *event) {
-    return xcb_xim_forward_event_full(im, ic, (im->event_sequence >> 16), event);
+bool xcb_xim_forward_event(xcb_xim_t *im, xcb_xic_t ic,
+                           xcb_key_press_event_t *event) {
+    return xcb_xim_forward_event_full(im, ic, (im->event_sequence >> 16),
+                                      event);
 }
 
 bool xcb_xim_forward_event_full(xcb_xim_t *im, xcb_xic_t ic, uint16_t sequence,
-                           xcb_key_press_event_t *event) {
+                                xcb_key_press_event_t *event) {
     xcb_xim_request_queue_t *queue =
         _xcb_xim_new_request(im, XCB_XIM_FORWARD_EVENT, 0, NULL, NULL);
     if (!queue) {
