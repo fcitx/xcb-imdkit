@@ -14,11 +14,13 @@
 #include "uthash.h"
 #include "ximproto.h"
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
+#include <xcb/xproto.h>
 
 #define CHECK_NEXT_SERVER(IM)                                                  \
     do {                                                                       \

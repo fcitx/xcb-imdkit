@@ -6,10 +6,12 @@
  */
 #include "clientprotocolhandler.h"
 #include "common.h"
+#include "imclient.h"
 #include "imclient_p.h"
 #include "parser.h"
 #include "uthash.h"
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <xcb/xproto.h>

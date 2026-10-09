@@ -5,11 +5,17 @@
  *
  */
 #include "encoding.h"
+#include "xcbimdkit_export.h"
 #include "xlibi18n/XlcPubI.h"
+#include <stddef.h>
+#include <stdlib.h>
 
 #define _CONVERT_BUFSIZE 2048
 
-typedef int (*convert_func)();
+typedef int (*convert_to_cs_func)(State, void **, size_t *, void **, size_t *,
+                                  XlcCharSet *);
+typedef int (*convert_from_cs_func)(State, void **, size_t *, void **, size_t *,
+                                    XlcCharSet);
 
 static size_t get_buf_size(size_t length) {
     length *= 3;                                                 /* XXX */
@@ -22,7 +28,7 @@ XCBIMDKIT_EXPORT
 void xcb_compound_text_init() { _XlcInitCTInfo(); }
 
 int indirect_convert(void **from, size_t *from_left, void **to, size_t *to_left,
-                     convert_func tocs, convert_func csto) {
+                     convert_to_cs_func tocs, convert_from_cs_func csto) {
     char buf[_CONVERT_BUFSIZE];
     void *cs;
     size_t cs_left;

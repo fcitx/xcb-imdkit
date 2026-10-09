@@ -8,6 +8,7 @@
 #ifndef _LINK_LIST_H_
 #define _LINK_LIST_H_
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 #define list_container_of(ptr, type, member)                                   \

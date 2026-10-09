@@ -7,7 +7,8 @@
 #ifndef _XCB_IMDKIT_ENCODING_H_
 #define _XCB_IMDKIT_ENCODING_H_
 
-#include "ximcommon.h"
+#include "xcbimdkit_export.h" // IWYU pragma: export
+#include "ximcommon.h"        // IWYU pragma: export
 #include <stdlib.h>
 
 XCBIMDKIT_DECL_BEGIN

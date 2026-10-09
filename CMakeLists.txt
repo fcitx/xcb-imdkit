@@ -45,6 +45,15 @@ set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_MODULE_LINKER_FLAGS}")
 
 find_package(XCB REQUIRED COMPONENTS XCB UTIL KEYSYMS)
 
+option(ENABLE_TEST_WITH_XSERVER "Build tests that require an X server" OFF)
+if (ENABLE_TEST_WITH_XSERVER)
+    find_package(Threads REQUIRED)
+    find_program(XVFB_BIN Xvfb)
+    if (NOT XVFB_BIN)
+        message(FATAL_ERROR "ENABLE_TEST_WITH_XSERVER requires Xvfb")
+    endif()
+endif()
+
 enable_testing()
 
 add_subdirectory(src)

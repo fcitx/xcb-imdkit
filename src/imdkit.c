@@ -12,8 +12,10 @@
 #include "protocolhandler.h"
 #include "uthash.h"
 #include "ximproto.h"
+#include "ximproto_p.h"
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -390,8 +392,6 @@ xcb_im_client_t *_xcb_im_new_client(xcb_im_t *im, xcb_window_t client_window) {
         client->connect_id = new_connect_id;
     }
 
-    list_init(&client->queue);
-
     xcb_window_t w = xcb_generate_id(im->conn);
     xcb_im_client_t *dup = NULL;
     HASH_FIND(hh2, im->clients_by_win, &w, sizeof(xcb_window_t), dup);
@@ -455,6 +455,7 @@ xcb_im_input_context_t *_xcb_im_new_input_context(xcb_im_t *im,
     }
 
     ic->client = client;
+    list_init(&ic->queue);
     HASH_ADD(hh, client->input_contexts, id, sizeof(uint16_t), ic);
     return ic;
 }
@@ -820,7 +821,6 @@ void xcb_im_close_im(xcb_im_t *im) {
         im->free_list = im->free_list->hh1.next;
         free(p);
     }
-    im->sync = false;
     im->connect_id = 0;
 }
 
@@ -849,7 +849,7 @@ void xcb_im_forward_event_full(xcb_im_t *im, xcb_im_input_context_t *ic,
     frame.sequence_number = sequence;
     if (im->use_sync_mode) {
         frame.flag = XCB_XIM_SYNCHRONOUS;
-        client->sync = true;
+        ic->sync = true;
     } else {
         frame.flag = 0;
     }
@@ -913,7 +913,7 @@ void xcb_im_preedit_end(xcb_im_t *im, xcb_im_input_context_t *ic) {
 }
 
 void xcb_im_sync_xlib(xcb_im_t *im, xcb_im_input_context_t *ic) {
-    im->sync = true;
+    ic->sync_xlib = true;
     xcb_im_sync_fr_t frame;
     frame.input_method_ID = ic->client->connect_id;
     frame.input_context_ID = ic->id;
@@ -977,6 +977,11 @@ void _xcb_im_destroy_ic(xcb_im_t *im, xcb_im_input_context_t *ic) {
         ic->free_data_function(ic->data);
     }
 
+    list_entry_foreach_safe(item, xcb_im_queue_t, &ic->queue, list) {
+        list_remove(&item->list);
+        free(item);
+    }
+
     // Destroy ic
     HASH_DEL(client->input_contexts, ic);
     ic->hh.next = client->ic_free_list;
@@ -995,10 +1000,6 @@ void _xcb_im_destroy_client(xcb_im_t *im, xcb_im_client_t *client) {
 
     if (im->callback) {
         im->callback(im, client, NULL, &hdr, NULL, NULL, im->user_data);
-    }
-
-    list_entry_foreach_safe(item, xcb_im_queue_t, &client->queue, list) {
-        free(item);
     }
 
     HASH_DELETE(hh2, im->clients_by_win, client);
@@ -1033,7 +1034,7 @@ void _xcb_im_send_set_event_mask(xcb_im_t *im, xcb_im_client_t *client,
     _xcb_im_send_frame(im, client, frame, false);
 }
 
-void _xcb_im_add_queue(xcb_im_t *im, xcb_im_client_t *client, uint16_t icid,
+void _xcb_im_add_queue(xcb_im_input_context_t *ic,
                        const xcb_im_packet_header_fr_t *hdr,
                        xcb_im_forward_event_fr_t *frame, uint8_t *data) {
     xcb_im_queue_t *item = malloc(sizeof(xcb_im_queue_t));
@@ -1041,28 +1042,21 @@ void _xcb_im_add_queue(xcb_im_t *im, xcb_im_client_t *client, uint16_t icid,
         return;
     }
 
-    item->icid = icid;
     memcpy(&item->event, data, sizeof(xcb_key_press_event_t));
     memcpy(&item->hdr, hdr, sizeof(xcb_im_packet_header_fr_t));
     memcpy(&item->frame, frame, sizeof(xcb_im_forward_event_fr_t));
 
-    list_append(&item->list, &client->queue);
+    list_append(&item->list, &ic->queue);
 }
 
-void _xcb_im_process_queue(xcb_im_t *im, xcb_im_client_t *client) {
-    while (!client->sync && !list_is_empty(&client->queue)) {
+void _xcb_im_process_queue(xcb_im_t *im, xcb_im_input_context_t *ic) {
+    while (!ic->sync && !list_is_empty(&ic->queue)) {
         xcb_im_queue_t *item =
-            list_container_of(client->queue.next, xcb_im_queue_t, list);
+            list_container_of(ic->queue.next, xcb_im_queue_t, list);
         list_remove(&item->list);
-
-        xcb_im_input_context_t *ic = NULL;
-        HASH_FIND(hh, client->input_contexts, &item->icid, sizeof(uint16_t),
-                  ic);
-        if (ic) {
-            if (im->callback) {
-                im->callback(im, client, ic, &item->hdr, &item->frame,
-                             &item->event, im->user_data);
-            }
+        if (im->callback) {
+            im->callback(im, ic->client, ic, &item->hdr, &item->frame,
+                         &item->event, im->user_data);
         }
         free(item);
     }

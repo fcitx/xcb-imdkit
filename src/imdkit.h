@@ -7,9 +7,9 @@
 #ifndef _XCB_IMDKIT_IMDKIT_H_
 #define _XCB_IMDKIT_IMDKIT_H_
 
-#include "xcbimdkit_export.h"
-#include "ximcommon.h"
-#include "ximproto.h"
+#include "xcbimdkit_export.h" // IWYU pragma: export
+#include "ximcommon.h"        // IWYU pragma: export
+#include "ximproto.h"         // IWYU pragma: export
 #include <stdbool.h>
 #include <stdint.h>
 #include <xcb/xcb.h>

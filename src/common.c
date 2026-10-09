@@ -7,8 +7,11 @@
 #include "common.h"
 #include "parser.h"
 #include "ximproto.h"
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <xcb/xcb.h>
+#include <xcb/xproto.h>
 
 bool _xcb_im_init_atoms(xcb_connection_t *conn, size_t n,
                         const char **atom_names, xcb_atom_t *atoms) {

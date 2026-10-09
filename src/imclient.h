@@ -7,8 +7,9 @@
 #ifndef _XCB_IMDKIT_IMCLIENT_H_
 #define _XCB_IMDKIT_IMCLIENT_H_
 
-#include "ximcommon.h"
-#include "ximproto.h"
+#include "xcbimdkit_export.h" // IWYU pragma: export
+#include "ximcommon.h"        // IWYU pragma: export
+#include "ximproto.h"         // IWYU pragma: export
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -119,9 +120,6 @@ XCBIMDKIT_EXPORT void xcb_xim_destroy(xcb_xim_t *im);
 XCBIMDKIT_EXPORT bool xcb_xim_open(xcb_xim_t *im,
                                    xcb_xim_open_callback callback,
                                    bool auto_connect, void *user_data);
-XCBIMDKIT_EXPORT void
-xcb_xim_set_im_callback(xcb_xim_t *im, const xcb_xim_im_callback *callbacks,
-                        void *user_data);
 XCBIMDKIT_EXPORT void
 xcb_xim_set_im_callback(xcb_xim_t *im, const xcb_xim_im_callback *callbacks,
                         void *user_data);
