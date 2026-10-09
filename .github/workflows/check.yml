@@ -38,9 +38,9 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          pacman -Syu --noconfirm base-devel clang cmake ninja extra-cmake-modules xcb-util xcb-util-keysyms
+          pacman -Syu --noconfirm base-devel clang cmake ninja extra-cmake-modules xcb-util xcb-util-keysyms xorg-server-xvfb
       - name: Init CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: c
       - uses: actions/checkout@v4
@@ -48,8 +48,9 @@ jobs:
         uses: fcitx/github-actions@cmake
         with:
           path: .
+          cmake-option: -DENABLE_TEST_WITH_XSERVER=ON
       - name: Test
         run: |
-          ctest --test-dir build
+          ctest --test-dir build --output-on-failure
       - name: CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v4

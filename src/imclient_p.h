@@ -14,6 +14,10 @@
 #include "uthash.h"
 #include "ximproto.h"
 #include "ximproto_p.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <xcb/xcb.h>
+#include <xcb/xproto.h>
 
 // this phase is basically a directly mapping from _XimSOMETHING function in
 // Xlib state machine is more suitable for xcb asynchronous nature.

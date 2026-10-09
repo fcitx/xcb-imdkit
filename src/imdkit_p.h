@@ -135,6 +135,9 @@ struct _xcb_im_input_context_t {
     void *data;
     xcb_im_free_function free_data_function;
     uint16_t forward_event_sequence;
+    bool sync;
+    bool sync_xlib;
+    list_head queue;
 };
 
 struct _xcb_im_client_t {
@@ -142,11 +145,9 @@ struct _xcb_im_client_t {
     int connect_id;
     xcb_window_t client_win;
     uint8_t byte_order;
-    bool sync;
     uint16_t icid;
     xcb_im_input_context_t *ic_free_list;
     xcb_im_input_context_t *input_contexts;
-    list_head queue;
 
     xcb_im_property_offset_t *offsets;
 
@@ -242,7 +243,6 @@ struct _xcb_im_t {
 
     uint8_t byte_order;
     bool init;
-    bool sync;
     bool use_sync_mode;
     bool use_sync_event;
 };
@@ -258,7 +258,6 @@ typedef union _xcb_im_ic_attr_value_t {
 } xcb_im_ic_attr_value_t;
 
 typedef struct _xcb_im_queue_t {
-    uint16_t icid;
     xcb_im_packet_header_fr_t hdr;
     xcb_im_forward_event_fr_t frame;
     xcb_key_press_event_t event;
@@ -282,10 +281,10 @@ void _xcb_im_send_set_event_mask(xcb_im_t *im, xcb_im_client_t *client,
                                  uint32_t sync_mask);
 void _xcb_im_set_ic_event_mask(xcb_im_t *im, xcb_im_input_context_t *client);
 void _xcb_im_set_im_event_mask(xcb_im_t *im, xcb_im_client_t *ic);
-void _xcb_im_add_queue(xcb_im_t *im, xcb_im_client_t *client, uint16_t icid,
+void _xcb_im_add_queue(xcb_im_input_context_t *ic,
                        const xcb_im_packet_header_fr_t *hdr,
                        xcb_im_forward_event_fr_t *frame, uint8_t *data);
-void _xcb_im_process_queue(xcb_im_t *im, xcb_im_client_t *client);
+void _xcb_im_process_queue(xcb_im_t *im, xcb_im_input_context_t *ic);
 static inline bool _xcb_im_has_trigger_key(xcb_im_t *im) {
     return im->onKeys.nKeys || im->offKeys.nKeys;
 }

@@ -7,10 +7,13 @@
 
 #include "protocolhandler.h"
 #include "common.h"
+#include "imdkit.h"
 #include "imdkit_p.h"
 #include "parser.h"
 #include "uthash.h"
+#include "ximproto.h"
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -726,8 +729,8 @@ void _xcb_im_handle_forward_event(xcb_im_t *im, xcb_im_client_t *client,
             break;
         }
         ic->forward_event_sequence = frame.sequence_number;
-        if (client->sync) {
-            _xcb_im_add_queue(im, client, ic->id, hdr, &frame, data);
+        if (ic->sync) {
+            _xcb_im_add_queue(ic, hdr, &frame, data);
         } else {
             xcb_key_press_event_t key_event;
             memcpy(&key_event, data, sizeof(xcb_key_press_event_t));
@@ -846,16 +849,15 @@ void _xcb_im_handle_sync_reply(xcb_im_t *im, xcb_im_client_t *client,
             break;
         }
 
-        client->sync = false;
-        if (im->sync) {
-            im->sync = false;
-
+        ic->sync = false;
+        if (ic->sync_xlib) {
+            ic->sync_xlib = false;
             if (im->callback) {
                 im->callback(im, client, ic, hdr, &frame, NULL, im->user_data);
             }
         }
 
-        _xcb_im_process_queue(im, client);
+        _xcb_im_process_queue(im, ic);
     } while (0);
 
     xcb_im_sync_reply_fr_free(&frame);
