@@ -3,7 +3,9 @@ project(xcb-imdkit VERSION 1.0.9)
 
 find_package(ECM 0.0.11 REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
-option(USE_SYSTEM_UTHASH "Enable system utash" On)
+
+option(USE_SYSTEM_UTHASH "Enable system uthash" ON)
+option(ENABLE_TEST "Enable unit tests for imdkit" ON)
 
 include(GenerateExportHeader)
 include(CheckFunctionExists)
@@ -13,7 +15,7 @@ include(ECMGenerateHeaders)
 include(uninstall)
 
 if (USE_SYSTEM_UTHASH)
-find_package(UTHash)
+    find_package(UTHash)
 endif()
 
 if (NOT TARGET UTHash::UTHash)
@@ -45,10 +47,12 @@ set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_MODULE_LINKER_FLAGS}")
 
 find_package(XCB REQUIRED COMPONENTS XCB UTIL KEYSYMS)
 
-enable_testing()
-
 add_subdirectory(src)
-add_subdirectory(test)
+
+if(ENABLE_TEST)
+    enable_testing()
+    add_subdirectory(test)
+endif()
 
 # Write out the features
 feature_summary (WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
