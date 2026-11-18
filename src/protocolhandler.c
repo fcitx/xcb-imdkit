@@ -463,6 +463,9 @@ uint32_t _xcb_im_get_nested_ic_values(xcb_im_t *im, xcb_im_input_context_t *ic,
         while (i < size && attrIDs[i] != im->separatorAttr_id) {
             uint16_t attrID = attrIDs[i];
             i++;
+            if (!attr) {
+                continue;
+            }
             const xcb_im_default_ic_attr_t *entry =
                 _xcb_im_default_ic_attr_entry(im, attrID);
             if (!entry || !entry->read || offsets[attrID] < 0) {
@@ -475,18 +478,21 @@ uint32_t _xcb_im_get_nested_ic_values(xcb_im_t *im, xcb_im_input_context_t *ic,
                 fr.value_length = _xcb_im_ic_attr_size(entry->type);
                 totalSize += xcb_im_xicattribute_fr_size(&fr);
             } else {
-                uint8_t *start = data;
+                uint8_t *item_start = data;
                 uint16_t value_length = _xcb_im_ic_attr_size(entry->type);
                 bool swap = im->byte_order != ic->client->byte_order;
                 data = uint16_t_write(&attrID, data, swap);
                 data = uint16_t_write(&value_length, data, swap);
                 data = _xcb_im_get_ic_value((((uint8_t *)p) + offsets[attrID]),
                                             entry->type, data, swap);
-                data =
-                    (uint8_t *)align_to_4((uintptr_t)data, data - start, NULL);
+                data = (uint8_t *)align_to_4((uintptr_t)data, data - item_start,
+                                             NULL);
             }
         }
         if (round == 0) {
+            if (totalSize == 0 || totalSize > UINT16_MAX) {
+                break;
+            }
             data = malloc(totalSize);
             if (!data) {
                 break;
@@ -529,26 +535,38 @@ void _xcb_im_handle_get_ic_values(xcb_im_t *im, xcb_im_client_t *client,
         uint32_t nBuffers = 0;
         xcb_im_xicattribute_fr_t buffers[ARRAY_SIZE(Default_ICattr)];
         memset(buffers, 0, sizeof(buffers));
+        bool met[ARRAY_SIZE(im->id2attr)];
+        memset(met, 0, sizeof(met));
         uint32_t i = 0;
         while (i < frame.ic_attribute.size) {
-            buffers[nBuffers].attribute_ID = frame.ic_attribute.items[i];
+            // Defensive check: should not happen since met[] deduplicates
+            // Default_ICattr entries.
+            if (nBuffers >= ARRAY_SIZE(buffers)) {
+                break;
+            }
+            uint16_t attrID = frame.ic_attribute.items[i];
+            const xcb_im_default_ic_attr_t *entry =
+                _xcb_im_default_ic_attr_entry(im, attrID);
+            if (!entry) {
+                i++;
+                continue;
+            }
+            bool skip = met[attrID];
+            met[attrID] = true;
 
-            if (frame.ic_attribute.items[i] == im->statusAttr_id) {
+            if (attrID == im->statusAttr_id) {
                 i = _xcb_im_get_nested_ic_values(
                     im, ic, &ic->status, im->id2statusoffset,
                     frame.ic_attribute.items, i + 1, frame.ic_attribute.size,
-                    &buffers[nBuffers]);
-            } else if (frame.ic_attribute.items[i] == im->preeditAttr_id) {
+                    skip ? NULL : &buffers[nBuffers]);
+            } else if (attrID == im->preeditAttr_id) {
                 i = _xcb_im_get_nested_ic_values(
                     im, ic, &ic->preedit, im->id2preeditoffset,
                     frame.ic_attribute.items, i + 1, frame.ic_attribute.size,
-                    &buffers[nBuffers]);
+                    skip ? NULL : &buffers[nBuffers]);
             } else {
-                const xcb_im_default_ic_attr_t *entry =
-                    _xcb_im_default_ic_attr_entry(im,
-                                                  frame.ic_attribute.items[i]);
                 i++;
-                if (!entry) {
+                if (skip) {
                     continue;
                 }
 
@@ -556,8 +574,8 @@ void _xcb_im_handle_get_ic_values(xcb_im_t *im, xcb_im_client_t *client,
                     uint32_t result =
                         XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE;
                     buffers[nBuffers].value = malloc(sizeof(uint32_t));
-                    buffers[nBuffers].value_length = sizeof(uint32_t);
-                    if (data) {
+                    if (buffers[nBuffers].value) {
+                        buffers[nBuffers].value_length = sizeof(uint32_t);
                         uint32_t_write(&result, buffers[nBuffers].value,
                                        im->byte_order !=
                                            ic->client->byte_order);
@@ -565,7 +583,8 @@ void _xcb_im_handle_get_ic_values(xcb_im_t *im, xcb_im_client_t *client,
                 }
             }
 
-            if (buffers[nBuffers].value) {
+            if (!skip && buffers[nBuffers].value) {
+                buffers[nBuffers].attribute_ID = attrID;
                 nBuffers++;
             }
         }
