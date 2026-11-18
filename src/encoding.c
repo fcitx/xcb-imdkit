@@ -7,7 +7,9 @@
 #include "encoding.h"
 #include "xcbimdkit_export.h"
 #include "xlibi18n/XlcPubI.h"
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #define _CONVERT_BUFSIZE 2048
@@ -17,11 +19,15 @@ typedef int (*convert_to_cs_func)(State, void **, size_t *, void **, size_t *,
 typedef int (*convert_from_cs_func)(State, void **, size_t *, void **, size_t *,
                                     XlcCharSet);
 
-static size_t get_buf_size(size_t length) {
+static bool get_buf_size(size_t length, size_t *out) {
+    if (length > (SIZE_MAX - _CONVERT_BUFSIZE - 1) / 3) {
+        return false;
+    }
     length *= 3;                                                 /* XXX */
     length = (length / _CONVERT_BUFSIZE + 1) * _CONVERT_BUFSIZE; /* XXX */
 
-    return length;
+    *out = length;
+    return true;
 }
 
 XCBIMDKIT_EXPORT
@@ -74,9 +80,15 @@ int indirect_convert(void **from, size_t *from_left, void **to, size_t *to_left,
 XCBIMDKIT_EXPORT
 char *xcb_utf8_to_compound_text(const char *utf8, size_t len,
                                 size_t *lenghtOut) {
-    size_t buf_len = get_buf_size(len) + 1;
+    if (!utf8 && len > 0) {
+        return NULL;
+    }
+    size_t buf_len;
+    if (!get_buf_size(len, &buf_len)) {
+        return NULL;
+    }
     void *result;
-    if ((result = malloc(buf_len)) == NULL) {
+    if ((result = malloc(buf_len + 1)) == NULL) {
         return NULL;
     }
 
@@ -93,7 +105,7 @@ char *xcb_utf8_to_compound_text(const char *utf8, size_t len,
     }
 
     if (lenghtOut) {
-        *lenghtOut = to - result;
+        *lenghtOut = (char *)to - (char *)result;
     }
 
     *((char *)to) = '\0';
@@ -104,9 +116,15 @@ char *xcb_utf8_to_compound_text(const char *utf8, size_t len,
 XCBIMDKIT_EXPORT
 char *xcb_compound_text_to_utf8(const char *compound_text, size_t len,
                                 size_t *lenghtOut) {
-    size_t buf_len = get_buf_size(len) + 1;
+    if (!compound_text && len > 0) {
+        return NULL;
+    }
+    size_t buf_len;
+    if (!get_buf_size(len, &buf_len)) {
+        return NULL;
+    }
     void *result;
-    if ((result = malloc(buf_len)) == NULL) {
+    if ((result = malloc(buf_len + 1)) == NULL) {
         return NULL;
     }
 
@@ -123,7 +141,7 @@ char *xcb_compound_text_to_utf8(const char *compound_text, size_t len,
     }
 
     if (lenghtOut) {
-        *lenghtOut = to - result;
+        *lenghtOut = (char *)to - (char *)result;
     }
 
     *((char *)to) = '\0';
