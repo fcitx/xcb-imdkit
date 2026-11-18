@@ -46,7 +46,10 @@ bool _xcb_xim_send_message(xcb_xim_t *im, uint8_t *data, size_t length) {
 
 bool _xcb_xim_check_server_name(xcb_xim_t *im, char *name, int namelen) {
     size_t category_len = strlen(XIM_SERVER_CATEGORY);
-    if (strncmp(name, XIM_SERVER_CATEGORY, category_len) != 0) {
+    if (namelen < 0 || (size_t)namelen < category_len) {
+        return false;
+    }
+    if (memcmp(name, XIM_SERVER_CATEGORY, category_len) != 0) {
         return false;
     }
 
@@ -54,8 +57,9 @@ bool _xcb_xim_check_server_name(xcb_xim_t *im, char *name, int namelen) {
         return true;
     }
 
-    return (strncmp(name + category_len, im->server_name,
-                    namelen - category_len) == 0);
+    size_t server_name_len = strlen(im->server_name);
+    return (size_t)namelen - category_len == server_name_len &&
+           memcmp(name + category_len, im->server_name, server_name_len) == 0;
 }
 
 bool _xcb_xim_check_transport(xcb_xim_t *im, char *address, char **trans_addr) {
