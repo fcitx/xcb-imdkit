@@ -1024,25 +1024,93 @@ bool _xcb_xim_send_request_frame(xcb_xim_t *im,
     return !fail;
 }
 
-void _xcb_xim_process_fail_callback(xcb_xim_t *im,
-                                    xcb_xim_request_queue_t *request) {
+/**
+ * Check whether an incoming reply (or error) matches the in-flight request
+ * (im->current).
+ *
+ * - Returns false if there is no in-flight request (im->current == NULL).
+ * - If reply_frame is NULL (e.g. XIM_ERROR, which carries no request opcode),
+ *   any in-flight request is considered matched and returns true.
+ * - If reply_frame is non-NULL, verifies that:
+ *   1. im->current->major_code equals major_code;
+ *   2. im->connect_id equals reply->input_method_ID;
+ *   3. For IC-scoped requests (DESTROY_IC, GET_IC_VALUES, SET_IC_VALUES,
+ *      RESET_IC), the request's input_context_ID also equals
+ *      reply->input_context_ID (CREATE_IC and GET_IM_VALUES only check
+ *      input_method_ID).
+ */
+static bool _xcb_xim_match_current(const xcb_xim_t *im, uint8_t major_code,
+                                   const void *reply_frame) {
+    if (!im->current) {
+        return false;
+    }
+    if (!reply_frame) {
+        return true;
+    }
+    if (im->current->major_code != major_code) {
+        return false;
+    }
+    switch (major_code) {
+    case XCB_XIM_CREATE_IC: {
+        const xcb_im_create_ic_reply_fr_t *reply = reply_frame;
+        return im->connect_id == reply->input_method_ID;
+    }
+    case XCB_XIM_DESTROY_IC: {
+        const xcb_im_destroy_ic_reply_fr_t *reply = reply_frame;
+        return im->connect_id == reply->input_method_ID &&
+               im->current->frame.destroy_ic.input_context_ID ==
+                   reply->input_context_ID;
+    }
+    case XCB_XIM_GET_IM_VALUES: {
+        const xcb_im_get_im_values_reply_fr_t *reply = reply_frame;
+        return im->connect_id == reply->input_method_ID;
+    }
+    case XCB_XIM_GET_IC_VALUES: {
+        const xcb_im_get_ic_values_reply_fr_t *reply = reply_frame;
+        return im->connect_id == reply->input_method_ID &&
+               im->current->frame.get_ic_values.input_context_ID ==
+                   reply->input_context_ID;
+    }
+    case XCB_XIM_SET_IC_VALUES: {
+        const xcb_im_set_ic_values_reply_fr_t *reply = reply_frame;
+        return im->connect_id == reply->input_method_ID &&
+               im->current->frame.set_ic_values.input_context_ID ==
+                   reply->input_context_ID;
+    }
+    case XCB_XIM_RESET_IC: {
+        const xcb_im_reset_ic_reply_fr_t *reply = reply_frame;
+        return im->connect_id == reply->input_method_ID &&
+               im->current->frame.reset_ic.input_context_ID ==
+                   reply->input_context_ID;
+    }
+    default:
+        return false;
+    }
+}
+
+static void _xcb_xim_notify_request_callback(xcb_xim_t *im,
+                                             xcb_xim_request_queue_t *request,
+                                             void *reply_frame) {
     if (!request->callback.generic) {
         return;
     }
     switch (request->major_code) {
-    case XCB_XIM_CREATE_IC:
-        request->callback.create_ic(im, 0, request->user_data);
+    case XCB_XIM_CREATE_IC: {
+        xcb_im_create_ic_reply_fr_t *reply = reply_frame;
+        request->callback.create_ic(im, reply ? reply->input_context_ID : 0,
+                                    request->user_data);
         break;
+    }
     case XCB_XIM_DESTROY_IC:
         request->callback.destroy_ic(
             im, request->frame.destroy_ic.input_context_ID, request->user_data);
         break;
     case XCB_XIM_GET_IM_VALUES:
-        request->callback.get_im_values(im, NULL, request->user_data);
+        request->callback.get_im_values(im, reply_frame, request->user_data);
         break;
     case XCB_XIM_GET_IC_VALUES:
         request->callback.get_ic_values(
-            im, request->frame.get_ic_values.input_context_ID, NULL,
+            im, request->frame.get_ic_values.input_context_ID, reply_frame,
             request->user_data);
         break;
     case XCB_XIM_SET_IC_VALUES:
@@ -1052,30 +1120,45 @@ void _xcb_xim_process_fail_callback(xcb_xim_t *im,
         break;
     case XCB_XIM_RESET_IC:
         request->callback.reset_ic(im, request->frame.reset_ic.input_context_ID,
-                                   NULL, request->user_data);
+                                   reply_frame, request->user_data);
         break;
     case XCB_XIM_FORWARD_EVENT:
-        break;
     default:
         break;
     }
 }
 
 void _xcb_xim_process_queue(xcb_xim_t *im) {
-    while (!im->current && !list_is_empty(&im->queue)) {
+    while (im->open_state == XIM_OPEN_DONE && !im->current &&
+           !list_is_empty(&im->queue)) {
         xcb_xim_request_queue_t *request =
             list_container_of((im->queue).next, xcb_xim_request_queue_t, list);
         list_remove(&request->list);
         if (_xcb_xim_send_request_frame(im, request)) {
             if (request->major_code != XCB_XIM_FORWARD_EVENT) {
                 im->current = request;
+            } else {
+                _xcb_xim_request_free(request);
             }
         } else {
-            _xcb_xim_process_fail_callback(im, request);
+            _xcb_xim_notify_request_callback(im, request, NULL);
             _xcb_xim_request_free(request);
-            im->current = NULL;
         }
     }
+}
+
+void _xcb_xim_complete_current(xcb_xim_t *im, uint8_t major_code,
+                               void *reply_frame) {
+    if (!_xcb_xim_match_current(im, major_code, reply_frame)) {
+        return;
+    }
+
+    xcb_xim_request_queue_t *request = im->current;
+    im->current = NULL;
+
+    _xcb_xim_notify_request_callback(im, request, reply_frame);
+    _xcb_xim_request_free(request);
+    _xcb_xim_process_queue(im);
 }
 
 static inline xcb_xim_icattr_table_t *_xcb_xim_find_icattr(xcb_xim_t *im,
@@ -1496,6 +1579,10 @@ bool xcb_xim_forward_event(xcb_xim_t *im, xcb_xic_t ic,
 
 bool xcb_xim_forward_event_full(xcb_xim_t *im, xcb_xic_t ic, uint16_t sequence,
                                 xcb_key_press_event_t *event) {
+    if (im->open_state != XIM_OPEN_DONE) {
+        return false;
+    }
+
     xcb_xim_request_queue_t *queue =
         _xcb_xim_new_request(im, XCB_XIM_FORWARD_EVENT, 0, NULL, NULL);
     if (!queue) {
@@ -1523,8 +1610,12 @@ bool xcb_xim_forward_event_full(xcb_xim_t *im, xcb_xic_t ic, uint16_t sequence,
 
 bool xcb_xim_reset_ic(xcb_xim_t *im, xcb_xic_t ic,
                       xcb_xim_reset_ic_callback callback, void *user_data) {
+    if (im->open_state != XIM_OPEN_DONE) {
+        return false;
+    }
+
     xcb_xim_request_queue_t *queue =
-        _xcb_xim_new_request(im, XCB_XIM_RESET_IC, 0, NULL, NULL);
+        _xcb_xim_new_request(im, XCB_XIM_RESET_IC, 0, callback, user_data);
     if (!queue) {
         return false;
     }
