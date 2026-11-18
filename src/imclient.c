@@ -1205,28 +1205,29 @@ xcb_xim_nested_list xcb_xim_create_nested_list(xcb_xim_t *im, ...) {
         va_start(var, im);
         for (char *attr = va_arg(var, char *); attr;
              attr = va_arg(var, char *)) {
+            void *p = va_arg(var, void *);
+            xcb_xim_icattr_table_t *icattr = _xcb_xim_find_icattr(im, attr);
+            if (!icattr) {
+                flag = true;
+                break;
+            }
+
+            uint16_t value_length =
+                _xcb_im_ic_attr_size(icattr->attr.type_of_the_value);
+            if (value_length == 0) {
+                if (round == 0) {
+                    DebugLog("Unsupported IC attribute: %s (type %u)\n", attr,
+                             icattr->attr.type_of_the_value);
+                }
+                continue;
+            }
+
             if (round == 0) {
-                (void)va_arg(var, void *);
-
-                xcb_xim_icattr_table_t *icattr = _xcb_xim_find_icattr(im, attr);
-                if (!icattr) {
-                    flag = true;
-                    break;
-                }
-
                 xcb_im_xicattribute_fr_t fr;
-                fr.value_length =
-                    _xcb_im_ic_attr_size(icattr->attr.type_of_the_value);
-                if (fr.value_length == 0) {
-                    continue;
-                }
+                fr.value_length = value_length;
                 totalSize += xcb_im_xicattribute_fr_size(&fr);
             } else {
-                void *p = va_arg(var, void *);
-                xcb_xim_icattr_table_t *icattr = _xcb_xim_find_icattr(im, attr);
                 uint8_t *start = data;
-                uint16_t value_length =
-                    _xcb_im_ic_attr_size(icattr->attr.type_of_the_value);
                 data = uint16_t_write(&icattr->attr.attribute_ID, data, false);
                 data = uint16_t_write(&value_length, data, false);
                 data = _xcb_im_get_ic_value(p, icattr->attr.type_of_the_value,
@@ -1237,7 +1238,7 @@ xcb_xim_nested_list xcb_xim_create_nested_list(xcb_xim_t *im, ...) {
         }
         va_end(var);
         if (round == 0) {
-            if (totalSize) {
+            if (totalSize > 0 && totalSize <= UINT16_MAX) {
                 data = malloc(totalSize);
             }
             if (!data) {

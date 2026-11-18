@@ -60,9 +60,16 @@ static void create_ic_callback(xcb_xim_t *im, xcb_xic_t ic, void *user_data) {
 static void open_callback(xcb_xim_t *im, void *user_data) {
     uint32_t input_style = XCB_IM_PreeditPosition | XCB_IM_StatusNothing;
     xcb_point_t spot = {.x = 12, .y = 34};
+    uint32_t fg = 1;
+    uint32_t bg = 2;
+    // 3 * 8 = 24 bytes (exact glibc 64-bit chunk usable size), plus an
+    // unsupported-type XNFontSet attribute (size 0) that previously wrote 4
+    // bytes past the end of the 24-byte heap buffer.
     xcb_xim_nested_list nested = xcb_xim_create_nested_list(
-        client_im, XCB_XIM_XNSpotLocation, &spot, NULL);
+        client_im, XCB_XIM_XNSpotLocation, &spot, XCB_XIM_XNForeground, &fg,
+        XCB_XIM_XNBackground, &bg, XCB_XIM_XNFontSet, "fixed", NULL);
     TEST_CHECK(nested.data);
+    TEST_CHECK(nested.length == 24);
     TEST_CHECK(xcb_xim_create_ic(
         client_im, create_ic_callback, NULL, XCB_XIM_XNInputStyle, &input_style,
         XCB_XIM_XNClientWindow, &client_window, XCB_XIM_XNFocusWindow,
