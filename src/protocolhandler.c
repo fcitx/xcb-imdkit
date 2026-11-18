@@ -168,7 +168,6 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t *im, xcb_im_client_t *client,
         j = 0;
     }
 
-    xcb_im_encoding_negotiation_fr_free(&frame);
     xcb_im_encoding_negotiation_reply_fr_t reply_frame;
     reply_frame.input_method_ID = client->connect_id;
     reply_frame.index_of_the_encoding_determined = i;
@@ -180,6 +179,7 @@ void _xcb_im_handle_encoding_negotiation(xcb_im_t *im, xcb_im_client_t *client,
         im->callback(im, client, NULL, hdr, &frame, &index, im->user_data);
     }
 
+    xcb_im_encoding_negotiation_fr_free(&frame);
     _xcb_im_send_frame(im, client, reply_frame, true);
 }
 
@@ -237,10 +237,10 @@ void _xcb_im_handle_get_im_values(xcb_im_t *im, xcb_im_client_t *client,
 void _xcb_im_handle_disconnect(xcb_im_t *im, xcb_im_client_t *client,
                                const xcb_im_packet_header_fr_t *hdr,
                                uint8_t *data) {
-    _xcb_im_destroy_client(im, client);
-
     xcb_im_disconnect_reply_fr_t reply_frame;
     _xcb_im_send_frame(im, client, reply_frame, true);
+
+    _xcb_im_destroy_client(im, client);
 }
 
 void _xcb_im_parse_ic_value(xcb_im_t *im, xcb_im_input_context_t *ic, void *p,
