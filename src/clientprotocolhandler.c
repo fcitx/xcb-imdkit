@@ -207,14 +207,20 @@ void _xcb_xim_handle_encoding_negotiation_reply(
         if (im->use_utf8_string) {
             encodings[nEncodings++] = XCB_XIM_UTF8_STRING;
         }
-        // we only send compound
-        if (frame.input_method_ID != im->connect_id &&
-            frame.index_of_the_encoding_determined >= nEncodings) {
+        if (frame.input_method_ID != im->connect_id) {
+            break;
+        }
+        if (frame.category_of_the_encoding_determined == 0 &&
+            frame.index_of_the_encoding_determined < nEncodings) {
+            im->encoding = encodings[frame.index_of_the_encoding_determined];
+        } else if (frame.index_of_the_encoding_determined == UINT16_MAX) {
+            // XIM_Default_Encoding_IDX (-1): fallback to COMPOUND_TEXT.
+            im->encoding = XCB_XIM_COMPOUND_TEXT;
+        } else {
             break;
         }
 
         im->open_state = XIM_OPEN_DONE;
-        im->encoding = encodings[frame.index_of_the_encoding_determined];
 
         if (im->connect_state.callback) {
             im->connect_state.callback(im, im->connect_state.user_data);
