@@ -15,6 +15,8 @@
 
 typedef struct {
     const char *name;
+    const xcb_im_trigger_keys_t *on_keys;
+    const xcb_im_trigger_keys_t *off_keys;
     xcb_im_callback callback;
     void *user_data;
     thrd_t thread;
@@ -28,6 +30,11 @@ typedef struct {
 test_xim_server_t *test_xim_server_new(const char *name,
                                        xcb_im_callback callback,
                                        void *user_data);
+test_xim_server_t *
+test_xim_server_new_with_keys(const char *name,
+                              const xcb_im_trigger_keys_t *on_keys,
+                              const xcb_im_trigger_keys_t *off_keys,
+                              xcb_im_callback callback, void *user_data);
 void test_xim_server_destroy(test_xim_server_t *server);
 
 #endif
