@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
 #include <xcb/xproto.h>
@@ -21,13 +22,28 @@ static xcb_screen_t *client_screen;
 static xcb_xim_t *client_im;
 static xcb_window_t client_window;
 static bool completed;
+static bool encoding_checked;
+static bool disconnect_checked;
 
 static void server_callback(xcb_im_t *im, xcb_im_client_t *client,
                             xcb_im_input_context_t *ic,
                             const xcb_im_packet_header_fr_t *hdr, void *frame,
                             void *arg, void *user_data) {
-    if (hdr->major_opcode == XCB_XIM_FORWARD_EVENT) {
+    if (hdr->major_opcode == XCB_XIM_ENCODING_NEGOTIATION) {
+        xcb_im_encoding_negotiation_fr_t *enc_frame = frame;
+        TEST_CHECK(enc_frame->supported_list_of_encoding_in_IM_library.size ==
+                   1);
+        TEST_CHECK(enc_frame->supported_list_of_encoding_in_IM_library.items[0]
+                       .length_of_string == strlen("COMPOUND_TEXT"));
+        TEST_CHECK(
+            memcmp(enc_frame->supported_list_of_encoding_in_IM_library.items[0]
+                       .string,
+                   "COMPOUND_TEXT", strlen("COMPOUND_TEXT")) == 0);
+        encoding_checked = true;
+    } else if (hdr->major_opcode == XCB_XIM_FORWARD_EVENT) {
         xcb_im_forward_event(im, ic, arg);
+    } else if (hdr->major_opcode == XCB_XIM_DISCONNECT) {
+        disconnect_checked = true;
     }
 }
 
@@ -86,6 +102,8 @@ static void run_client(void) {
 
     TEST_CHECK(completed);
     xcb_xim_close(client_im);
+    free(xcb_get_input_focus_reply(
+        client_connection, xcb_get_input_focus(client_connection), NULL));
     xcb_xim_destroy(client_im);
     xcb_disconnect(client_connection);
 }
@@ -96,5 +114,7 @@ int main() {
 
     run_client();
     test_xim_server_destroy(server);
+    TEST_CHECK(encoding_checked);
+    TEST_CHECK(disconnect_checked);
     return 0;
 }
