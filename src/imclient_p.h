@@ -227,7 +227,22 @@ struct _xcb_xim_t {
 bool _xcb_xim_send_message(xcb_xim_t *im, uint8_t *data, size_t length);
 void _xcb_xim_request_free(xcb_xim_request_queue_t *request);
 bool _xcb_xim_sync(xcb_xim_t *im, xcb_xic_t ic);
-void _xcb_xim_process_fail_callback(xcb_xim_t *im,
-                                    xcb_xim_request_queue_t *request);
+
+/**
+ * Complete the currently in-flight request (im->current), invoke its user
+ * callback, free the request, and process the next queued request.
+ *
+ * @param im XIM client instance.
+ * @param major_code Expected request major opcode (e.g. XCB_XIM_CREATE_IC) to
+ * match against im->current->major_code when reply_frame is non-NULL. Ignored
+ * when reply_frame is NULL.
+ * @param reply_frame Pointer to the decoded xcb_im_*_reply_fr_t corresponding
+ * to major_code for a normal reply, or NULL when failing the current in-flight
+ * request (e.g. upon receiving XIM_ERROR, which does not identify the request
+ * opcode), in which case failure callback values (0 / NULL) are passed to the
+ * user callback.
+ */
+void _xcb_xim_complete_current(xcb_xim_t *im, uint8_t major_code,
+                               void *reply_frame);
 
 #endif // _XCB_IMDKIT_IMCLIENT_P_H_

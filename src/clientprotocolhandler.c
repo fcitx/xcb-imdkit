@@ -284,26 +284,7 @@ void _xcb_xim_handle_create_ic_reply(xcb_xim_t *im,
         return;
     }
 
-    do {
-        if (!im->current) {
-            break;
-        }
-
-        if (im->current->major_code != XCB_XIM_CREATE_IC &&
-            im->connect_id != frame.input_method_ID) {
-            break;
-        }
-
-        xcb_xim_request_queue_t *request = im->current;
-        im->current = NULL;
-
-        if (request->callback.create_ic) {
-            request->callback.create_ic(im, frame.input_context_ID,
-                                        request->user_data);
-        }
-
-        _xcb_xim_request_free(request);
-    } while (0);
+    _xcb_xim_complete_current(im, XCB_XIM_CREATE_IC, &frame);
     xcb_im_create_ic_reply_fr_free(&frame);
 }
 
@@ -317,28 +298,7 @@ void _xcb_xim_handle_destroy_ic_reply(xcb_xim_t *im,
         return;
     }
 
-    do {
-        if (!im->current) {
-            break;
-        }
-
-        if (im->current->major_code != XCB_XIM_DESTROY_IC &&
-            im->connect_id != frame.input_method_ID &&
-            im->current->frame.destroy_ic.input_context_ID !=
-                frame.input_context_ID) {
-            break;
-        }
-
-        xcb_xim_request_queue_t *request = im->current;
-        im->current = NULL;
-
-        if (request->callback.destroy_ic) {
-            request->callback.destroy_ic(im, frame.input_context_ID,
-                                         request->user_data);
-        }
-
-        _xcb_xim_request_free(request);
-    } while (0);
+    _xcb_xim_complete_current(im, XCB_XIM_DESTROY_IC, &frame);
     xcb_im_destroy_ic_reply_fr_free(&frame);
 }
 
@@ -352,25 +312,7 @@ void _xcb_xim_handle_get_im_values_reply(xcb_xim_t *im,
         return;
     }
 
-    do {
-        if (!im->current) {
-            break;
-        }
-
-        if (im->current->major_code != XCB_XIM_GET_IM_VALUES &&
-            im->connect_id != frame.input_method_ID) {
-            break;
-        }
-
-        xcb_xim_request_queue_t *request = im->current;
-        im->current = NULL;
-
-        if (request->callback.get_im_values) {
-            request->callback.get_im_values(im, &frame, request->user_data);
-        }
-
-        _xcb_xim_request_free(request);
-    } while (0);
+    _xcb_xim_complete_current(im, XCB_XIM_GET_IM_VALUES, &frame);
     xcb_im_get_im_values_reply_fr_free(&frame);
 }
 
@@ -384,28 +326,7 @@ void _xcb_xim_handle_get_ic_values_reply(xcb_xim_t *im,
         return;
     }
 
-    do {
-        if (!im->current) {
-            break;
-        }
-
-        if (im->current->major_code != XCB_XIM_GET_IC_VALUES &&
-            im->connect_id != frame.input_method_ID &&
-            im->current->frame.get_ic_values.input_context_ID !=
-                frame.input_context_ID) {
-            break;
-        }
-
-        xcb_xim_request_queue_t *request = im->current;
-        im->current = NULL;
-
-        if (request->callback.get_ic_values) {
-            request->callback.get_ic_values(im, frame.input_context_ID, &frame,
-                                            request->user_data);
-        }
-
-        _xcb_xim_request_free(request);
-    } while (0);
+    _xcb_xim_complete_current(im, XCB_XIM_GET_IC_VALUES, &frame);
     xcb_im_get_ic_values_reply_fr_free(&frame);
 }
 
@@ -419,28 +340,7 @@ void _xcb_xim_handle_set_ic_values_reply(xcb_xim_t *im,
         return;
     }
 
-    do {
-        if (!im->current) {
-            break;
-        }
-
-        if (im->current->major_code != XCB_XIM_SET_IC_VALUES &&
-            im->connect_id != frame.input_method_ID &&
-            im->current->frame.set_ic_values.input_context_ID !=
-                frame.input_context_ID) {
-            break;
-        }
-
-        xcb_xim_request_queue_t *request = im->current;
-        im->current = NULL;
-
-        if (request->callback.set_ic_values) {
-            request->callback.set_ic_values(im, frame.input_context_ID,
-                                            request->user_data);
-        }
-
-        _xcb_xim_request_free(request);
-    } while (0);
+    _xcb_xim_complete_current(im, XCB_XIM_SET_IC_VALUES, &frame);
     xcb_im_set_ic_values_reply_fr_free(&frame);
 }
 
@@ -454,28 +354,7 @@ void _xcb_xim_handle_reset_ic_reply(xcb_xim_t *im,
         return;
     }
 
-    do {
-        if (!im->current) {
-            break;
-        }
-
-        if (im->current->major_code != XCB_XIM_RESET_IC &&
-            im->connect_id != frame.input_method_ID &&
-            im->current->frame.reset_ic.input_context_ID !=
-                frame.input_context_ID) {
-            break;
-        }
-
-        xcb_xim_request_queue_t *request = im->current;
-        im->current = NULL;
-
-        if (request->callback.reset_ic) {
-            request->callback.reset_ic(im, frame.input_context_ID, &frame,
-                                       request->user_data);
-        }
-
-        _xcb_xim_request_free(request);
-    } while (0);
+    _xcb_xim_complete_current(im, XCB_XIM_RESET_IC, &frame);
     xcb_im_reset_ic_reply_fr_free(&frame);
 }
 
@@ -843,11 +722,7 @@ void _xcb_xim_handle_sync(xcb_xim_t *im, const xcb_im_packet_header_fr_t *hdr,
 
 void _xcb_xim_handle_error(xcb_xim_t *im, uint8_t *data) {
     if (im->open_state == XIM_OPEN_DONE) {
-        if (im->current) {
-            _xcb_xim_process_fail_callback(im, im->current);
-            _xcb_xim_request_free(im->current);
-            im->current = NULL;
-        }
+        _xcb_xim_complete_current(im, 0, NULL);
     } else {
         if (im->open_state != XIM_OPEN_INVALID) {
             im->open_state = XIM_OPEN_INVALID;
