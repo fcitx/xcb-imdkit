@@ -900,7 +900,7 @@ void _xcb_xim_close(xcb_xim_t *im) {
     im->onKeys.keys = NULL;
     im->onKeys.nKeys = 0;
     free(im->offKeys.keys);
-    im->onKeys.keys = NULL;
+    im->offKeys.keys = NULL;
     im->offKeys.nKeys = 0;
 
     free(im->server_atoms);

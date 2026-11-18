@@ -54,10 +54,10 @@ static int test_xim_server_run(void *data) {
         connection, XCB_COPY_FROM_PARENT, server->window, screen->root, 0, 0, 1,
         1, 1, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual, 0, NULL);
     server->stop_atom = test_xim_server_stop_atom(connection);
-    xcb_im_t *im =
-        xcb_im_create(connection, screen_number, server->window, server->name,
-                      XCB_IM_ALL_LOCALES, &input_styles, NULL, NULL,
-                      &encoding_list, 0, server->callback, server->user_data);
+    xcb_im_t *im = xcb_im_create(
+        connection, screen_number, server->window, server->name,
+        XCB_IM_ALL_LOCALES, &input_styles, server->on_keys, server->off_keys,
+        &encoding_list, 0, server->callback, server->user_data);
     TEST_CHECK(xcb_im_open_im(im));
     xcb_flush(connection);
 
@@ -86,12 +86,16 @@ static int test_xim_server_run(void *data) {
     return thrd_success;
 }
 
-test_xim_server_t *test_xim_server_new(const char *name,
-                                       xcb_im_callback callback,
-                                       void *user_data) {
+test_xim_server_t *
+test_xim_server_new_with_keys(const char *name,
+                              const xcb_im_trigger_keys_t *on_keys,
+                              const xcb_im_trigger_keys_t *off_keys,
+                              xcb_im_callback callback, void *user_data) {
     test_xim_server_t *server = calloc(1, sizeof(*server));
     TEST_CHECK(server);
     server->name = name;
+    server->on_keys = on_keys;
+    server->off_keys = off_keys;
     server->callback = callback;
     server->user_data = user_data;
     TEST_CHECK(mtx_init(&server->mutex, mtx_plain) == thrd_success);
@@ -105,6 +109,12 @@ test_xim_server_t *test_xim_server_new(const char *name,
     }
     TEST_CHECK(mtx_unlock(&server->mutex) == thrd_success);
     return server;
+}
+
+test_xim_server_t *test_xim_server_new(const char *name,
+                                       xcb_im_callback callback,
+                                       void *user_data) {
+    return test_xim_server_new_with_keys(name, NULL, NULL, callback, user_data);
 }
 
 static void test_xim_server_stop(test_xim_server_t *server) {
