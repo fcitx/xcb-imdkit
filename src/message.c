@@ -9,8 +9,11 @@
 #include "common.h"
 #include "parser.h"
 #include "ximproto.h"
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <xcb/xcb.h>
+#include <xcb/xproto.h>
 
 static uint32_t lookup_offset(xcb_im_property_offset_t **offsets,
                               xcb_atom_t atom) {
@@ -150,11 +153,24 @@ void _xcb_send_xim_error_message(xcb_connection_t *conn,
     _xcb_send_xim_message(conn, protocol_atom, window, message, 0, NULL, 0);
 }
 
+// Valid zero-payload messages (e.g. XIM_DISCONNECT, XIM_DISCONNECT_REPLY) have
+// hdr->length == 0. Callers and frame_read_func macros treat NULL as a read or
+// parse failure, so always return a non-NULL buffer on success even when
+// buffer_size == 0 (avoiding implementation-defined malloc(0) returning NULL).
+static uint8_t *dup_xim_body(const uint8_t *rec, size_t buffer_size) {
+    uint8_t *p = malloc(buffer_size ? buffer_size : 1);
+    if (p && buffer_size) {
+        memcpy(p, rec, buffer_size);
+    }
+    return p;
+}
+
 uint8_t *_xcb_read_xim_message(xcb_connection_t *conn, xcb_window_t window,
                                xcb_im_property_offset_t **offsets,
                                xcb_client_message_event_t *ev,
                                xcb_im_packet_header_fr_t *hdr, bool swap) {
     uint8_t *p = NULL;
+    memset(hdr, 0, sizeof(*hdr));
 
     if (ev->format == 8) {
         /* ClientMessage only */
@@ -164,20 +180,24 @@ uint8_t *_xcb_read_xim_message(xcb_connection_t *conn, xcb_window_t window,
         uint8_t_read(&hdr->minor_opcode, &rec, &len, false);
         uint16_t_read(&hdr->length, &rec, &len, false);
 
+        size_t buffer_size = ((size_t)hdr->length) * 4;
         // check message is well formed
-        if (len >= hdr->length * 4) {
-            p = malloc(hdr->length * 4);
-        }
-        if (p) {
-            memcpy(p, rec, hdr->length * 4);
+        if (buffer_size <= len) {
+            p = dup_xim_body(rec, buffer_size);
         }
     } else if (ev->format == 32) {
         /* ClientMessage and WindowProperty */
         size_t length = ev->data.data32[0];
         xcb_atom_t atom = ev->data.data32[1];
+        if (length < XCB_IM_HEADER_SIZE || atom == XCB_ATOM_NONE) {
+            return NULL;
+        }
 
         uint32_t offset = lookup_offset(offsets, atom);
-        uint32_t end = offset + length;
+        uint64_t end = (uint64_t)offset + length;
+        if (end > UINT32_MAX) {
+            return NULL;
+        }
         uint32_t dword_begin = offset / 4;
         uint32_t dword_end = (end + 3) / 4;
         xcb_get_property_cookie_t cookie =
@@ -186,20 +206,25 @@ uint8_t *_xcb_read_xim_message(xcb_connection_t *conn, xcb_window_t window,
 
         xcb_get_property_reply_t *reply =
             xcb_get_property_reply(conn, cookie, NULL);
-        uint8_t *rec;
 
-        if (!reply || reply->format == 0 || reply->length == 0) {
-            free(reply);
-            return (unsigned char *)NULL;
+        if (!reply) {
+            return NULL;
         }
 
-        rec = xcb_get_property_value(reply) + (offset % 4);
+        size_t prop_len = xcb_get_property_value_length(reply);
+        if (reply->format == 0 || prop_len < (offset % 4) + length) {
+            set_offset(offsets, atom, 0);
+            free(reply);
+            return NULL;
+        }
 
         if (reply->bytes_after) {
-            set_offset(offsets, atom, offset + length);
+            set_offset(offsets, atom, (uint32_t)end);
         } else {
             set_offset(offsets, atom, 0);
         }
+
+        uint8_t *rec = (uint8_t *)xcb_get_property_value(reply) + (offset % 4);
 
         uint8_t_read(&hdr->major_opcode, &rec, &length, swap);
         uint8_t_read(&hdr->minor_opcode, &rec, &length, swap);
@@ -208,12 +233,7 @@ uint8_t *_xcb_read_xim_message(xcb_connection_t *conn, xcb_window_t window,
         size_t buffer_size = ((size_t)hdr->length) * 4;
         // check message is well formed
         if (buffer_size <= length) {
-            /* if hit, it might be an error */
-            p = malloc(buffer_size);
-        }
-
-        if (p) {
-            memcpy(p, rec, buffer_size);
+            p = dup_xim_body(rec, buffer_size);
         }
         free(reply);
     }
