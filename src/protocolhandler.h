@@ -78,6 +78,9 @@ void _xcb_im_handle_extension(xcb_im_t *im, xcb_im_client_t *client,
                               const xcb_im_packet_header_fr_t *hdr,
                               uint8_t *data);
 
+void _xcb_im_handle_sync(xcb_im_t *im, xcb_im_client_t *client,
+                         const xcb_im_packet_header_fr_t *hdr, uint8_t *data);
+
 void _xcb_im_handle_sync_reply(xcb_im_t *im, xcb_im_client_t *client,
                                const xcb_im_packet_header_fr_t *hdr,
                                uint8_t *data);

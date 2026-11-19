@@ -672,7 +672,7 @@ void _xcb_im_handle_message(xcb_im_t *im, xcb_im_client_t *client,
 
     case XCB_XIM_SYNC:
         DebugLog("-- XIM_SYNC\n");
-        // nothing is needed here
+        _xcb_im_handle_sync(im, client, hdr, data);
         break;
 
     case XCB_XIM_SYNC_REPLY:

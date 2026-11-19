@@ -851,6 +851,36 @@ void _xcb_im_handle_extension(xcb_im_t *im, xcb_im_client_t *client,
     }
 }
 
+void _xcb_im_handle_sync(xcb_im_t *im, xcb_im_client_t *client,
+                         const xcb_im_packet_header_fr_t *hdr, uint8_t *data) {
+    xcb_im_sync_fr_t frame;
+    _xcb_im_read_frame_with_error(im, client, frame, data,
+                                  XIM_MESSAGE_BYTES(hdr));
+
+    do {
+        if (client->connect_id != frame.input_method_ID) {
+            break;
+        }
+
+        xcb_im_input_context_t *ic = NULL;
+        HASH_FIND(hh, client->input_contexts, &frame.input_context_ID,
+                  sizeof(uint16_t), ic);
+        if (!ic) {
+            break;
+        }
+
+        xcb_im_sync_reply_fr_t reply_frame;
+        reply_frame.input_method_ID = frame.input_method_ID;
+        reply_frame.input_context_ID = frame.input_context_ID;
+        xcb_im_sync_fr_free(&frame);
+        _xcb_im_send_frame(im, client, reply_frame, true);
+        return;
+    } while (0);
+
+    xcb_im_sync_fr_free(&frame);
+    _xcb_im_send_error_message(im, client);
+}
+
 void _xcb_im_handle_sync_reply(xcb_im_t *im, xcb_im_client_t *client,
                                const xcb_im_packet_header_fr_t *hdr,
                                uint8_t *data) {
