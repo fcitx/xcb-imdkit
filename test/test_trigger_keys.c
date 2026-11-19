@@ -23,10 +23,23 @@ static void open_callback(xcb_xim_t *im, void *user_data) {
     TEST_CHECK(
         xcb_xim_check_trigger_on_key(im, ' ', XCB_MOD_MASK_CONTROL, &idx));
     TEST_CHECK(idx == 0);
+    TEST_CHECK(
+        xcb_xim_check_trigger_on_key(im, ' ', XCB_MOD_MASK_CONTROL, NULL));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    TEST_CHECK(xcb_xim_check_trigger_key(im, ' ', XCB_MOD_MASK_CONTROL, NULL) ==
+               XCB_XIM_TRIGGER_ON_KEY);
+#pragma GCC diagnostic pop
 
     idx = UINT32_MAX;
     TEST_CHECK(xcb_xim_check_trigger_off_key(im, 0xff1b, 0, &idx));
     TEST_CHECK(idx == 0);
+    TEST_CHECK(xcb_xim_check_trigger_off_key(im, 0xff1b, 0, NULL));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    TEST_CHECK(xcb_xim_check_trigger_key(im, 0xff1b, 0, NULL) ==
+               XCB_XIM_TRIGGER_OFF_KEY);
+#pragma GCC diagnostic pop
 
     opened = true;
 }
@@ -69,6 +82,7 @@ int main() {
                                           "@im=test_trigger_keys_server");
     xcb_xim_set_im_callback(client_im, &callbacks, NULL);
     TEST_CHECK(xcb_xim_open(client_im, open_callback, true, NULL));
+    TEST_CHECK(!xcb_xim_filter_event(client_im, NULL));
 
     xcb_generic_event_t *event;
     while (!opened && (event = xcb_wait_for_event(client_connection))) {
@@ -90,4 +104,3 @@ int main() {
     xcb_disconnect(client_connection);
     return 0;
 }
-
