@@ -822,8 +822,8 @@ bool xcb_xim_trigger_notify(xcb_xim_t *im, xcb_xic_t ic, uint32_t idx,
     frame.input_context_ID = ic;
     frame.flag = off ? 1 : 0;
     frame.index_of_keys_list = idx;
-    frame.client_select_event_mask =
-        _xcb_get_event_mask(im->conn, im->focus_window);
+    frame.client_select_event_mask = _xcb_get_event_mask(
+        im->conn, im->focus_window ? im->focus_window : im->client_window);
     bool fail;
     _xcb_xim_send_frame(im, frame, fail);
     return !fail;
@@ -1330,7 +1330,7 @@ bool xcb_xim_create_ic(xcb_xim_t *im, xcb_xim_create_ic_callback callback,
         if (strcmp(attr, XCB_XIM_XNClientWindow) == 0) {
             im->client_window = *(xcb_window_t *)p;
         } else if (strcmp(attr, XCB_XIM_XNFocusWindow) == 0) {
-            im->client_window = *(xcb_window_t *)p;
+            im->focus_window = *(xcb_window_t *)p;
         }
 
         xcb_xim_icattr_table_t *icattr = _xcb_xim_find_icattr(im, attr);
@@ -1543,7 +1543,7 @@ bool xcb_xim_set_ic_values(xcb_xim_t *im, xcb_xic_t ic,
         if (strcmp(attr, XCB_XIM_XNClientWindow) == 0) {
             im->client_window = *(xcb_window_t *)p;
         } else if (strcmp(attr, XCB_XIM_XNFocusWindow) == 0) {
-            im->client_window = *(xcb_window_t *)p;
+            im->focus_window = *(xcb_window_t *)p;
         }
 
         xcb_xim_icattr_table_t *icattr = _xcb_xim_find_icattr(im, attr);
