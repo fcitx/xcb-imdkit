@@ -176,9 +176,9 @@ uint8_t *_xcb_read_xim_message(xcb_connection_t *conn, xcb_window_t window,
         /* ClientMessage only */
         uint8_t *rec = ev->data.data8;
         size_t len = sizeof(ev->data.data8);
-        uint8_t_read(&hdr->major_opcode, &rec, &len, false);
-        uint8_t_read(&hdr->minor_opcode, &rec, &len, false);
-        uint16_t_read(&hdr->length, &rec, &len, false);
+        uint8_t_read(&hdr->major_opcode, &rec, &len, swap);
+        uint8_t_read(&hdr->minor_opcode, &rec, &len, swap);
+        uint16_t_read(&hdr->length, &rec, &len, swap);
 
         size_t buffer_size = ((size_t)hdr->length) * 4;
         // check message is well formed

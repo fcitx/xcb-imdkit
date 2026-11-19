@@ -573,14 +573,19 @@ static uint8_t *_xcb_im_read_message(xcb_im_t *im,
                                      xcb_client_message_event_t *ev,
                                      xcb_im_client_t *client,
                                      xcb_im_packet_header_fr_t *hdr) {
-    if (ev->format == 8) {
-        if (client->byte_order == '?') {
-            // major_opcode
-            if (ev->data.data8[0] != XCB_XIM_CONNECT) {
-                return NULL; /* can do nothing */
-            }
-            client->byte_order = ev->data.data8[XCB_IM_HEADER_SIZE];
+    if (client->byte_order == '?') {
+        if (ev->format != 8) {
+            return NULL;
         }
+        // major_opcode
+        if (ev->data.data8[0] != XCB_XIM_CONNECT) {
+            return NULL; /* can do nothing */
+        }
+        uint8_t byte_order = ev->data.data8[XCB_IM_HEADER_SIZE];
+        if (byte_order != 'l' && byte_order != 'B') {
+            return NULL;
+        }
+        client->byte_order = byte_order;
     }
     return _xcb_read_xim_message(im->conn, client->accept_win, &client->offsets,
                                  ev, hdr, client->byte_order != im->byte_order);
@@ -873,7 +878,11 @@ void xcb_im_forward_event_full(xcb_im_t *im, xcb_im_input_context_t *ic,
                                       client->byte_order != im->byte_order);
     content = xcb_im_forward_event_fr_write(
         &frame, content, client->byte_order != im->byte_order);
-    memcpy(content, event, sizeof(xcb_key_press_event_t));
+    xcb_key_press_event_t wire_event = *event;
+    if (client->byte_order != im->byte_order) {
+        _xcb_im_swap_key_event(&wire_event);
+    }
+    memcpy(content, &wire_event, sizeof(xcb_key_press_event_t));
 
     (void)_xcb_im_send_message(im, client, data, length);
 }
@@ -1047,13 +1056,14 @@ void _xcb_im_send_set_event_mask(xcb_im_t *im, xcb_im_client_t *client,
 
 void _xcb_im_add_queue(xcb_im_input_context_t *ic,
                        const xcb_im_packet_header_fr_t *hdr,
-                       xcb_im_forward_event_fr_t *frame, uint8_t *data) {
+                       xcb_im_forward_event_fr_t *frame,
+                       const xcb_key_press_event_t *event) {
     xcb_im_queue_t *item = malloc(sizeof(xcb_im_queue_t));
     if (!item) {
         return;
     }
 
-    memcpy(&item->event, data, sizeof(xcb_key_press_event_t));
+    item->event = *event;
     memcpy(&item->hdr, hdr, sizeof(xcb_im_packet_header_fr_t));
     memcpy(&item->frame, frame, sizeof(xcb_im_forward_event_fr_t));
 

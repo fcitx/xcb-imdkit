@@ -748,12 +748,14 @@ void _xcb_im_handle_forward_event(xcb_im_t *im, xcb_im_client_t *client,
             break;
         }
         ic->forward_event_sequence = frame.sequence_number;
+        xcb_key_press_event_t key_event;
+        memcpy(&key_event, data, sizeof(xcb_key_press_event_t));
+        if (client->byte_order != im->byte_order) {
+            _xcb_im_swap_key_event(&key_event);
+        }
         if (ic->sync) {
-            _xcb_im_add_queue(ic, hdr, &frame, data);
+            _xcb_im_add_queue(ic, hdr, &frame, &key_event);
         } else {
-            xcb_key_press_event_t key_event;
-            memcpy(&key_event, data, sizeof(xcb_key_press_event_t));
-
             if (im->callback) {
                 im->callback(im, client, ic, hdr, &frame, &key_event,
                              im->user_data);
