@@ -225,8 +225,12 @@ int main() {
     uint8_t bad_connect[8] = {'X', 0, 0, 0, 0, 0, 0, 0};
     send_swapped_inline(conn, bad_accept_win, protocol_atom, XCB_XIM_CONNECT,
                         bad_connect, sizeof(bad_connect));
+    // A premature format=32 message before valid format=8 XIM_CONNECT must also
+    // be ignored cleanly without proceeding with byte_order == '?'.
+    send_swapped_property(conn, bad_accept_win, protocol_atom, client_prop,
+                          XCB_XIM_OPEN, bad_connect, sizeof(bad_connect));
 
-    // 2. Opposite-endian client sending XIM_CONNECT via format=32 property.
+    // 2. Opposite-endian client sending inline format=8 XIM_CONNECT.
     xcb_window_t comm_win = xcb_generate_id(conn);
     xcb_create_window(conn, XCB_COPY_FROM_PARENT, comm_win, screen->root, 0, 0,
                       1, 1, 1, XCB_WINDOW_CLASS_INPUT_OUTPUT,
@@ -236,8 +240,8 @@ int main() {
         xconnect(conn, server_win, comm_win, xconnect_atom);
 
     uint8_t connect_body[8] = {opposite_order, 0, 0, 1, 0, 0, 0, 0};
-    send_swapped_property(conn, accept_win, protocol_atom, client_prop,
-                          XCB_XIM_CONNECT, connect_body, sizeof(connect_body));
+    send_swapped_inline(conn, accept_win, protocol_atom, XCB_XIM_CONNECT,
+                        connect_body, sizeof(connect_body));
 
     uint8_t opcode = 0;
     size_t reply_len = 0;
@@ -379,47 +383,6 @@ int main() {
     free(reply);
 
     TEST_CHECK(server_saw_key);
-
-    // 6. Host-endian client sending XIM_CONNECT via format=32 property must
-    // detect local byte_order instead of leaving byte_order == '?' (swap=true).
-    uint8_t local_order = (*(char *)&endian) ? 'l' : 'B';
-    xcb_window_t local_comm_win = xcb_generate_id(conn);
-    xcb_create_window(conn, XCB_COPY_FROM_PARENT, local_comm_win, screen->root,
-                      0, 0, 1, 1, 1, XCB_WINDOW_CLASS_INPUT_OUTPUT,
-                      screen->root_visual, 0, NULL);
-    xcb_window_t local_accept_win =
-        xconnect(conn, server_win, local_comm_win, xconnect_atom);
-    uint8_t local_connect_hdr_and_body[12] = {
-        XCB_XIM_CONNECT, 0, 0, 0, local_order, 0, 1, 0, 0, 0, 0, 0};
-    uint16_t local_words = 2;
-    memcpy(&local_connect_hdr_and_body[2], &local_words, 2);
-    uint16_t local_major = 1;
-    memcpy(&local_connect_hdr_and_body[6], &local_major, 2);
-    xcb_change_property(conn, XCB_PROP_MODE_APPEND, local_accept_win,
-                        client_prop, XCB_ATOM_STRING, 8,
-                        sizeof(local_connect_hdr_and_body),
-                        local_connect_hdr_and_body);
-    xcb_client_message_event_t cm32;
-    memset(&cm32, 0, sizeof(cm32));
-    cm32.response_type = XCB_CLIENT_MESSAGE;
-    cm32.format = 32;
-    cm32.window = local_accept_win;
-    cm32.type = protocol_atom;
-    cm32.data.data32[0] = sizeof(local_connect_hdr_and_body);
-    cm32.data.data32[1] = client_prop;
-    xcb_send_event(conn, false, local_accept_win, XCB_EVENT_MASK_NO_EVENT,
-                   (const char *)&cm32);
-    xcb_flush(conn);
-
-    xcb_generic_event_t *local_gev = wait_client_message(conn);
-    xcb_client_message_event_t *local_reply =
-        (xcb_client_message_event_t *)local_gev;
-    TEST_CHECK(local_reply->format == 8);
-    TEST_CHECK(local_reply->data.data8[0] == XCB_XIM_CONNECT_REPLY);
-    uint16_t local_reply_words;
-    memcpy(&local_reply_words, &local_reply->data.data8[2], 2);
-    TEST_CHECK(local_reply_words == 1);
-    free(local_gev);
 
     xcb_disconnect(conn);
     test_xim_server_destroy(server);

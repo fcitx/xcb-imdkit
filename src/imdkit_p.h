@@ -283,9 +283,32 @@ void _xcb_im_set_ic_event_mask(xcb_im_t *im, xcb_im_input_context_t *client);
 void _xcb_im_set_im_event_mask(xcb_im_t *im, xcb_im_client_t *ic);
 void _xcb_im_add_queue(xcb_im_input_context_t *ic,
                        const xcb_im_packet_header_fr_t *hdr,
-                       xcb_im_forward_event_fr_t *frame, uint8_t *data);
+                       xcb_im_forward_event_fr_t *frame,
+                       const xcb_key_press_event_t *event);
 void _xcb_im_process_queue(xcb_im_t *im, xcb_im_input_context_t *ic);
 static inline bool _xcb_im_has_trigger_key(xcb_im_t *im) {
     return im->onKeys.nKeys || im->offKeys.nKeys;
+}
+static inline uint16_t _xcb_im_bswap16(uint16_t x) {
+    return (uint16_t)((x << 8) | (x >> 8));
+}
+static inline uint32_t _xcb_im_bswap32(uint32_t x) {
+    return ((x << 24) & 0xFF000000u) | ((x << 8) & 0x00FF0000u) |
+           ((x >> 8) & 0x0000FF00u) | ((x >> 24) & 0x000000FFu);
+}
+// libX11 (_XimProtoEventToWire / _XimProtoWireToEvent with sw=False) sends and
+// expects the 32-byte xEvent in XIM_FORWARD_EVENT in the client's byte order.
+// Classic IMdkit had a bug omitting this byte swap on xEvent.
+static inline void _xcb_im_swap_key_event(xcb_key_press_event_t *ev) {
+    ev->sequence = _xcb_im_bswap16(ev->sequence);
+    ev->time = _xcb_im_bswap32(ev->time);
+    ev->root = _xcb_im_bswap32(ev->root);
+    ev->event = _xcb_im_bswap32(ev->event);
+    ev->child = _xcb_im_bswap32(ev->child);
+    ev->root_x = (int16_t)_xcb_im_bswap16((uint16_t)ev->root_x);
+    ev->root_y = (int16_t)_xcb_im_bswap16((uint16_t)ev->root_y);
+    ev->event_x = (int16_t)_xcb_im_bswap16((uint16_t)ev->event_x);
+    ev->event_y = (int16_t)_xcb_im_bswap16((uint16_t)ev->event_y);
+    ev->state = _xcb_im_bswap16(ev->state);
 }
 #endif // _XCB_IMDKIT_IMDKIT_P_H_
