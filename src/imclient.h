@@ -117,22 +117,48 @@ XCBIMDKIT_EXPORT void xcb_xim_set_use_utf8_string(xcb_xim_t *im, bool enable);
 XCBIMDKIT_EXPORT
 xcb_xim_encoding_t xcb_xim_get_encoding(xcb_xim_t *im);
 XCBIMDKIT_EXPORT void xcb_xim_destroy(xcb_xim_t *im);
+/**
+ * Open connection to XIM server.
+ *
+ * This function must succeed at least once before calling xcb_xim_filter_event,
+ * xcb_xim_close, or other session functions.
+ */
 XCBIMDKIT_EXPORT bool xcb_xim_open(xcb_xim_t *im,
                                    xcb_xim_open_callback callback,
                                    bool auto_connect, void *user_data);
 XCBIMDKIT_EXPORT void
 xcb_xim_set_im_callback(xcb_xim_t *im, const xcb_xim_im_callback *callbacks,
                         void *user_data);
+/**
+ * Filter X event for XIM client.
+ *
+ * xcb_xim_open must succeed before calling this function.
+ */
 XCBIMDKIT_EXPORT bool xcb_xim_filter_event(xcb_xim_t *im,
                                            xcb_generic_event_t *event);
 
+/**
+ * Check whether the key matches a trigger on/off key.
+ *
+ * @param idx Output index of the matched trigger key. May be NULL since 1.0.10.
+ */
 XCBIMDKIT_DEPRECATED_EXPORT xcb_xim_trigger_key_type_t
 xcb_xim_check_trigger_key(xcb_xim_t *im, xcb_keysym_t keysym, uint32_t modifier,
                           uint32_t *idx);
+/**
+ * Check whether the key matches a trigger on key.
+ *
+ * @param idx Output index of the matched trigger key. May be NULL since 1.0.10.
+ */
 XCBIMDKIT_EXPORT bool xcb_xim_check_trigger_on_key(xcb_xim_t *im,
                                                    xcb_keysym_t keysym,
                                                    uint32_t modifier,
                                                    uint32_t *idx);
+/**
+ * Check whether the key matches a trigger off key.
+ *
+ * @param idx Output index of the matched trigger key. May be NULL since 1.0.10.
+ */
 XCBIMDKIT_EXPORT bool xcb_xim_check_trigger_off_key(xcb_xim_t *im,
                                                     xcb_keysym_t keysym,
                                                     uint32_t modifier,
@@ -169,6 +195,11 @@ XCBIMDKIT_EXPORT bool xcb_xim_reset_ic(xcb_xim_t *im, xcb_xic_t ic,
 XCBIMDKIT_EXPORT bool xcb_xim_destroy_ic(xcb_xim_t *im, xcb_xic_t ic,
                                          xcb_xim_destroy_ic_callback callback,
                                          void *user_data);
+/**
+ * Close connection to XIM server.
+ *
+ * Only call this function if xcb_xim_open has succeeded.
+ */
 XCBIMDKIT_EXPORT void xcb_xim_close(xcb_xim_t *im);
 XCBIMDKIT_EXPORT bool xcb_xim_support_extension(xcb_xim_t *im,
                                                 uint16_t major_code,

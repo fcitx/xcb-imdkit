@@ -94,12 +94,14 @@ typedef void (*xcb_im_free_function)(void *memory);
  * @param conn xcb connection to be used.
  * @param screen xcb screen to be used.
  * @param serverWindow A server window.
- * @param serverName server name, need to be consistent with XMODIFIERS
- * @param locale locale supported. You may want to use XCB_IM_ALL_LOCALES.
+ * @param serverName server name, need to be consistent with XMODIFIERS. Must
+ * not be NULL.
+ * @param locale locale supported. You may want to use XCB_IM_ALL_LOCALES. Must
+ * not be NULL.
  * @param inputStyles XIM Styles supported by XIM server.
  * @param onKeysList Trigger on key to send to client.
  * @param offKeysList Trigger off key to send to cilent.
- * @param encodingList XIM encoding list.
+ * @param encodingList XIM encoding list. Must not be NULL.
  * @param event_mask if 0, XCB_EVENT_MASK_KEY_PRESS will be used.
  * @param callback Callback function
  * @param user_data user data to callback function.
@@ -162,6 +164,8 @@ XCBIMDKIT_EXPORT bool xcb_im_open_im(xcb_im_t *im);
 /**
  * Handle XIM related event, most relevant event will be client message.
  *
+ * xcb_im_open_im must succeed before calling this function.
+ *
  * @param im XIM server
  * @param event X event.
  * @return Whether the event is handled by XIM.
@@ -171,6 +175,8 @@ XCBIMDKIT_EXPORT bool xcb_im_filter_event(xcb_im_t *im,
 
 /**
  * Shutdown the XIM server and free all the resources.
+ *
+ * Only call this function if xcb_im_open_im has succeeded.
  *
  * @param im XIM server
  *

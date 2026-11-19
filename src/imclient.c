@@ -500,6 +500,9 @@ char *_xcb_xim_make_im_name(const char *imname) {
 xcb_xim_t *xcb_xim_create(xcb_connection_t *conn, int screen_id,
                           const char *imname) {
     xcb_xim_t *im = calloc(1, sizeof(xcb_xim_t));
+    if (!im) {
+        return NULL;
+    }
 
     if (!imname) {
         imname = getenv("XMODIFIERS");
@@ -797,6 +800,9 @@ bool _xcb_xim_filter_property_changed(xcb_xim_t *im,
 }
 
 bool xcb_xim_filter_event(xcb_xim_t *im, xcb_generic_event_t *event) {
+    if (!event) {
+        return false;
+    }
     im->yield_recheck = false;
     im->event_sequence = event->full_sequence;
     bool result = _xcb_xim_preconnect_im(im, event) ||
@@ -831,7 +837,9 @@ xcb_xim_trigger_key_type_t xcb_xim_check_trigger_key(xcb_xim_t *im,
         if (im->onKeys.keys[i].keysym == keysym &&
             (modifier & im->onKeys.keys[i].modifier_mask) ==
                 im->onKeys.keys[i].modifier) {
-            *idx = i;
+            if (idx) {
+                *idx = i;
+            }
             return XCB_XIM_TRIGGER_ON_KEY;
         }
     }
@@ -839,7 +847,9 @@ xcb_xim_trigger_key_type_t xcb_xim_check_trigger_key(xcb_xim_t *im,
         if (im->offKeys.keys[i].keysym == keysym &&
             (modifier & im->offKeys.keys[i].modifier_mask) ==
                 im->offKeys.keys[i].modifier) {
-            *idx = i;
+            if (idx) {
+                *idx = i;
+            }
             return XCB_XIM_TRIGGER_OFF_KEY;
         }
     }
@@ -852,7 +862,9 @@ bool xcb_xim_check_trigger_on_key(xcb_xim_t *im, xcb_keysym_t keysym,
         if (im->onKeys.keys[i].keysym == keysym &&
             (modifier & im->onKeys.keys[i].modifier_mask) ==
                 im->onKeys.keys[i].modifier) {
-            *idx = i;
+            if (idx) {
+                *idx = i;
+            }
             return true;
         }
     }
@@ -865,8 +877,10 @@ bool xcb_xim_check_trigger_off_key(xcb_xim_t *im, xcb_keysym_t keysym,
         if (im->offKeys.keys[i].keysym == keysym &&
             (modifier & im->offKeys.keys[i].modifier_mask) ==
                 im->offKeys.keys[i].modifier) {
-            *idx = i;
-            return XCB_XIM_TRIGGER_OFF_KEY;
+            if (idx) {
+                *idx = i;
+            }
+            return true;
         }
     }
     return false;

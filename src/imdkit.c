@@ -55,7 +55,12 @@ SIMPLE_ARRAY_FUNC(input_styles, xcb_im_styles_t, xcb_im_style_t, nStyles,
                   styles)
 
 void _copy_encodings(xcb_im_encodings_t *to, const xcb_im_encodings_t *from) {
-    to->encodings = malloc(from->nEncodings * sizeof(xcb_im_encoding_t));
+    if (!from->nEncodings) {
+        to->nEncodings = 0;
+        to->encodings = NULL;
+        return;
+    }
+    to->encodings = calloc(from->nEncodings, sizeof(xcb_im_encoding_t));
     if (!to->encodings) {
         return;
     }
@@ -81,6 +86,9 @@ xcb_im_t *xcb_im_create(xcb_connection_t *conn, int screen,
                         uint32_t event_mask, xcb_im_callback callback,
                         void *user_data) {
     xcb_im_t *im = calloc(1, sizeof(xcb_im_t));
+    if (!im) {
+        return NULL;
+    }
     im->conn = conn;
     im->screen_id = screen;
     im->callback = callback;
@@ -756,6 +764,9 @@ bool _xcb_im_filter_destroy_window(xcb_im_t *im, xcb_generic_event_t *event) {
 }
 
 bool xcb_im_filter_event(xcb_im_t *im, xcb_generic_event_t *event) {
+    if (!event) {
+        return false;
+    }
     return _xcb_im_filter_xconnect_message(im, event) ||
            _xcb_im_filter_selection_request(im, event) ||
            _xcb_im_filter_client(im, event) ||
