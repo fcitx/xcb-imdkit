@@ -256,7 +256,9 @@ xcb_xim_connect_action_t _xcb_xim_connect_wait(xcb_xim_t *im,
 
     xcb_client_message_event_t *client_message =
         (xcb_client_message_event_t *)event;
-    if (client_message->type != im->atoms[XIM_ATOM_XIM_CONNECT]) {
+    if (client_message->window != im->im_client_window ||
+        client_message->format != 32 ||
+        client_message->type != im->atoms[XIM_ATOM_XIM_CONNECT]) {
         return ACTION_YIELD;
     }
     event = NULL;
@@ -303,13 +305,15 @@ _xcb_xim_connect_wait_reply(xcb_xim_t *im, xcb_generic_event_t *event) {
     }
     xcb_client_message_event_t *client_message =
         (xcb_client_message_event_t *)event;
-    if (client_message->type != im->atoms[XIM_ATOM_XIM_PROTOCOL]) {
+    if (client_message->window != im->im_client_window ||
+        client_message->type != im->atoms[XIM_ATOM_XIM_PROTOCOL]) {
         return ACTION_YIELD;
     }
 
     xcb_im_packet_header_fr_t hdr;
-    uint8_t *message = _xcb_read_xim_message(im->conn, im->accept_win, NULL,
-                                             client_message, &hdr, false);
+    uint8_t *message =
+        _xcb_read_xim_message(im->conn, im->im_client_window, &im->offsets,
+                              client_message, &hdr, false);
 
     if (!message) {
         return ACTION_FAILED;
@@ -690,7 +694,8 @@ bool _xcb_xim_filter_event(xcb_xim_t *im, xcb_generic_event_t *event) {
         xcb_client_message_event_t *clientmessage =
             (xcb_client_message_event_t *)event;
 
-        if (clientmessage->type != im->atoms[XIM_ATOM_XIM_PROTOCOL]) {
+        if (clientmessage->window != im->im_client_window ||
+            clientmessage->type != im->atoms[XIM_ATOM_XIM_PROTOCOL]) {
             break;
         }
 

@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <threads.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
@@ -121,10 +122,102 @@ static int client_thread(void *data) {
     }
 
     TEST_CHECK(client->completed);
+
+    xcb_intern_atom_reply_t *proto_reply = xcb_intern_atom_reply(
+        client->connection,
+        xcb_intern_atom(client->connection, false, strlen("_XIM_PROTOCOL"),
+                        "_XIM_PROTOCOL"),
+        NULL);
+    TEST_CHECK(proto_reply);
+    xcb_client_message_event_t bogus_proto = {
+        .response_type = XCB_CLIENT_MESSAGE,
+        .format = 8,
+        .window = client->window,
+        .type = proto_reply->atom,
+    };
+    free(proto_reply);
+    TEST_CHECK(
+        !xcb_xim_filter_event(client->im, (xcb_generic_event_t *)&bogus_proto));
+
     xcb_xim_close(client->im);
     xcb_xim_destroy(client->im);
     xcb_disconnect(client->connection);
     return thrd_success;
+}
+
+static void run_shared_connection_clients(void) {
+    int screen_number;
+    xcb_connection_t *conn = xcb_connect(NULL, &screen_number);
+    xcb_screen_t *screen = xcb_aux_get_screen(conn, screen_number);
+    TEST_CHECK(screen);
+
+    xcb_intern_atom_reply_t *proto_reply = xcb_intern_atom_reply(
+        conn,
+        xcb_intern_atom(conn, false, strlen("_XIM_PROTOCOL"), "_XIM_PROTOCOL"),
+        NULL);
+    xcb_intern_atom_reply_t *xconn_reply = xcb_intern_atom_reply(
+        conn,
+        xcb_intern_atom(conn, false, strlen("_XIM_XCONNECT"), "_XIM_XCONNECT"),
+        NULL);
+    TEST_CHECK(proto_reply && xconn_reply);
+    xcb_atom_t proto_atom = proto_reply->atom;
+    xcb_atom_t xconn_atom = xconn_reply->atom;
+    free(proto_reply);
+    free(xconn_reply);
+
+    client_t shared[CLIENT_COUNT] = {0};
+    xcb_xim_im_callback callbacks = {
+        .forward_event = forward_event,
+    };
+
+    for (unsigned int i = 0; i < CLIENT_COUNT; i++) {
+        shared[i].index = i;
+        shared[i].connection = conn;
+        shared[i].screen = screen;
+        shared[i].window = xcb_generate_id(conn);
+        xcb_create_window(
+            conn, XCB_COPY_FROM_PARENT, shared[i].window, screen->root, 0, 0, 1,
+            1, 1, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual, 0, NULL);
+        shared[i].im =
+            xcb_xim_create(conn, screen_number, "@im=test_multiple_server");
+        xcb_xim_set_im_callback(shared[i].im, &callbacks, &shared[i]);
+        TEST_CHECK(xcb_xim_open(shared[i].im, open_callback, true, &shared[i]));
+    }
+
+    // ClientMessages addressed to an unrelated window must not be consumed.
+    xcb_client_message_event_t bogus_xconn = {
+        .response_type = XCB_CLIENT_MESSAGE,
+        .format = 32,
+        .window = shared[0].window,
+        .type = xconn_atom,
+    };
+    TEST_CHECK(!xcb_xim_filter_event(shared[0].im,
+                                     (xcb_generic_event_t *)&bogus_xconn));
+
+    xcb_generic_event_t *event;
+    while (!(shared[0].completed && shared[1].completed) &&
+           (event = xcb_wait_for_event(conn))) {
+        if (!xcb_xim_filter_event(shared[0].im, event)) {
+            xcb_xim_filter_event(shared[1].im, event);
+        }
+        free(event);
+    }
+
+    xcb_client_message_event_t bogus_proto = {
+        .response_type = XCB_CLIENT_MESSAGE,
+        .format = 8,
+        .window = shared[0].window,
+        .type = proto_atom,
+    };
+    TEST_CHECK(!xcb_xim_filter_event(shared[0].im,
+                                     (xcb_generic_event_t *)&bogus_proto));
+
+    for (unsigned int i = 0; i < CLIENT_COUNT; i++) {
+        TEST_CHECK(shared[i].completed);
+        xcb_xim_close(shared[i].im);
+        xcb_xim_destroy(shared[i].im);
+    }
+    xcb_disconnect(conn);
 }
 
 int main() {
@@ -142,8 +235,11 @@ int main() {
     for (unsigned int i = 0; i < CLIENT_COUNT; i++) {
         TEST_CHECK(thrd_join(clients[i], NULL) == thrd_success);
     }
+
+    run_shared_connection_clients();
+
     test_xim_server_destroy(server);
     TEST_CHECK(atomic_load(&server_forwarded_events) ==
-               CLIENT_COUNT * IC_COUNT);
+               2 * CLIENT_COUNT * IC_COUNT);
     return 0;
 }
