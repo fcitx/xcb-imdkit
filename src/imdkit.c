@@ -33,20 +33,21 @@ typedef struct _xcb_im_ext_t {
 } xcb_im_ext_t;
 
 #define SIMPLE_ARRAY_FUNC(NAME, ARRAY_TYPE, ELEM_TYPE, NUM, PTR)               \
-    void _copy_##NAME(ARRAY_TYPE *to, const ARRAY_TYPE *from) {                \
+    static bool _copy_##NAME(ARRAY_TYPE *to, const ARRAY_TYPE *from) {         \
         if (!from || !from->NUM) {                                             \
             to->NUM = 0;                                                       \
             to->PTR = NULL;                                                    \
-            return;                                                            \
+            return true;                                                       \
         }                                                                      \
         to->PTR = malloc(from->NUM * sizeof(ELEM_TYPE));                       \
         if (!to->PTR) {                                                        \
-            return;                                                            \
+            return false;                                                      \
         }                                                                      \
         to->NUM = from->NUM;                                                   \
         memcpy(to->PTR, from->PTR, from->NUM * sizeof(ELEM_TYPE));             \
+        return true;                                                           \
     }                                                                          \
-    void _free_##NAME(ARRAY_TYPE *to) { free(to->PTR); }
+    static void _free_##NAME(ARRAY_TYPE *to) { free(to->PTR); }
 
 SIMPLE_ARRAY_FUNC(trigger_keys, xcb_im_trigger_keys_t,
                   xcb_im_ximtriggerkey_fr_t, nKeys, keys)
@@ -54,23 +55,28 @@ SIMPLE_ARRAY_FUNC(trigger_keys, xcb_im_trigger_keys_t,
 SIMPLE_ARRAY_FUNC(input_styles, xcb_im_styles_t, xcb_im_style_t, nStyles,
                   styles)
 
-void _copy_encodings(xcb_im_encodings_t *to, const xcb_im_encodings_t *from) {
+static bool _copy_encodings(xcb_im_encodings_t *to,
+                            const xcb_im_encodings_t *from) {
     if (!from->nEncodings) {
         to->nEncodings = 0;
         to->encodings = NULL;
-        return;
+        return true;
     }
     to->encodings = calloc(from->nEncodings, sizeof(xcb_im_encoding_t));
     if (!to->encodings) {
-        return;
+        return false;
     }
     to->nEncodings = from->nEncodings;
     for (int i = 0; i < to->nEncodings; i++) {
         to->encodings[i] = strdup(from->encodings[i]);
+        if (!to->encodings[i]) {
+            return false;
+        }
     }
+    return true;
 }
 
-void _free_encodings(xcb_im_encodings_t *to) {
+static void _free_encodings(xcb_im_encodings_t *to) {
     for (int i = 0; i < to->nEncodings; i++) {
         free(to->encodings[i]);
     }
@@ -102,12 +108,30 @@ xcb_im_t *xcb_im_create(xcb_connection_t *conn, int screen,
         im->event_mask = event_mask;
     }
 
-    _copy_trigger_keys(&im->onKeys, onKeysList);
-    _copy_trigger_keys(&im->offKeys, offKeysList);
-    _copy_input_styles(&im->inputStyles, inputStyles);
-    _copy_encodings(&im->encodings, encodingList);
-    im->locale = strdup(locale);
-    im->serverName = strdup(serverName);
+    bool alloc_ok = false;
+    do {
+        if (!_copy_trigger_keys(&im->onKeys, onKeysList) ||
+            !_copy_trigger_keys(&im->offKeys, offKeysList) ||
+            !_copy_input_styles(&im->inputStyles, inputStyles) ||
+            !_copy_encodings(&im->encodings, encodingList)) {
+            break;
+        }
+        int locale_len = asprintf(&im->locale, "@locale=%s", locale);
+        if (locale_len < 0) {
+            im->locale = NULL;
+            break;
+        }
+        im->locale_len = (size_t)locale_len;
+        im->serverName = strdup(serverName);
+        if (!im->serverName) {
+            break;
+        }
+        alloc_ok = true;
+    } while (false);
+    if (!alloc_ok) {
+        xcb_im_destroy(im);
+        return NULL;
+    }
     im->serverWindow = serverWindow;
 
     uint16_t endian = 1;
@@ -255,7 +279,9 @@ bool _xcb_im_init(xcb_im_t *im) {
     im->screen = screen;
     im->default_screen = defaultScreen;
     char *buf;
-    asprintf(&buf, "@server=%s", im->serverName);
+    if (asprintf(&buf, "@server=%s", im->serverName) < 0) {
+        return false;
+    }
     const char *atom_names[] = {buf,           XIM_SERVERS,   XIM_LOCALES,
                                 XIM_TRANSPORT, _XIM_PROTOCOL, _XIM_XCONNECT};
     im->init = _xcb_im_init_atoms(im->conn, ARRAY_SIZE(atom_names), atom_names,
@@ -534,21 +560,29 @@ bool _xcb_im_filter_selection_request(xcb_im_t *im,
         if (selection_request->selection != im->atoms[XIM_ATOM_SERVER_NAME]) {
             break;
         }
-        char buf[LOCALES_BUFSIZE];
+        const char *reply_data = NULL;
+        size_t reply_length = 0;
         if (selection_request->target == im->atoms[XIM_ATOM_LOCALES]) {
-            snprintf(buf, LOCALES_BUFSIZE - 2, "@locale=%s", im->locale);
-            buf[LOCALES_BUFSIZE - 1] = 0;
+            reply_data = im->locale;
+            reply_length = im->locale_len;
         } else if (selection_request->target == im->atoms[XIM_ATOM_TRANSPORT]) {
-            strcpy(buf, "@transport=X/");
-        } else {
-            return true;
+            static const char transport[] = "@transport=X/";
+            reply_data = transport;
+            reply_length = sizeof(transport) - 1;
         }
-        DebugLog("requestor:%u\n", selection_request->requestor);
-        DebugLog("buf:%s\n", buf);
-        xcb_change_property(
-            im->conn, XCB_PROP_MODE_REPLACE, selection_request->requestor,
-            selection_request->target, selection_request->target, 8,
-            strlen(buf), (unsigned char *)buf);
+
+        xcb_atom_t prop = XCB_ATOM_NONE;
+        if (reply_data) {
+            prop = selection_request->property != XCB_ATOM_NONE
+                       ? selection_request->property
+                       : selection_request->target;
+            DebugLog("requestor:%u\n", selection_request->requestor);
+            DebugLog("buf:%s\n", reply_data);
+            xcb_change_property(im->conn, XCB_PROP_MODE_REPLACE,
+                                selection_request->requestor, prop,
+                                selection_request->target, 8, reply_length,
+                                (const unsigned char *)reply_data);
+        }
 
         xcb_selection_notify_event_t ev;
         memset(&ev, 0, sizeof(ev));
@@ -558,7 +592,7 @@ bool _xcb_im_filter_selection_request(xcb_im_t *im,
         ev.selection = selection_request->selection;
         ev.target = selection_request->target;
         ev.time = selection_request->time;
-        ev.property = selection_request->property;
+        ev.property = prop;
         xcb_send_event(im->conn, false, ev.requestor, XCB_EVENT_MASK_NO_EVENT,
                        (char *)&ev);
         xcb_flush(im->conn);

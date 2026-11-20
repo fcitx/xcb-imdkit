@@ -14,8 +14,6 @@
 #include "uthash.h"
 #include "ximproto_p.h"
 
-#define LOCALES_BUFSIZE (sizeof(XCB_IM_ALL_LOCALES) + 32)
-
 /*
  * values for the flag of XIM_ERROR
  */
@@ -226,6 +224,7 @@ struct _xcb_im_t {
     xcb_im_styles_t inputStyles;
     xcb_im_encodings_t encodings;
     char *locale;
+    size_t locale_len;
     char *serverName;
     xcb_window_t serverWindow;
     int screen_id;
