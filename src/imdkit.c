@@ -1070,15 +1070,31 @@ void _xcb_im_add_queue(xcb_im_input_context_t *ic,
     list_append(&item->list, &ic->queue);
 }
 
+void _xcb_im_process_forward_event(xcb_im_t *im, xcb_im_input_context_t *ic,
+                                   const xcb_im_packet_header_fr_t *hdr,
+                                   xcb_im_forward_event_fr_t *frame,
+                                   xcb_key_press_event_t *key_event) {
+    ic->forward_event_sequence = frame->sequence_number;
+    if (im->callback) {
+        im->callback(im, ic->client, ic, hdr, frame, key_event, im->user_data);
+    }
+
+    if (im->use_sync_event && (frame->flag & XCB_XIM_SYNCHRONOUS)) {
+        xcb_im_sync_reply_fr_t reply_frame;
+        reply_frame.input_method_ID = frame->input_method_ID;
+        reply_frame.input_context_ID = frame->input_context_ID;
+
+        _xcb_im_send_frame(im, ic->client, reply_frame, true);
+    }
+}
+
 void _xcb_im_process_queue(xcb_im_t *im, xcb_im_input_context_t *ic) {
     while (!ic->sync && !list_is_empty(&ic->queue)) {
         xcb_im_queue_t *item =
             list_container_of(ic->queue.next, xcb_im_queue_t, list);
         list_remove(&item->list);
-        if (im->callback) {
-            im->callback(im, ic->client, ic, &item->hdr, &item->frame,
-                         &item->event, im->user_data);
-        }
+        _xcb_im_process_forward_event(im, ic, &item->hdr, &item->frame,
+                                      &item->event);
         free(item);
     }
 }

@@ -747,7 +747,6 @@ void _xcb_im_handle_forward_event(xcb_im_t *im, xcb_im_client_t *client,
         if (!ic) {
             break;
         }
-        ic->forward_event_sequence = frame.sequence_number;
         xcb_key_press_event_t key_event;
         memcpy(&key_event, data, sizeof(xcb_key_press_event_t));
         if (client->byte_order != im->byte_order) {
@@ -756,18 +755,7 @@ void _xcb_im_handle_forward_event(xcb_im_t *im, xcb_im_client_t *client,
         if (ic->sync) {
             _xcb_im_add_queue(ic, hdr, &frame, &key_event);
         } else {
-            if (im->callback) {
-                im->callback(im, client, ic, hdr, &frame, &key_event,
-                             im->user_data);
-            }
-
-            if (im->use_sync_event) {
-                xcb_im_sync_reply_fr_t reply_frame;
-                reply_frame.input_method_ID = frame.input_method_ID;
-                reply_frame.input_context_ID = frame.input_context_ID;
-
-                _xcb_im_send_frame(im, client, reply_frame, true);
-            }
+            _xcb_im_process_forward_event(im, ic, hdr, &frame, &key_event);
         }
     } while (0);
 
