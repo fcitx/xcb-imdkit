@@ -285,6 +285,10 @@ void _xcb_im_add_queue(xcb_im_input_context_t *ic,
                        const xcb_im_packet_header_fr_t *hdr,
                        xcb_im_forward_event_fr_t *frame,
                        const xcb_key_press_event_t *event);
+void _xcb_im_process_forward_event(xcb_im_t *im, xcb_im_input_context_t *ic,
+                                   const xcb_im_packet_header_fr_t *hdr,
+                                   xcb_im_forward_event_fr_t *frame,
+                                   xcb_key_press_event_t *key_event);
 void _xcb_im_process_queue(xcb_im_t *im, xcb_im_input_context_t *ic);
 static inline bool _xcb_im_has_trigger_key(xcb_im_t *im) {
     return im->onKeys.nKeys || im->offKeys.nKeys;

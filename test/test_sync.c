@@ -32,7 +32,11 @@ static void server_callback(xcb_im_t *im, xcb_im_client_t *client,
                             const xcb_im_packet_header_fr_t *hdr, void *frame,
                             void *arg, void *user_data) {
     if (hdr->major_opcode == XCB_XIM_FORWARD_EVENT) {
-        xcb_im_forward_event(im, ic, arg);
+        xcb_key_press_event_t *ev = arg;
+        if (ev->detail == 99) {
+            xcb_im_set_use_sync_event(im, true);
+        }
+        xcb_im_forward_event(im, ic, ev);
     }
 }
 
@@ -239,6 +243,30 @@ static uint8_t *read_native_reply(xcb_connection_t *conn, xcb_window_t comm_win,
     return body;
 }
 
+static void send_forward_key(xcb_connection_t *conn, xcb_window_t accept_win,
+                             xcb_atom_t protocol_atom, xcb_atom_t prop,
+                             uint16_t imid, uint16_t icid, uint16_t flag,
+                             uint16_t seq, uint8_t keycode,
+                             xcb_window_t root_win, xcb_window_t event_win) {
+    uint8_t body[8 + sizeof(xcb_key_press_event_t)];
+    memset(body, 0, sizeof(body));
+    memcpy(&body[0], &imid, 2);
+    memcpy(&body[2], &icid, 2);
+    memcpy(&body[4], &flag, 2);
+    memcpy(&body[6], &seq, 2);
+
+    xcb_key_press_event_t key;
+    memset(&key, 0, sizeof(key));
+    key.response_type = XCB_KEY_PRESS;
+    key.detail = keycode;
+    key.root = root_win;
+    key.event = event_win;
+    memcpy(&body[8], &key, sizeof(key));
+
+    send_native_property(conn, accept_win, protocol_atom, prop,
+                         XCB_XIM_FORWARD_EVENT, body, sizeof(body));
+}
+
 static void run_xim_sync_request_test(xcb_window_t server_win) {
     int screen_num;
     xcb_connection_t *conn = xcb_connect(NULL, &screen_num);
@@ -373,7 +401,57 @@ static void run_xim_sync_request_test(xcb_window_t server_win) {
     TEST_CHECK(opcode == XCB_XIM_QUERY_EXTENSION_REPLY);
     free(reply);
 
-    // Invalid ICID in XIM_SYNC -> XIM_ERROR.
+    // Queue two FORWARD_EVENTs behind an in-flight synchronous FORWARD_EVENT:
+    // - Event 1 (detail=99, seq=0x1111, flag=SYNCHRONOUS): enables
+    //   use_sync_event and sets ic->sync = true.
+    // - Event 2 (detail=41, seq=0x2222, flag=SYNCHRONOUS): queued; upon dequeue
+    //   must preserve seq=0x2222 and emit XIM_SYNC_REPLY.
+    // - Event 3 (detail=42, seq=0x3333, flag=0): queued; upon dequeue must
+    //   preserve seq=0x3333 and NOT emit an unsolicited XIM_SYNC_REPLY.
+    send_forward_key(conn, accept_win, protocol_atom, client_prop, imid, icid,
+                     XCB_XIM_SYNCHRONOUS, 0x1111, 99, screen->root, comm_win);
+    send_forward_key(conn, accept_win, protocol_atom, client_prop, imid, icid,
+                     XCB_XIM_SYNCHRONOUS, 0x2222, 41, screen->root, comm_win);
+    send_forward_key(conn, accept_win, protocol_atom, client_prop, imid, icid,
+                     0, 0x3333, 42, screen->root, comm_win);
+
+    uint16_t returned_seq = 0;
+    reply = read_native_reply(conn, comm_win, &opcode, &reply_len);
+    TEST_CHECK(opcode == XCB_XIM_FORWARD_EVENT);
+    memcpy(&returned_seq, reply + 6, 2);
+    TEST_CHECK(returned_seq == 0x1111);
+    free(reply);
+    reply = read_native_reply(conn, comm_win, &opcode, &reply_len);
+    TEST_CHECK(opcode == XCB_XIM_SYNC_REPLY);
+    free(reply);
+
+    // Unblock Event 2 from ic->queue.
+    send_native_inline(conn, accept_win, protocol_atom, XCB_XIM_SYNC_REPLY,
+                       sync_body, sizeof(sync_body));
+    reply = read_native_reply(conn, comm_win, &opcode, &reply_len);
+    TEST_CHECK(opcode == XCB_XIM_FORWARD_EVENT);
+    memcpy(&returned_seq, reply + 6, 2);
+    TEST_CHECK(returned_seq == 0x2222);
+    free(reply);
+    reply = read_native_reply(conn, comm_win, &opcode, &reply_len);
+    TEST_CHECK(opcode == XCB_XIM_SYNC_REPLY);
+    free(reply);
+
+    // Unblock Event 3 (flag == 0) from ic->queue.
+    send_native_inline(conn, accept_win, protocol_atom, XCB_XIM_SYNC_REPLY,
+                       sync_body, sizeof(sync_body));
+    reply = read_native_reply(conn, comm_win, &opcode, &reply_len);
+    TEST_CHECK(opcode == XCB_XIM_FORWARD_EVENT);
+    memcpy(&returned_seq, reply + 6, 2);
+    TEST_CHECK(returned_seq == 0x3333);
+    free(reply);
+
+    // Acknowledge Event 3's server->client forward_event.
+    send_native_inline(conn, accept_win, protocol_atom, XCB_XIM_SYNC_REPLY,
+                       sync_body, sizeof(sync_body));
+
+    // Invalid ICID in XIM_SYNC -> XIM_ERROR (also proves Event 3 with flag == 0
+    // did not leave a stray XIM_SYNC_REPLY in the stream).
     uint16_t bad_icid = icid + 99;
     memcpy(&sync_body[2], &bad_icid, 2);
     send_native_inline(conn, accept_win, protocol_atom, XCB_XIM_SYNC, sync_body,
