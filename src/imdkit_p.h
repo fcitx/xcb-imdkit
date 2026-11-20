@@ -140,7 +140,7 @@ struct _xcb_im_input_context_t {
 
 struct _xcb_im_client_t {
     xcb_window_t accept_win;
-    int connect_id;
+    uint16_t connect_id;
     xcb_window_t client_win;
     uint8_t byte_order;
     uint16_t icid;

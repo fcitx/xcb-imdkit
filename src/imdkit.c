@@ -396,7 +396,7 @@ bool xcb_im_open_im(xcb_im_t *im) {
 
 xcb_im_client_t *_xcb_im_new_client(xcb_im_t *im, xcb_window_t client_window) {
     xcb_im_client_t *client;
-    int new_connect_id = 0;
+    uint16_t new_connect_id = 0;
     if (im->free_list) {
         client = im->free_list;
         // save as a cache, since we want to memset the item from free list
@@ -408,9 +408,9 @@ xcb_im_client_t *_xcb_im_new_client(xcb_im_t *im, xcb_window_t client_window) {
             DebugLog("Bug in implementation");
             return NULL;
         }
+        im->free_list = im->free_list->hh1.next;
         memset(client, 0, sizeof(xcb_im_client_t));
         client->connect_id = new_connect_id;
-        im->free_list = im->free_list->hh1.next;
     } else {
         while (new_connect_id == 0) {
             new_connect_id = ++im->connect_id;
@@ -423,6 +423,9 @@ xcb_im_client_t *_xcb_im_new_client(xcb_im_t *im, xcb_window_t client_window) {
             return NULL;
         }
         client = calloc(1, sizeof(xcb_im_client_t));
+        if (!client) {
+            return NULL;
+        }
         client->connect_id = new_connect_id;
     }
 
@@ -444,7 +447,7 @@ xcb_im_client_t *_xcb_im_new_client(xcb_im_t *im, xcb_window_t client_window) {
     client->client_win = client_window;
     client->accept_win = w;
     client->byte_order = '?'; // initial value
-    HASH_ADD(hh1, im->clients_by_id, connect_id, sizeof(int), client);
+    HASH_ADD(hh1, im->clients_by_id, connect_id, sizeof(uint16_t), client);
     HASH_ADD(hh2, im->clients_by_win, accept_win, sizeof(xcb_window_t), client);
 
     _xcb_change_event_mask(im->conn, client_window,
@@ -788,7 +791,7 @@ bool _xcb_im_filter_destroy_window(xcb_im_t *im, xcb_generic_event_t *event) {
 
         xcb_im_client_t *client = im->clients_by_win;
         while (client && client->client_win != destroy_notify->window) {
-            client = client->hh1.next;
+            client = client->hh2.next;
         }
         if (!client) {
             break;
