@@ -824,6 +824,11 @@ void _xcb_im_handle_ext_move(xcb_im_t *im, xcb_im_client_t *client,
 
         ic->preedit.spot_location.x = frame.X;
         ic->preedit.spot_location.y = frame.Y;
+        ic->preedit_mask |= XCB_XIM_XNSpotLocation_MASK;
+
+        if (im->callback) {
+            im->callback(im, client, ic, hdr, &frame, NULL, im->user_data);
+        }
     } while (0);
 
     xcb_im_ext_move_fr_free(&frame);
