@@ -9,6 +9,7 @@
 #include "imdkit.h"
 #include "test.h"
 #include "test_xim_server.h"
+#include "ximproto.h"
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -220,6 +221,181 @@ static void run_shared_connection_clients(void) {
     xcb_disconnect(conn);
 }
 
+typedef struct {
+    atomic_uint disconnect_count;
+    atomic_uint close_count;
+    uint16_t closed_ids[4];
+} table_stats_t;
+
+static void table_server_callback(xcb_im_t *im, xcb_im_client_t *client,
+                                  xcb_im_input_context_t *ic,
+                                  const xcb_im_packet_header_fr_t *hdr,
+                                  void *frame, void *arg, void *user_data) {
+    table_stats_t *stats = user_data;
+    if (hdr->major_opcode == XCB_XIM_CLOSE) {
+        xcb_im_close_fr_t *close_fr = frame;
+        unsigned int idx = atomic_fetch_add(&stats->close_count, 1);
+        if (idx < 4) {
+            stats->closed_ids[idx] = close_fr->input_method_ID;
+        }
+    } else if (hdr->major_opcode == XCB_XIM_DISCONNECT) {
+        atomic_fetch_add(&stats->disconnect_count, 1);
+    }
+}
+
+static void simple_open_callback(xcb_xim_t *im, void *user_data) {
+    bool *opened = user_data;
+    *opened = true;
+}
+
+static xcb_window_t create_test_window(xcb_connection_t *conn,
+                                       xcb_screen_t *screen) {
+    xcb_window_t w = xcb_generate_id(conn);
+    xcb_create_window(conn, XCB_COPY_FROM_PARENT, w, screen->root, 0, 0, 1, 1,
+                      1, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual, 0,
+                      NULL);
+    return w;
+}
+
+static void send_xconnect(xcb_connection_t *cli_conn, xcb_window_t srv_win,
+                          xcb_atom_t xconn_atom, xcb_window_t cli_win) {
+    xcb_client_message_event_t ev = {
+        .response_type = XCB_CLIENT_MESSAGE,
+        .format = 32,
+        .window = srv_win,
+        .type = xconn_atom,
+    };
+    ev.data.data32[0] = cli_win;
+    xcb_send_event(cli_conn, false, srv_win, XCB_EVENT_MASK_NO_EVENT,
+                   (const char *)&ev);
+    xcb_aux_sync(cli_conn);
+}
+
+static void pump_server_events(xcb_connection_t *srv_conn, xcb_im_t *srv_im) {
+    xcb_aux_sync(srv_conn);
+    xcb_generic_event_t *ev;
+    while ((ev = xcb_poll_for_event(srv_conn)) != NULL) {
+        xcb_im_filter_event(srv_im, ev);
+        free(ev);
+    }
+}
+
+static void test_server_client_tables(void) {
+    table_stats_t stats = {0};
+    test_xim_server_t *table_server = test_xim_server_new(
+        "test_client_tables", table_server_callback, &stats);
+
+    int cli_screen_num = 0;
+    xcb_connection_t *cli_conn = xcb_connect(NULL, &cli_screen_num);
+    xcb_screen_t *cli_screen = xcb_aux_get_screen(cli_conn, cli_screen_num);
+    TEST_CHECK(cli_screen);
+
+    // 1. Open two clients concurrently (IDs 1 and 2), close both so both go on
+    // free_list, then open and close two more clients: both freed IDs (1 and 2)
+    // must be reused without free_list losing its tail entry.
+    xcb_xim_t *c1 =
+        xcb_xim_create(cli_conn, cli_screen_num, "@im=test_client_tables");
+    xcb_xim_t *c2 =
+        xcb_xim_create(cli_conn, cli_screen_num, "@im=test_client_tables");
+    bool o1 = false;
+    bool o2 = false;
+    TEST_CHECK(xcb_xim_open(c1, simple_open_callback, true, &o1));
+    TEST_CHECK(xcb_xim_open(c2, simple_open_callback, true, &o2));
+    xcb_generic_event_t *ev;
+    while (!(o1 && o2) && (ev = xcb_wait_for_event(cli_conn))) {
+        if (!xcb_xim_filter_event(c1, ev)) {
+            xcb_xim_filter_event(c2, ev);
+        }
+        free(ev);
+    }
+    TEST_CHECK(o1 && o2);
+    xcb_xim_close(c1);
+    xcb_xim_close(c2);
+    xcb_xim_destroy(c1);
+    xcb_xim_destroy(c2);
+
+    xcb_xim_t *c3 =
+        xcb_xim_create(cli_conn, cli_screen_num, "@im=test_client_tables");
+    xcb_xim_t *c4 =
+        xcb_xim_create(cli_conn, cli_screen_num, "@im=test_client_tables");
+    bool o3 = false;
+    bool o4 = false;
+    TEST_CHECK(xcb_xim_open(c3, simple_open_callback, true, &o3));
+    TEST_CHECK(xcb_xim_open(c4, simple_open_callback, true, &o4));
+    while (!(o3 && o4) && (ev = xcb_wait_for_event(cli_conn))) {
+        if (!xcb_xim_filter_event(c3, ev)) {
+            xcb_xim_filter_event(c4, ev);
+        }
+        free(ev);
+    }
+    TEST_CHECK(o3 && o4);
+    xcb_xim_close(c3);
+    xcb_xim_close(c4);
+    xcb_xim_destroy(c3);
+    xcb_xim_destroy(c4);
+    test_xim_server_destroy(table_server);
+
+    TEST_CHECK(atomic_load(&stats.close_count) == 4);
+    TEST_CHECK(stats.closed_ids[0] == 1);
+    TEST_CHECK(stats.closed_ids[1] == 2);
+    TEST_CHECK(stats.closed_ids[2] == 2);
+    TEST_CHECK(stats.closed_ids[3] == 1);
+
+    // 2. Test DestroyNotify cleanup across multiple clients (destroying the
+    // second client window first so _xcb_im_filter_destroy_window traverses
+    // clients_by_win via hh2.next).
+    int srv_screen_num = 0;
+    xcb_connection_t *srv_conn = xcb_connect(NULL, &srv_screen_num);
+    xcb_screen_t *srv_screen = xcb_aux_get_screen(srv_conn, srv_screen_num);
+    TEST_CHECK(srv_screen);
+
+    xcb_intern_atom_reply_t *xconn_reply = xcb_intern_atom_reply(
+        cli_conn,
+        xcb_intern_atom(cli_conn, false, strlen("_XIM_XCONNECT"),
+                        "_XIM_XCONNECT"),
+        NULL);
+    TEST_CHECK(xconn_reply);
+    xcb_atom_t xconn_atom = xconn_reply->atom;
+    free(xconn_reply);
+
+    table_stats_t destroy_stats = {0};
+    xcb_window_t srv_win = create_test_window(srv_conn, srv_screen);
+    uint32_t style = XCB_IM_PreeditNothing | XCB_IM_StatusNothing;
+    xcb_im_styles_t styles = {1, &style};
+    char *enc = "COMPOUND_TEXT";
+    xcb_im_encodings_t encodings = {1, &enc};
+
+    xcb_im_t *srv_im =
+        xcb_im_create(srv_conn, srv_screen_num, srv_win, "test_destroy_notify",
+                      XCB_IM_ALL_LOCALES, &styles, NULL, NULL, &encodings, 0,
+                      table_server_callback, &destroy_stats);
+    TEST_CHECK(srv_im);
+    TEST_CHECK(xcb_im_open_im(srv_im));
+
+    xcb_window_t w1 = create_test_window(cli_conn, cli_screen);
+    xcb_window_t w2 = create_test_window(cli_conn, cli_screen);
+    send_xconnect(cli_conn, srv_win, xconn_atom, w1);
+    pump_server_events(srv_conn, srv_im);
+    send_xconnect(cli_conn, srv_win, xconn_atom, w2);
+    pump_server_events(srv_conn, srv_im);
+
+    xcb_destroy_window(cli_conn, w2);
+    xcb_aux_sync(cli_conn);
+    pump_server_events(srv_conn, srv_im);
+    TEST_CHECK(atomic_load(&destroy_stats.disconnect_count) == 1);
+
+    xcb_destroy_window(cli_conn, w1);
+    xcb_aux_sync(cli_conn);
+    pump_server_events(srv_conn, srv_im);
+    TEST_CHECK(atomic_load(&destroy_stats.disconnect_count) == 2);
+
+    xcb_im_close_im(srv_im);
+    xcb_im_destroy(srv_im);
+    xcb_destroy_window(srv_conn, srv_win);
+    xcb_disconnect(srv_conn);
+    xcb_disconnect(cli_conn);
+}
+
 int main() {
     thrd_t clients[CLIENT_COUNT];
     client_t client_data[CLIENT_COUNT] = {0};
@@ -237,6 +413,7 @@ int main() {
     }
 
     run_shared_connection_clients();
+    test_server_client_tables();
 
     test_xim_server_destroy(server);
     TEST_CHECK(atomic_load(&server_forwarded_events) ==
