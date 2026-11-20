@@ -10,6 +10,7 @@
 #include "test.h"
 #include "test_xim_server.h"
 #include "ximproto.h"
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -21,7 +22,42 @@ static xcb_connection_t *client_connection;
 static xcb_screen_t *client_screen;
 static xcb_xim_t *client_im;
 static xcb_window_t client_window;
+static atomic_bool ext_move_notified;
 static bool completed;
+
+static void server_callback(xcb_im_t *im, xcb_im_client_t *client,
+                            xcb_im_input_context_t *ic,
+                            const xcb_im_packet_header_fr_t *hdr, void *frame,
+                            void *arg, void *user_data) {
+    if (hdr->major_opcode == XCB_XIM_EXTENSION &&
+        hdr->minor_opcode == XCB_XIM_EXT_MOVE) {
+        TEST_CHECK(xcb_im_input_context_get_preedit_attr_mask(ic) &
+                   XCB_XIM_XNSpotLocation_MASK);
+        const xcb_im_preedit_attr_t *attr =
+            xcb_im_input_context_get_preedit_attr(ic);
+        TEST_CHECK(attr->spot_location.x == 123);
+        TEST_CHECK(attr->spot_location.y == 456);
+        atomic_store(&ext_move_notified, true);
+    }
+}
+
+static void
+second_get_ic_values_callback(xcb_xim_t *im, xcb_xic_t ic,
+                              xcb_im_get_ic_values_reply_fr_t *reply,
+                              void *user_data) {
+    TEST_CHECK(reply);
+    TEST_CHECK(atomic_load(&ext_move_notified));
+    completed = true;
+}
+
+static void second_create_ic_callback(xcb_xim_t *im, xcb_xic_t ic,
+                                      void *user_data) {
+    TEST_CHECK(ic);
+    TEST_CHECK(xcb_xim_ext_move(client_im, ic, 123, 456));
+    TEST_CHECK(xcb_xim_get_ic_values(client_im, ic,
+                                     second_get_ic_values_callback, NULL,
+                                     XCB_XIM_XNFilterEvents, NULL));
+}
 
 static void get_ic_values_callback(xcb_xim_t *im, xcb_xic_t ic,
                                    xcb_im_get_ic_values_reply_fr_t *reply,
@@ -32,7 +68,13 @@ static void get_ic_values_callback(xcb_xim_t *im, xcb_xic_t ic,
     TEST_CHECK(reply->ic_attribute.size == 2);
     TEST_CHECK(reply->ic_attribute.items[0].value_length == 4);
     TEST_CHECK(reply->ic_attribute.items[1].value_length == 16);
-    completed = true;
+
+    // Create a second IC without initial XNSpotLocation and update spot via
+    // XIM_EXT_MOVE.
+    uint32_t input_style = XCB_IM_PreeditNothing | XCB_IM_StatusNothing;
+    TEST_CHECK(xcb_xim_create_ic(client_im, second_create_ic_callback, NULL,
+                                 XCB_XIM_XNInputStyle, &input_style,
+                                 XCB_XIM_XNClientWindow, &client_window, NULL));
 }
 
 static void create_ic_callback(xcb_xim_t *im, xcb_xic_t ic, void *user_data) {
@@ -79,7 +121,7 @@ static void open_callback(xcb_xim_t *im, void *user_data) {
 
 int main() {
     test_xim_server_t *server =
-        test_xim_server_new("test_ic_values_server", NULL, NULL);
+        test_xim_server_new("test_ic_values_server", server_callback, NULL);
 
     int screen_number;
     client_connection = xcb_connect(NULL, &screen_number);

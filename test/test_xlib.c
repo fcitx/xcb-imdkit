@@ -31,6 +31,7 @@ typedef struct {
     const char *name;
     bool use_sync_event;
     atomic_bool corrupt_next_close;
+    atomic_bool spot_updated;
     xcb_window_t window;
     xcb_atom_t stop_atom;
     xcb_atom_t proto_atom;
@@ -77,6 +78,17 @@ static void server_callback(xcb_im_t *im, xcb_im_client_t *client,
         TEST_CHECK(ctext);
         reply->committed_string = (uint8_t *)ctext;
         reply->byte_length_of_committed_string = len;
+    } else if (hdr->major_opcode == XCB_XIM_SET_IC_VALUES ||
+               (hdr->major_opcode == XCB_XIM_EXTENSION &&
+                hdr->minor_opcode == XCB_XIM_EXT_MOVE)) {
+        xlib_test_server_t *srv = user_data;
+        TEST_CHECK(xcb_im_input_context_get_preedit_attr_mask(ic) &
+                   XCB_XIM_XNSpotLocation_MASK);
+        const xcb_im_preedit_attr_t *attr =
+            xcb_im_input_context_get_preedit_attr(ic);
+        TEST_CHECK(attr->spot_location.x == 77);
+        TEST_CHECK(attr->spot_location.y == 88);
+        atomic_store(&srv->spot_updated, true);
     }
 }
 
@@ -260,6 +272,15 @@ static void run_xlib_round(xcb_connection_t *server_conn, int screen_number,
     TEST_CHECK(xic != NULL);
 
     XSetICFocus(xic);
+    if (fontset) {
+        XPoint moved = {.x = 77, .y = 88};
+        XVaNestedList move_attr =
+            XVaCreateNestedList(0, XNSpotLocation, &moved, NULL);
+        TEST_CHECK(move_attr != NULL);
+        TEST_CHECK(XSetICValues(xic, XNPreeditAttributes, move_attr, NULL) ==
+                   NULL);
+        XFree(move_attr);
+    }
 
     // 1. Keycode 38 -> committed string via XIM_COMMIT + Xutf8LookupString.
     send_xlib_key(dpy, win, 38, KeyPress, 100);
@@ -313,6 +334,7 @@ static void run_xlib_round(xcb_connection_t *server_conn, int screen_number,
     XUnsetICFocus(xic);
     XDestroyIC(xic);
     if (fontset) {
+        TEST_CHECK(atomic_load(&srv->spot_updated));
         XFreeFontSet(dpy, fontset);
     }
 
