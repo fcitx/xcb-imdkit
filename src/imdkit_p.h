@@ -272,6 +272,8 @@ bool _xcb_im_send_message(xcb_im_t *im, xcb_im_client_t *client, uint8_t *data,
                           size_t length);
 
 void _xcb_im_send_error_message(xcb_im_t *im, xcb_im_client_t *client);
+void _xcb_im_send_ic_error_message(xcb_im_t *im, xcb_im_client_t *client,
+                                   uint16_t icid);
 
 void _xcb_im_destroy_client(xcb_im_t *im, xcb_im_client_t *client);
 void _xcb_im_destroy_ic(xcb_im_t *im, xcb_im_input_context_t *ic);

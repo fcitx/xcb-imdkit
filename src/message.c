@@ -146,11 +146,24 @@ bool _xcb_send_xim_message(xcb_connection_t *conn, xcb_atom_t protocol_atom,
 
 void _xcb_send_xim_error_message(xcb_connection_t *conn,
                                  xcb_atom_t protocol_atom, xcb_window_t window,
-                                 bool swap) {
-    // use stack to avoid alloc fails
-    uint8_t message[XCB_IM_HEADER_SIZE];
-    _xcb_write_xim_message_header(message, XCB_XIM_ERROR, 0, 0, swap);
-    _xcb_send_xim_message(conn, protocol_atom, window, message, 0, NULL, 0);
+                                 bool swap, uint16_t imid, uint16_t icid,
+                                 uint16_t flag, uint16_t error_code) {
+    // Fixed 12-byte XIM_ERROR body (length_of_error_detail == 0), use stack to
+    // avoid alloc fails.
+    xcb_im_error_fr_t frame = {
+        .input_method_ID = imid,
+        .input_context_ID = icid,
+        .flag = flag,
+        .Error_Code = error_code,
+        .length_of_error_detail = 0,
+        .type_of_error_detail = 0,
+        .error_detail = (uint8_t *)"",
+    };
+    uint8_t message[XCB_IM_HEADER_SIZE + 12];
+    uint8_t *content =
+        _xcb_write_xim_message_header(message, XCB_XIM_ERROR, 0, 12, swap);
+    xcb_im_error_fr_write(&frame, content, swap);
+    _xcb_send_xim_message(conn, protocol_atom, window, message, 12, NULL, 0);
 }
 
 // Valid zero-payload messages (e.g. XIM_DISCONNECT, XIM_DISCONNECT_REPLY) have

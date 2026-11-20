@@ -38,7 +38,8 @@ bool _xcb_send_xim_message(xcb_connection_t *conn, xcb_atom_t protocol_atom,
 
 void _xcb_send_xim_error_message(xcb_connection_t *conn,
                                  xcb_atom_t protocol_atom, xcb_window_t window,
-                                 bool swap);
+                                 bool swap, uint16_t imid, uint16_t icid,
+                                 uint16_t flag, uint16_t error_code);
 
 // Read a XIM message body (caller must free). Returns NULL on error; valid
 // zero-body messages (hdr->length == 0) still return a non-NULL 1-byte buffer.

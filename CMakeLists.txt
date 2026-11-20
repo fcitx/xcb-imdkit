@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.14)
 project(xcb-imdkit VERSION 1.0.9)
 
 find_package(ECM 0.0.11 REQUIRED NO_MODULE)
@@ -53,6 +53,7 @@ add_subdirectory(src)
 if(ENABLE_TEST)
     if (ENABLE_TEST_WITH_XSERVER)
         find_package(Threads REQUIRED)
+        find_package(X11)
         find_program(XVFB_BIN Xvfb)
         if (NOT XVFB_BIN)
             message(FATAL_ERROR "ENABLE_TEST_WITH_XSERVER requires Xvfb")
