@@ -387,6 +387,7 @@ void _xcb_im_handle_destroy_ic(xcb_im_t *im, xcb_im_client_t *client,
 
     do {
         if (frame.input_method_ID != client->connect_id) {
+            _xcb_im_send_error_message(im, client);
             break;
         }
 
@@ -394,6 +395,7 @@ void _xcb_im_handle_destroy_ic(xcb_im_t *im, xcb_im_client_t *client,
         HASH_FIND(hh, client->input_contexts, &frame.input_context_ID,
                   sizeof(uint16_t), ic);
         if (!ic) {
+            _xcb_im_send_ic_error_message(im, client, frame.input_context_ID);
             break;
         }
 
@@ -409,7 +411,6 @@ void _xcb_im_handle_destroy_ic(xcb_im_t *im, xcb_im_client_t *client,
     } while (0);
     // error
     xcb_im_destroy_ic_fr_free(&frame);
-    _xcb_im_send_error_message(im, client);
 }
 
 void _xcb_im_handle_set_ic_values(xcb_im_t *im, xcb_im_client_t *client,
@@ -421,6 +422,7 @@ void _xcb_im_handle_set_ic_values(xcb_im_t *im, xcb_im_client_t *client,
 
     do {
         if (frame.input_method_ID != client->connect_id) {
+            _xcb_im_send_error_message(im, client);
             break;
         }
 
@@ -428,6 +430,7 @@ void _xcb_im_handle_set_ic_values(xcb_im_t *im, xcb_im_client_t *client,
         HASH_FIND(hh, client->input_contexts, &frame.input_context_ID,
                   sizeof(uint16_t), ic);
         if (!ic) {
+            _xcb_im_send_ic_error_message(im, client, frame.input_context_ID);
             break;
         }
 
@@ -447,7 +450,6 @@ void _xcb_im_handle_set_ic_values(xcb_im_t *im, xcb_im_client_t *client,
     } while (0);
     // error
     xcb_im_set_ic_values_fr_free(&frame);
-    _xcb_im_send_error_message(im, client);
 }
 
 uint32_t _xcb_im_get_nested_ic_values(xcb_im_t *im, xcb_im_input_context_t *ic,
@@ -514,6 +516,7 @@ void _xcb_im_handle_get_ic_values(xcb_im_t *im, xcb_im_client_t *client,
 
     do {
         if (frame.input_method_ID != client->connect_id) {
+            _xcb_im_send_error_message(im, client);
             break;
         }
 
@@ -521,6 +524,7 @@ void _xcb_im_handle_get_ic_values(xcb_im_t *im, xcb_im_client_t *client,
         HASH_FIND(hh, client->input_contexts, &frame.input_context_ID,
                   sizeof(uint16_t), ic);
         if (!ic) {
+            _xcb_im_send_ic_error_message(im, client, frame.input_context_ID);
             break;
         }
 
@@ -600,7 +604,6 @@ void _xcb_im_handle_get_ic_values(xcb_im_t *im, xcb_im_client_t *client,
     } while (0);
     // error
     xcb_im_get_ic_values_fr_free(&frame);
-    _xcb_im_send_error_message(im, client);
 }
 
 void _xcb_im_handle_set_ic_focus(xcb_im_t *im, xcb_im_client_t *client,
@@ -847,6 +850,7 @@ void _xcb_im_handle_sync(xcb_im_t *im, xcb_im_client_t *client,
 
     do {
         if (client->connect_id != frame.input_method_ID) {
+            _xcb_im_send_error_message(im, client);
             break;
         }
 
@@ -854,6 +858,7 @@ void _xcb_im_handle_sync(xcb_im_t *im, xcb_im_client_t *client,
         HASH_FIND(hh, client->input_contexts, &frame.input_context_ID,
                   sizeof(uint16_t), ic);
         if (!ic) {
+            _xcb_im_send_ic_error_message(im, client, frame.input_context_ID);
             break;
         }
 
@@ -866,7 +871,6 @@ void _xcb_im_handle_sync(xcb_im_t *im, xcb_im_client_t *client,
     } while (0);
 
     xcb_im_sync_fr_free(&frame);
-    _xcb_im_send_error_message(im, client);
 }
 
 void _xcb_im_handle_sync_reply(xcb_im_t *im, xcb_im_client_t *client,

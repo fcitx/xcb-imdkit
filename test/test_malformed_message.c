@@ -127,6 +127,37 @@ static void sync_x_roundtrip(xcb_connection_t *conn, xcb_window_t win) {
 
 static void open_callback(xcb_xim_t *im, void *user_data) { opened = true; }
 
+static void read_error_reply(xcb_connection_t *conn, xcb_atom_t protocol_atom,
+                             xcb_im_error_fr_t *out_err) {
+    xcb_generic_event_t *event;
+    while ((event = xcb_wait_for_event(conn))) {
+        if ((event->response_type & ~0x80) == XCB_CLIENT_MESSAGE) {
+            xcb_client_message_event_t *cm =
+                (xcb_client_message_event_t *)event;
+            if (cm->type == protocol_atom) {
+                TEST_CHECK(cm->format == 8);
+                TEST_CHECK(cm->data.data8[0] == XCB_XIM_ERROR);
+                TEST_CHECK(cm->data.data8[1] == 0);
+                uint16_t words = 0;
+                memcpy(&words, &cm->data.data8[2], sizeof(words));
+                TEST_CHECK(words == 3); // 12-byte XIM_ERROR body
+                memset(out_err, 0, sizeof(*out_err));
+                memcpy(&out_err->input_method_ID, &cm->data.data8[4], 2);
+                memcpy(&out_err->input_context_ID, &cm->data.data8[6], 2);
+                memcpy(&out_err->flag, &cm->data.data8[8], 2);
+                memcpy(&out_err->Error_Code, &cm->data.data8[10], 2);
+                memcpy(&out_err->length_of_error_detail, &cm->data.data8[12],
+                       2);
+                memcpy(&out_err->type_of_error_detail, &cm->data.data8[14], 2);
+                free(event);
+                return;
+            }
+        }
+        free(event);
+    }
+    TEST_CHECK(false);
+}
+
 int main() {
     atomic_store(&allow_open, false);
     test_xim_server_t *server =
@@ -190,6 +221,58 @@ int main() {
     xcb_window_t barrier_accept =
         xconnect_to_server(conn, server->window, barrier_win, xconnect_atom);
     TEST_CHECK(barrier_accept != XCB_WINDOW_NONE);
+    send_inline_connect(conn, barrier_accept, protocol_atom);
+
+    // 4. Malformed XIM_OPEN (string length 10 > 4-byte body) must elicit a
+    // valid 12-byte XIM_ERROR frame with XIM_IMID_VALID (0x0001).
+    {
+        xcb_client_message_event_t bad_open = {
+            .response_type = XCB_CLIENT_MESSAGE,
+            .format = 8,
+            .window = barrier_accept,
+            .type = protocol_atom,
+        };
+        bad_open.data.data8[0] = XCB_XIM_OPEN;
+        uint16_t words = 1;
+        memcpy(&bad_open.data.data8[2], &words, sizeof(words));
+        bad_open.data.data8[4] = 10; // length_of_string > 4 bytes
+        xcb_send_event(conn, false, barrier_accept, XCB_EVENT_MASK_NO_EVENT,
+                       (const char *)&bad_open);
+        xcb_flush(conn);
+
+        xcb_im_error_fr_t err_fr;
+        read_error_reply(conn, protocol_atom, &err_fr);
+        TEST_CHECK(err_fr.flag == 0x0001);
+        TEST_CHECK(err_fr.input_method_ID != 0);
+        TEST_CHECK(err_fr.Error_Code == 13);
+        uint16_t imid = err_fr.input_method_ID;
+
+        // IC-scoped request with unknown icid must elicit a 12-byte XIM_ERROR
+        // with both XIM_IMID_VALID | XIM_ICID_VALID (0x0003).
+        xcb_client_message_event_t bad_getic = {
+            .response_type = XCB_CLIENT_MESSAGE,
+            .format = 8,
+            .window = barrier_accept,
+            .type = protocol_atom,
+        };
+        bad_getic.data.data8[0] = XCB_XIM_GET_IC_VALUES;
+        words = 2;
+        memcpy(&bad_getic.data.data8[2], &words, sizeof(words));
+        uint16_t icid = 0x4321;
+        uint16_t byte_len = 0;
+        memcpy(&bad_getic.data.data8[4], &imid, sizeof(imid));
+        memcpy(&bad_getic.data.data8[6], &icid, sizeof(icid));
+        memcpy(&bad_getic.data.data8[8], &byte_len, sizeof(byte_len));
+        xcb_send_event(conn, false, barrier_accept, XCB_EVENT_MASK_NO_EVENT,
+                       (const char *)&bad_getic);
+        xcb_flush(conn);
+
+        read_error_reply(conn, protocol_atom, &err_fr);
+        TEST_CHECK(err_fr.flag == 0x0003);
+        TEST_CHECK(err_fr.input_method_ID == imid);
+        TEST_CHECK(err_fr.input_context_ID == icid);
+        TEST_CHECK(err_fr.Error_Code == 13);
+    }
 
     // Now allow legitimate XIM_OPEN and verify normal client works.
     atomic_store(&allow_open, true);

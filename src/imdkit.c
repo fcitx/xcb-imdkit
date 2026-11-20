@@ -1224,9 +1224,20 @@ bool _xcb_im_send_message(xcb_im_t *im, xcb_im_client_t *client, uint8_t *data,
 }
 
 void _xcb_im_send_error_message(xcb_im_t *im, xcb_im_client_t *client) {
+    uint16_t flag = client->connect_id ? XIM_IMID_VALID : 0;
     _xcb_send_xim_error_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL],
                                 client->client_win,
-                                im->byte_order != client->byte_order);
+                                im->byte_order != client->byte_order,
+                                client->connect_id, 0, flag, XIM_BadProtocol);
+}
+
+void _xcb_im_send_ic_error_message(xcb_im_t *im, xcb_im_client_t *client,
+                                   uint16_t icid) {
+    uint16_t flag = (client->connect_id ? XIM_IMID_VALID : 0) | XIM_ICID_VALID;
+    _xcb_send_xim_error_message(
+        im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL], client->client_win,
+        im->byte_order != client->byte_order, client->connect_id, icid, flag,
+        XIM_BadProtocol);
 }
 
 bool xcb_im_support_extension(xcb_im_t *im, uint16_t major_code,
