@@ -347,6 +347,7 @@ else:
 
         print("void {0}_free({0}_t *frame)".format(funcname))
         print("{")
+        skip = False
         for i, (attr, name) in enumerate(attrs):
             if skip:
                 skip = False

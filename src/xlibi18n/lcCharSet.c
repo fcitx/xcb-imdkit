@@ -103,7 +103,7 @@ _XlcCreateDefaultCharSet(
     const char *ct_sequence)
 {
     XlcCharSet charset;
-    int name_len, ct_sequence_len;
+    size_t name_len, ct_sequence_len;
     const char *colon;
     char *tmp;
 
@@ -125,7 +125,7 @@ _XlcCreateDefaultCharSet(
 
     /* Fill in encoding_name and xrm_encoding_name.  */
     if ((colon = strchr(charset->name, ':')) != NULL) {
-        unsigned int length = colon - charset->name;
+        size_t length = (size_t)(colon - charset->name);
         char *encoding_tmp = malloc(length + 1);
         if (encoding_tmp == NULL) {
             free((char *) charset->name);
