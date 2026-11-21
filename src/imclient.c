@@ -22,17 +22,21 @@
 #include <xcb/xcb_aux.h>
 #include <xcb/xproto.h>
 
-#define CHECK_NEXT_SERVER(IM)                                                  \
-    do {                                                                       \
-        (IM)->connect_state.check_server.subphase =                            \
-            XIM_CONNECT_CHECK_SERVER_PREPARE;                                  \
-        (IM)->connect_state.check_server.index++;                              \
-        if ((IM)->connect_state.check_server.requestor_window) {               \
-            xcb_destroy_window(                                                \
-                (IM)->conn,                                                    \
-                (IM)->connect_state.check_server.requestor_window);            \
-        }                                                                      \
-    } while (0);
+static bool _xcb_xim_destroy_window(xcb_xim_t *im, xcb_window_t *window) {
+    if (*window == XCB_NONE) {
+        return false;
+    }
+    xcb_destroy_window(im->conn, *window);
+    *window = XCB_NONE;
+    return true;
+}
+
+static bool _xcb_xim_check_next_server(xcb_xim_t *im) {
+    im->connect_state.check_server.subphase = XIM_CONNECT_CHECK_SERVER_PREPARE;
+    im->connect_state.check_server.index++;
+    return _xcb_xim_destroy_window(
+        im, &im->connect_state.check_server.requestor_window);
+}
 
 void _xcb_xim_close(xcb_xim_t *im);
 
@@ -202,14 +206,14 @@ _xcb_xim_check_server_transport_wait(xcb_xim_t *im,
     bool check_transport = _xcb_xim_check_transport(im, address, &trans_addr);
     free(reply);
     if (check_transport) {
+        free(im->trans_addr);
         im->trans_addr = strdup(trans_addr);
         free(address);
         if (!im->trans_addr) {
             return ACTION_FAILED;
         }
-        xcb_destroy_window(im->conn,
-                           im->connect_state.check_server.requestor_window);
-        im->connect_state.check_server.requestor_window = XCB_NONE;
+        _xcb_xim_destroy_window(
+            im, &im->connect_state.check_server.requestor_window);
         im->im_window = im->connect_state.check_server.window;
         im->atoms[XIM_ATOM_SERVER_NAME] = server_atom;
         return ACTION_ACCEPT;
@@ -346,6 +350,7 @@ _xcb_xim_connect_wait_reply(xcb_xim_t *im, xcb_generic_event_t *event) {
 }
 
 bool _xcb_xim_preconnect_im(xcb_xim_t *im, xcb_generic_event_t *event) {
+    bool need_flush = false;
     while (im->connect_state.phase != XIM_CONNECT_DONE &&
            im->connect_state.phase != XIM_CONNECT_FAIL) {
         if (im->connect_state.phase == XIM_CONNECT_CHECK_SERVER) {
@@ -359,7 +364,7 @@ bool _xcb_xim_preconnect_im(xcb_xim_t *im, xcb_generic_event_t *event) {
                     im->connect_state.check_server.subphase =
                         XIM_CONNECT_CHECK_SERVER_LOCALE;
                 } else {
-                    CHECK_NEXT_SERVER(im);
+                    need_flush = _xcb_xim_check_next_server(im) || need_flush;
                     continue;
                 }
             } else if (im->connect_state.check_server.subphase ==
@@ -385,7 +390,7 @@ bool _xcb_xim_preconnect_im(xcb_xim_t *im, xcb_generic_event_t *event) {
                     break;
                 case ACTION_FAILED:
                     event = NULL;
-                    CHECK_NEXT_SERVER(im);
+                    need_flush = _xcb_xim_check_next_server(im) || need_flush;
                     break;
                 case ACTION_YIELD:
                     return false;
@@ -408,6 +413,9 @@ bool _xcb_xim_preconnect_im(xcb_xim_t *im, xcb_generic_event_t *event) {
                     break;
                 case ACTION_FAILED:
                     event = NULL;
+                    need_flush =
+                        _xcb_xim_destroy_window(im, &im->im_client_window) ||
+                        need_flush;
                     im->connect_state.phase = XIM_CONNECT_FAIL;
                     break;
                 case ACTION_YIELD:
@@ -424,6 +432,9 @@ bool _xcb_xim_preconnect_im(xcb_xim_t *im, xcb_generic_event_t *event) {
                     break;
                 case ACTION_FAILED:
                     event = NULL;
+                    need_flush =
+                        _xcb_xim_destroy_window(im, &im->im_client_window) ||
+                        need_flush;
                     im->connect_state.phase = XIM_CONNECT_FAIL;
                     break;
                 case ACTION_YIELD:
@@ -431,6 +442,10 @@ bool _xcb_xim_preconnect_im(xcb_xim_t *im, xcb_generic_event_t *event) {
                 }
             }
         }
+    }
+
+    if (need_flush) {
+        xcb_flush(im->conn);
     }
 
     return event == NULL;
@@ -904,13 +919,14 @@ void _xcb_xim_close(xcb_xim_t *im) {
         _xcb_xim_send_close(im);
     }
 
+    bool need_flush = false;
     if (im->connect_state.phase == XIM_CONNECT_DONE) {
         _xcb_xim_send_disconnect(im);
     } else if (im->connect_state.phase == XIM_CONNECT_CHECK_SERVER) {
-        if (im->connect_state.check_server.requestor_window) {
-            xcb_destroy_window(im->conn,
-                               im->connect_state.check_server.requestor_window);
-        }
+        need_flush =
+            _xcb_xim_destroy_window(
+                im, &im->connect_state.check_server.requestor_window) ||
+            need_flush;
     }
 
     im->open_state = XIM_OPEN_INVALID;
@@ -933,9 +949,9 @@ void _xcb_xim_close(xcb_xim_t *im) {
     free(im->trans_addr);
     im->trans_addr = NULL;
     im->connect_state.phase = XIM_CONNECT_FAIL;
-    if (im->im_client_window != XCB_NONE) {
-        xcb_destroy_window(im->conn, im->im_client_window);
-        im->im_client_window = XCB_NONE;
+    need_flush =
+        _xcb_xim_destroy_window(im, &im->im_client_window) || need_flush;
+    if (need_flush) {
         xcb_flush(im->conn);
     }
 
