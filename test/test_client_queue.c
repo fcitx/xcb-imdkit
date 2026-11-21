@@ -24,6 +24,7 @@ static xcb_window_t client_window;
 static xcb_xic_t client_ic;
 static unsigned int set_ic_values_replies;
 static unsigned int forwarded_events;
+static bool bogus_reset_replied;
 static bool reset_replied;
 static bool completed;
 
@@ -74,9 +75,19 @@ static void set_ic_values_callback(xcb_xim_t *im, xcb_xic_t ic,
     set_ic_values_replies++;
 }
 
+static void bogus_reset_ic_callback(xcb_xim_t *im, xcb_xic_t ic,
+                                    xcb_im_reset_ic_reply_fr_t *reply,
+                                    void *user_data) {
+    TEST_CHECK(ic == 0x9999);
+    TEST_CHECK(reply == NULL);
+    TEST_CHECK(!bogus_reset_replied);
+    bogus_reset_replied = true;
+}
+
 static void reset_ic_callback(xcb_xim_t *im, xcb_xic_t ic,
                               xcb_im_reset_ic_reply_fr_t *reply,
                               void *user_data) {
+    TEST_CHECK(bogus_reset_replied);
     TEST_CHECK(ic == client_ic);
     TEST_CHECK(reply != NULL);
     TEST_CHECK(!reset_replied);
@@ -98,8 +109,10 @@ static void forward_event(xcb_xim_t *im, xcb_xic_t ic,
     forwarded_events++;
 
     if (forwarded_events == 2) {
-        // Queue two different IC requests back-to-back with no follow-up call
-        // inside reset_ic_callback.
+        // Queue a bogus RESET_IC (must elicit XIM_ERROR instead of wedging the
+        // client queue) followed by valid RESET_IC and DESTROY_IC.
+        TEST_CHECK(
+            xcb_xim_reset_ic(client_im, 0x9999, bogus_reset_ic_callback, NULL));
         TEST_CHECK(
             xcb_xim_reset_ic(client_im, client_ic, reset_ic_callback, NULL));
         TEST_CHECK(xcb_xim_destroy_ic(client_im, client_ic, destroy_ic_callback,
