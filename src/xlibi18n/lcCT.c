@@ -551,6 +551,9 @@ _XlcAddCT(
             if (strcmp(charset->ct_sequence, ct_sequence) == 0)
                 charset->ct_sequence = "";
         }
+        /* Local fix (not yet in upstream libX11): free ext_segment allocated
+           in the XctExtSeg branch above before discarding duplicate ct_info. */
+        free((char *) ct_info->ext_segment);
         free(ct_info);
     }
 
@@ -603,7 +606,7 @@ _XlcCheckCTSequence(
         return resOK;
     case XctExtSeg:
         if (tmp_ctext_len > 2
-                && (tmp_ctext[0] & 0x80) && (tmp_ctext[0] & 0x80)) {
+                && (tmp_ctext[0] & 0x80) && (tmp_ctext[1] & 0x80)) {
             unsigned int msb = tmp_ctext[0] & 0x7f;
             unsigned int lsb = tmp_ctext[1] & 0x7f;
             ext_seg_left = (msb << 7) + lsb;
@@ -993,19 +996,19 @@ cstoct(
            ) {
             while (csstr_len > 0 && ct_len > 0) {
                 unsigned char ch = * (const unsigned char *) csptr;
-                int char_size = (ch < 0xc0 ? 1 :
+                int ch_size = (ch < 0xc0 ? 1 :
                                  ch < 0xe0 ? 2 :
                                  ch < 0xf0 ? 3 :
                                  ch < 0xf8 ? 4 :
                                  ch < 0xfc ? 5 :
                                  6);
                 int i;
-                if (!(csstr_len >= char_size && ct_len >= char_size))
+                if (!(csstr_len >= ch_size && ct_len >= ch_size))
                     break;
-                for (i = char_size; i > 0; i--)
+                for (i = ch_size; i > 0; i--)
                     *ctptr++ = *csptr++;
-                csstr_len -= char_size;
-                ct_len -= char_size;
+                csstr_len -= ch_size;
+                ct_len -= ch_size;
             }
         } else {
             while (csstr_len > 0 && ct_len > 0) {
