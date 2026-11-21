@@ -135,6 +135,7 @@ bool _xcb_send_xim_message(xcb_connection_t *conn, xcb_atom_t protocol_atom,
         xcb_generic_error_t *error = NULL;
         if ((error = xcb_request_check(conn, cookie)) != NULL) {
             free(error);
+            return false;
         }
         event.format = 32;
         event.data.data32[0] = length;
@@ -156,6 +157,7 @@ bool _xcb_send_xim_message(xcb_connection_t *conn, xcb_atom_t protocol_atom,
     xcb_generic_error_t *error = NULL;
     if ((error = xcb_request_check(conn, send_event_cookie)) != NULL) {
         free(error);
+        return false;
     }
     return true;
 }
