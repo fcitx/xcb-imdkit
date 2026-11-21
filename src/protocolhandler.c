@@ -699,6 +699,7 @@ void _xcb_im_handle_reset_ic(xcb_im_t *im, xcb_im_client_t *client,
 
     do {
         if (client->connect_id != frame.input_method_ID) {
+            _xcb_im_send_error_message(im, client);
             break;
         }
 
@@ -706,6 +707,7 @@ void _xcb_im_handle_reset_ic(xcb_im_t *im, xcb_im_client_t *client,
         HASH_FIND(hh, client->input_contexts, &frame.input_context_ID,
                   sizeof(uint16_t), ic);
         if (!ic) {
+            _xcb_im_send_ic_error_message(im, client, frame.input_context_ID);
             break;
         }
 
