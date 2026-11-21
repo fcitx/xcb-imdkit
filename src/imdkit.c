@@ -816,15 +816,42 @@ bool xcb_im_filter_event(xcb_im_t *im, xcb_generic_event_t *event) {
 }
 
 void xcb_im_close_im(xcb_im_t *im) {
+    if (!im->init) {
+        return;
+    }
     xcb_atom_t *atoms = im->atoms;
-    xcb_get_property_cookie_t cookie = xcb_get_property(
-        im->conn, false, im->screen->root, atoms[XIM_ATOM_XIM_SERVERS],
-        XCB_ATOM_ATOM, 0L, 1000000L);
+    xcb_window_t owner = XCB_WINDOW_NONE;
+    xcb_get_selection_owner_reply_t *owner_reply =
+        xcb_get_selection_owner_reply(
+            im->conn,
+            xcb_get_selection_owner(im->conn, atoms[XIM_ATOM_SERVER_NAME]),
+            NULL);
+    if (owner_reply) {
+        owner = owner_reply->owner;
+        free(owner_reply);
+    }
 
-    xcb_get_property_reply_t *reply =
-        xcb_get_property_reply(im->conn, cookie, NULL);
+    if (owner == im->serverWindow) {
+        xcb_set_selection_owner(im->conn, XCB_WINDOW_NONE,
+                                atoms[XIM_ATOM_SERVER_NAME], XCB_CURRENT_TIME);
+    }
+
+    xcb_get_property_reply_t *reply = NULL;
     bool found = false;
     do {
+        // Another XIM server may already own this selection name (e.g. it
+        // replaced us via SetSelectionOwner, or the caller called
+        // xcb_im_close_im after xcb_im_open_im failed on a name conflict). Only
+        // update XIM_SERVERS when we still own the selection or no one owns it
+        // (e.g. serverWindow was already destroyed before xcb_im_close_im).
+        if (owner != im->serverWindow && owner != XCB_WINDOW_NONE) {
+            break;
+        }
+        xcb_get_property_cookie_t cookie = xcb_get_property(
+            im->conn, false, im->screen->root, atoms[XIM_ATOM_XIM_SERVERS],
+            XCB_ATOM_ATOM, 0L, 1000000L);
+
+        reply = xcb_get_property_reply(im->conn, cookie, NULL);
         if (!reply) {
             break;
         }
@@ -875,6 +902,7 @@ void xcb_im_close_im(xcb_im_t *im) {
         free(p);
     }
     im->connect_id = 0;
+    xcb_flush(im->conn);
 }
 
 void xcb_im_destroy(xcb_im_t *im) {

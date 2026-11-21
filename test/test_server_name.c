@@ -434,6 +434,101 @@ static void test_client_connect_window_cleanup(xcb_connection_t *conn,
     xcb_disconnect(srv_conn);
 }
 
+static xcb_window_t get_selection_owner(xcb_connection_t *conn,
+                                        xcb_atom_t selection) {
+    xcb_get_selection_owner_reply_t *reply = xcb_get_selection_owner_reply(
+        conn, xcb_get_selection_owner(conn, selection), NULL);
+    TEST_CHECK(reply);
+    xcb_window_t owner = reply->owner;
+    free(reply);
+    return owner;
+}
+
+static bool server_atom_in_xim_servers(xcb_connection_t *conn,
+                                       xcb_window_t root,
+                                       xcb_atom_t servers_atom,
+                                       xcb_atom_t target) {
+    xcb_get_property_reply_t *reply =
+        xcb_get_property_reply(conn,
+                               xcb_get_property(conn, false, root, servers_atom,
+                                                XCB_ATOM_ATOM, 0L, 1000L),
+                               NULL);
+    TEST_CHECK(reply);
+    xcb_atom_t *atoms = xcb_get_property_value(reply);
+    int len = xcb_get_property_value_length(reply) / (int)sizeof(xcb_atom_t);
+    bool found = false;
+    for (int i = 0; i < len; i++) {
+        if (atoms[i] == target) {
+            found = true;
+            break;
+        }
+    }
+    free(reply);
+    return found;
+}
+
+static void test_server_close_im(xcb_connection_t *conn, int screen_number,
+                                 xcb_screen_t *screen) {
+    static uint32_t styles[] = {XCB_IM_PreeditNothing | XCB_IM_StatusNothing};
+    static char *encodings[] = {"COMPOUND_TEXT"};
+    xcb_im_styles_t input_styles = {.nStyles = 1, .styles = styles};
+    xcb_im_encodings_t encoding_list = {.nEncodings = 1,
+                                        .encodings = encodings};
+
+    xcb_atom_t servers_atom = intern_atom(conn, "XIM_SERVERS");
+    xcb_atom_t close_srv_atom = intern_atom(conn, "@server=close_test");
+
+    xcb_window_t win1 = xcb_generate_id(conn);
+    xcb_window_t win2 = xcb_generate_id(conn);
+    xcb_create_window(conn, XCB_COPY_FROM_PARENT, win1, screen->root, 0, 0, 1,
+                      1, 1, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual,
+                      0, NULL);
+    xcb_create_window(conn, XCB_COPY_FROM_PARENT, win2, screen->root, 0, 0, 1,
+                      1, 1, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual,
+                      0, NULL);
+
+    xcb_im_t *srv1 = xcb_im_create(conn, screen_number, win1, "close_test",
+                                   XCB_IM_ALL_LOCALES, &input_styles, NULL,
+                                   NULL, &encoding_list, 0, NULL, NULL);
+    xcb_im_t *srv2 = xcb_im_create(conn, screen_number, win2, "close_test",
+                                   XCB_IM_ALL_LOCALES, &input_styles, NULL,
+                                   NULL, &encoding_list, 0, NULL, NULL);
+    TEST_CHECK(srv1 && srv2);
+
+    // Calling xcb_im_close_im before xcb_im_open_im must be a safe no-op.
+    xcb_im_close_im(srv2);
+
+    TEST_CHECK(xcb_im_open_im(srv1));
+    TEST_CHECK(get_selection_owner(conn, close_srv_atom) == win1);
+    TEST_CHECK(server_atom_in_xim_servers(conn, screen->root, servers_atom,
+                                          close_srv_atom));
+
+    // Conflicting server fails xcb_im_open_im; calling xcb_im_close_im on it
+    // (like fcitx5 ~XIMServer()) must NOT clobber srv1's XIM_SERVERS entry.
+    TEST_CHECK(!xcb_im_open_im(srv2));
+    xcb_im_close_im(srv2);
+    TEST_CHECK(get_selection_owner(conn, close_srv_atom) == win1);
+    TEST_CHECK(server_atom_in_xim_servers(conn, screen->root, servers_atom,
+                                          close_srv_atom));
+
+    // Closing srv1 while win1 is still alive must release selection ownership
+    // and remove @server=close_test from XIM_SERVERS so srv2 can take over.
+    xcb_im_close_im(srv1);
+    TEST_CHECK(get_selection_owner(conn, close_srv_atom) == XCB_WINDOW_NONE);
+    TEST_CHECK(!server_atom_in_xim_servers(conn, screen->root, servers_atom,
+                                           close_srv_atom));
+
+    TEST_CHECK(xcb_im_open_im(srv2));
+    TEST_CHECK(get_selection_owner(conn, close_srv_atom) == win2);
+    xcb_im_close_im(srv2);
+    TEST_CHECK(get_selection_owner(conn, close_srv_atom) == XCB_WINDOW_NONE);
+
+    xcb_im_destroy(srv2);
+    xcb_im_destroy(srv1);
+    xcb_destroy_window(conn, win2);
+    xcb_destroy_window(conn, win1);
+}
+
 int main() {
     // xcb_im_open_im prepends each server atom to XIM_SERVERS, so starting
     // fcitx5 -> fcitx -> "" produces ["@server=", "@server=fcitx",
@@ -486,6 +581,7 @@ int main() {
 
     test_selection_icccm(conn, screen_number, screen);
     test_client_connect_window_cleanup(conn, screen_number, screen);
+    test_server_close_im(conn, screen_number, screen);
 
     xcb_xim_close(ctx.im);
     xcb_xim_destroy(ctx.im);
