@@ -13,6 +13,6 @@ find_package_handle_standard_args(UTHash
 if(UTHash_FOUND AND NOT TARGET UTHash::UTHash)
     add_library(UTHash::UTHash INTERFACE IMPORTED )
     set_target_properties(UTHash::UTHash PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${EXECINFO_INCLUDE_DIR}"
+        INTERFACE_INCLUDE_DIRECTORIES "${UTHash_INCLUDE_DIR}"
     )
 endif()
