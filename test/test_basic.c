@@ -74,6 +74,14 @@ static void open_callback(xcb_xim_t *im, void *user_data) {
                                  XCB_XIM_XNFocusWindow, &client_window, NULL));
 }
 
+static bool atom_exists(xcb_connection_t *conn, const char *name) {
+    xcb_intern_atom_reply_t *reply = xcb_intern_atom_reply(
+        conn, xcb_intern_atom(conn, true, strlen(name), name), NULL);
+    xcb_atom_t atom = reply ? reply->atom : XCB_ATOM_NONE;
+    free(reply);
+    return atom != XCB_ATOM_NONE;
+}
+
 static void run_client(void) {
     int screen_number;
     client_connection = xcb_connect(NULL, &screen_number);
@@ -101,6 +109,19 @@ static void run_client(void) {
     }
 
     TEST_CHECK(completed);
+    // Client sent 4 property-backed XIM messages (QUERY_EXTENSION,
+    // ENCODING_NEGOTIATION, CREATE_IC, FORWARD_EVENT) -> _client0.._client3;
+    // Server sent 3 property-backed XIM messages (OPEN_REPLY,
+    // QUERY_EXTENSION_REPLY, FORWARD_EVENT) -> _server1_0.._server1_2.
+    TEST_CHECK(atom_exists(client_connection, "_client0"));
+    TEST_CHECK(atom_exists(client_connection, "_client1"));
+    TEST_CHECK(atom_exists(client_connection, "_client2"));
+    TEST_CHECK(atom_exists(client_connection, "_client3"));
+    TEST_CHECK(!atom_exists(client_connection, "_client4"));
+    TEST_CHECK(atom_exists(client_connection, "_server1_0"));
+    TEST_CHECK(atom_exists(client_connection, "_server1_1"));
+    TEST_CHECK(atom_exists(client_connection, "_server1_2"));
+    TEST_CHECK(!atom_exists(client_connection, "_server1_3"));
     xcb_xim_close(client_im);
     free(xcb_get_input_focus_reply(
         client_connection, xcb_get_input_focus(client_connection), NULL));
