@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
 #include <xcb/xproto.h>
@@ -154,7 +155,52 @@ static void open_callback(xcb_xim_t *im, void *user_data) {
     free(nested.data);
 }
 
-static void run_client(void) {
+static void fail_create_ic_callback(xcb_xim_t *im, xcb_xic_t ic,
+                                    void *user_data) {
+    bool *called = user_data;
+    TEST_CHECK(ic == 0);
+    *called = true;
+}
+
+static void fail_reset_ic_callback(xcb_xim_t *im, xcb_xic_t ic,
+                                   xcb_im_reset_ic_reply_fr_t *reply,
+                                   void *user_data) {
+    bool *called = user_data;
+    TEST_CHECK(reply == NULL);
+    *called = true;
+}
+
+static xcb_atom_t get_atom(xcb_connection_t *conn, const char *name) {
+    xcb_intern_atom_reply_t *reply = xcb_intern_atom_reply(
+        conn, xcb_intern_atom(conn, false, strlen(name), name), NULL);
+    TEST_CHECK(reply);
+    xcb_atom_t atom = reply->atom;
+    free(reply);
+    return atom;
+}
+
+static xcb_window_t find_accept_window(xcb_connection_t *conn,
+                                       xcb_window_t root,
+                                       xcb_window_t server_win) {
+    uint32_t mask = xcb_get_setup(conn)->resource_id_mask;
+    xcb_query_tree_reply_t *tree =
+        xcb_query_tree_reply(conn, xcb_query_tree(conn, root), NULL);
+    TEST_CHECK(tree);
+    xcb_window_t *children = xcb_query_tree_children(tree);
+    int len = xcb_query_tree_children_length(tree);
+    xcb_window_t found = XCB_NONE;
+    for (int i = 0; i < len; i++) {
+        if (children[i] != server_win &&
+            (children[i] & ~mask) == (server_win & ~mask)) {
+            found = children[i];
+            break;
+        }
+    }
+    free(tree);
+    return found;
+}
+
+static void run_client(test_xim_server_t *server) {
     int screen_number;
     client_connection = xcb_connect(NULL, &screen_number);
     client_screen = xcb_aux_get_screen(client_connection, screen_number);
@@ -184,6 +230,37 @@ static void run_client(void) {
     TEST_CHECK(set_ic_values_replies == 2);
     TEST_CHECK(forwarded_events == 2);
     TEST_CHECK(reset_replied);
+
+    // 1. Pre-populate _client7 on accept_win with format=32 so the next >20B
+    // property append (format=8) fails xcb_change_property_checked (BadMatch)
+    // and _xcb_send_xim_message must return false immediately.
+    xcb_window_t accept_win = find_accept_window(
+        client_connection, client_screen->root, server->window);
+    TEST_CHECK(accept_win != XCB_NONE);
+    xcb_atom_t client7 = get_atom(client_connection, "_client7");
+    uint32_t bad_prop = 0;
+    xcb_change_property(client_connection, XCB_PROP_MODE_REPLACE, accept_win,
+                        client7, XCB_ATOM_STRING, 32, 1, &bad_prop);
+    xcb_aux_sync(client_connection);
+
+    bool create_failed_sync = false;
+    uint32_t style = XCB_IM_PreeditNothing | XCB_IM_StatusNothing;
+    TEST_CHECK(xcb_xim_create_ic(client_im, fail_create_ic_callback,
+                                 &create_failed_sync, XCB_XIM_XNInputStyle,
+                                 &style, XCB_XIM_XNClientWindow, &client_window,
+                                 NULL));
+    TEST_CHECK(create_failed_sync);
+
+    // 2. Destroy the server (destroying accept_win) before client filters
+    // DestroyNotify: inline xcb_send_event_checked fails with BadWindow and
+    // _xcb_send_xim_message must return false.
+    test_xim_server_destroy(server);
+    TEST_CHECK(!xcb_xim_set_ic_focus(client_im, 1));
+    bool reset_failed_sync = false;
+    TEST_CHECK(xcb_xim_reset_ic(client_im, 1, fail_reset_ic_callback,
+                                &reset_failed_sync));
+    TEST_CHECK(reset_failed_sync);
+
     xcb_xim_close(client_im);
     xcb_xim_destroy(client_im);
     xcb_disconnect(client_connection);
@@ -193,8 +270,7 @@ int main() {
     test_xim_server_t *server =
         test_xim_server_new("test_client_queue_server", server_callback, NULL);
 
-    run_client();
-    test_xim_server_destroy(server);
+    run_client(server);
     TEST_CHECK(atomic_load(&server_set_ic_values_count) == 2);
     TEST_CHECK(atomic_load(&server_forwarded_events) == 2);
     return 0;
