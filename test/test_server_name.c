@@ -9,6 +9,7 @@
 #include "imdkit.h"
 #include "test.h"
 #include "test_xim_server.h"
+#include "ximproto.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -241,6 +242,198 @@ static void test_selection_icccm(xcb_connection_t *conn, int screen_number,
     xcb_destroy_window(conn, req_win);
 }
 
+static bool window_exists(xcb_connection_t *conn, xcb_window_t win) {
+    xcb_get_window_attributes_reply_t *reply = xcb_get_window_attributes_reply(
+        conn, xcb_get_window_attributes(conn, win), NULL);
+    free(reply);
+    return reply != NULL;
+}
+
+static void test_client_connect_window_cleanup(xcb_connection_t *conn,
+                                               int screen_number,
+                                               xcb_screen_t *screen) {
+    int srv_screen_num = 0;
+    xcb_connection_t *srv_conn = xcb_connect(NULL, &srv_screen_num);
+    xcb_screen_t *srv_screen = xcb_aux_get_screen(srv_conn, srv_screen_num);
+    TEST_CHECK(srv_screen);
+
+    xcb_atom_t servers_atom = intern_atom(srv_conn, "XIM_SERVERS");
+    xcb_atom_t transport_atom = intern_atom(srv_conn, "TRANSPORT");
+    xcb_atom_t xconn_atom = intern_atom(srv_conn, "_XIM_XCONNECT");
+    xcb_atom_t proto_atom = intern_atom(srv_conn, "_XIM_PROTOCOL");
+    xcb_atom_t bad_trans_atom = intern_atom(srv_conn, "@server=bad_trans");
+    xcb_atom_t bad_name_atom = intern_atom(srv_conn, "NOT_A_SERVER");
+    xcb_atom_t bad_conn_atom = intern_atom(srv_conn, "@server=bad_conn");
+    xcb_atom_t silent_atom = intern_atom(srv_conn, "@server=silent_srv");
+
+    xcb_window_t fake_srv_win = xcb_generate_id(srv_conn);
+    xcb_create_window(
+        srv_conn, XCB_COPY_FROM_PARENT, fake_srv_win, srv_screen->root, 0, 0, 1,
+        1, 1, XCB_WINDOW_CLASS_INPUT_OUTPUT, srv_screen->root_visual, 0, NULL);
+    xcb_set_selection_owner(srv_conn, fake_srv_win, bad_trans_atom,
+                            XCB_CURRENT_TIME);
+    xcb_set_selection_owner(srv_conn, fake_srv_win, bad_name_atom,
+                            XCB_CURRENT_TIME);
+    xcb_set_selection_owner(srv_conn, fake_srv_win, bad_conn_atom,
+                            XCB_CURRENT_TIME);
+    xcb_set_selection_owner(srv_conn, fake_srv_win, silent_atom,
+                            XCB_CURRENT_TIME);
+
+    // 1. CHECK_NEXT_SERVER: index 0 (@server=bad_trans) creates
+    // requestor_window then fails TRANSPORT_WAIT; index 1 (NOT_A_SERVER) fails
+    // _xcb_xim_check_server_prepare before creating a window and must not
+    // double-destroy the previous requestor_window (which causes BadWindow).
+    xcb_atom_t list1[2] = {bad_trans_atom, bad_name_atom};
+    xcb_change_property(srv_conn, XCB_PROP_MODE_REPLACE, srv_screen->root,
+                        servers_atom, XCB_ATOM_ATOM, 32, 2, list1);
+    xcb_aux_sync(srv_conn);
+
+    unsetenv("XMODIFIERS");
+    xcb_xim_t *xim1 = xcb_xim_create(conn, screen_number, NULL);
+    TEST_CHECK(xcb_xim_open(xim1, NULL, false, NULL));
+
+    // Fake server receives SelectionRequest for bad_trans and replies NONE.
+    xcb_generic_event_t *srv_ev = xcb_wait_for_event(srv_conn);
+    TEST_CHECK(srv_ev &&
+               (srv_ev->response_type & ~0x80) == XCB_SELECTION_REQUEST);
+    xcb_selection_request_event_t *sel_req =
+        (xcb_selection_request_event_t *)srv_ev;
+    xcb_selection_notify_event_t sel_notify = {
+        .response_type = XCB_SELECTION_NOTIFY,
+        .requestor = sel_req->requestor,
+        .selection = sel_req->selection,
+        .target = sel_req->target,
+        .time = sel_req->time,
+        .property = XCB_ATOM_NONE,
+    };
+    xcb_send_event(srv_conn, false, sel_req->requestor, XCB_EVENT_MASK_NO_EVENT,
+                   (const char *)&sel_notify);
+    xcb_flush(srv_conn);
+    free(srv_ev);
+
+    xcb_generic_event_t *cli_ev = xcb_wait_for_event(conn);
+    TEST_CHECK(cli_ev &&
+               (cli_ev->response_type & ~0x80) == XCB_SELECTION_NOTIFY);
+    xcb_xim_filter_event(xim1, cli_ev);
+    free(cli_ev);
+    xcb_aux_sync(conn);
+    while ((cli_ev = xcb_poll_for_event(conn)) != NULL) {
+        // Must not receive any X11 error (response_type == 0, e.g. BadWindow).
+        TEST_CHECK((cli_ev->response_type & ~0x80) != 0);
+        free(cli_ev);
+    }
+    xcb_xim_close(xim1);
+    xcb_xim_destroy(xim1);
+
+    // 2. XIM_CONNECT_CONNECT failure must destroy im_client_window immediately.
+    xcb_change_property(srv_conn, XCB_PROP_MODE_REPLACE, srv_screen->root,
+                        servers_atom, XCB_ATOM_ATOM, 32, 1, &bad_conn_atom);
+    xcb_aux_sync(srv_conn);
+
+    xcb_xim_t *xim2 = xcb_xim_create(conn, screen_number, "@im=bad_conn");
+    TEST_CHECK(xcb_xim_open(xim2, NULL, false, NULL));
+
+    // Reply "@transport=X/" to TRANSPORT SelectionRequest.
+    srv_ev = xcb_wait_for_event(srv_conn);
+    TEST_CHECK(srv_ev &&
+               (srv_ev->response_type & ~0x80) == XCB_SELECTION_REQUEST);
+    sel_req = (xcb_selection_request_event_t *)srv_ev;
+    const char trans_val[] = "@transport=X/";
+    xcb_change_property(srv_conn, XCB_PROP_MODE_REPLACE, sel_req->requestor,
+                        sel_req->property, transport_atom, 8,
+                        sizeof(trans_val) - 1, trans_val);
+    sel_notify.requestor = sel_req->requestor;
+    sel_notify.selection = sel_req->selection;
+    sel_notify.target = sel_req->target;
+    sel_notify.time = sel_req->time;
+    sel_notify.property = sel_req->property;
+    xcb_send_event(srv_conn, false, sel_req->requestor, XCB_EVENT_MASK_NO_EVENT,
+                   (const char *)&sel_notify);
+    xcb_flush(srv_conn);
+    free(srv_ev);
+
+    cli_ev = xcb_wait_for_event(conn);
+    TEST_CHECK(cli_ev);
+    xcb_xim_filter_event(xim2, cli_ev);
+    free(cli_ev);
+
+    // Receive _XIM_XCONNECT on fake_srv_win, record im_client_window, reply.
+    srv_ev = xcb_wait_for_event(srv_conn);
+    TEST_CHECK(srv_ev && (srv_ev->response_type & ~0x80) == XCB_CLIENT_MESSAGE);
+    xcb_client_message_event_t *cm = (xcb_client_message_event_t *)srv_ev;
+    TEST_CHECK(cm->type == xconn_atom);
+    xcb_window_t im_cli_win = cm->data.data32[0];
+    TEST_CHECK(window_exists(srv_conn, im_cli_win));
+
+    xcb_client_message_event_t xconn_reply = {
+        .response_type = XCB_CLIENT_MESSAGE,
+        .format = 32,
+        .window = im_cli_win,
+        .type = xconn_atom,
+    };
+    xconn_reply.data.data32[0] = fake_srv_win;
+    xcb_send_event(srv_conn, false, im_cli_win, XCB_EVENT_MASK_NO_EVENT,
+                   (const char *)&xconn_reply);
+    xcb_flush(srv_conn);
+    free(srv_ev);
+
+    cli_ev = xcb_wait_for_event(conn);
+    TEST_CHECK(cli_ev);
+    xcb_xim_filter_event(xim2, cli_ev);
+    free(cli_ev);
+
+    // Receive XIM_CONNECT and send truncated 0-byte XIM_CONNECT_REPLY.
+    srv_ev = xcb_wait_for_event(srv_conn);
+    TEST_CHECK(srv_ev && (srv_ev->response_type & ~0x80) == XCB_CLIENT_MESSAGE);
+    free(srv_ev);
+
+    xcb_client_message_event_t bad_conn_reply = {
+        .response_type = XCB_CLIENT_MESSAGE,
+        .format = 8,
+        .window = im_cli_win,
+        .type = proto_atom,
+    };
+    bad_conn_reply.data.data8[0] = XCB_XIM_CONNECT_REPLY;
+    xcb_send_event(srv_conn, false, im_cli_win, XCB_EVENT_MASK_NO_EVENT,
+                   (const char *)&bad_conn_reply);
+    xcb_flush(srv_conn);
+
+    cli_ev = xcb_wait_for_event(conn);
+    TEST_CHECK(cli_ev);
+    xcb_xim_filter_event(xim2, cli_ev);
+    free(cli_ev);
+    xcb_aux_sync(conn);
+
+    TEST_CHECK(!window_exists(srv_conn, im_cli_win));
+    xcb_xim_close(xim2);
+    xcb_xim_destroy(xim2);
+
+    // 3. Closing xcb_xim_t while still waiting in XIM_CONNECT_CHECK_SERVER must
+    // destroy requestor_window.
+    xcb_change_property(srv_conn, XCB_PROP_MODE_REPLACE, srv_screen->root,
+                        servers_atom, XCB_ATOM_ATOM, 32, 1, &silent_atom);
+    xcb_aux_sync(srv_conn);
+
+    xcb_xim_t *xim3 = xcb_xim_create(conn, screen_number, "@im=silent_srv");
+    TEST_CHECK(xcb_xim_open(xim3, NULL, false, NULL));
+
+    srv_ev = xcb_wait_for_event(srv_conn);
+    TEST_CHECK(srv_ev &&
+               (srv_ev->response_type & ~0x80) == XCB_SELECTION_REQUEST);
+    xcb_window_t pending_req_win =
+        ((xcb_selection_request_event_t *)srv_ev)->requestor;
+    free(srv_ev);
+    TEST_CHECK(window_exists(srv_conn, pending_req_win));
+
+    xcb_xim_close(xim3);
+    xcb_xim_destroy(xim3);
+    xcb_aux_sync(conn);
+    TEST_CHECK(!window_exists(srv_conn, pending_req_win));
+
+    xcb_destroy_window(srv_conn, fake_srv_win);
+    xcb_disconnect(srv_conn);
+}
+
 int main() {
     // xcb_im_open_im prepends each server atom to XIM_SERVERS, so starting
     // fcitx5 -> fcitx -> "" produces ["@server=", "@server=fcitx",
@@ -292,6 +485,7 @@ int main() {
     TEST_CHECK(right_server_hit);
 
     test_selection_icccm(conn, screen_number, screen);
+    test_client_connect_window_cleanup(conn, screen_number, screen);
 
     xcb_xim_close(ctx.im);
     xcb_xim_destroy(ctx.im);
