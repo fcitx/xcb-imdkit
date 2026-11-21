@@ -79,6 +79,9 @@ static void get_ic_values_callback(xcb_xim_t *im, xcb_xic_t ic,
 
 static void create_ic_callback(xcb_xim_t *im, xcb_xic_t ic, void *user_data) {
     TEST_CHECK(ic);
+    TEST_CHECK(!xcb_xim_set_ic_values(client_im, ic, NULL, NULL, NULL));
+    TEST_CHECK(!xcb_xim_set_ic_values(client_im, ic, NULL, NULL,
+                                      "unknownAttribute", &ic, NULL));
 
     // Request more than ARRAY_SIZE(Default_ICattr) (17) readable IC attributes
     // (including duplicate nested lists and duplicate nested sub-attributes)
@@ -104,6 +107,19 @@ static void open_callback(xcb_xim_t *im, void *user_data) {
     xcb_point_t spot = {.x = 12, .y = 34};
     uint32_t fg = 1;
     uint32_t bg = 2;
+
+    // Empty or invalid IC attributes in xcb_xim_create_ic must fail upfront.
+    TEST_CHECK(!xcb_xim_create_ic(client_im, create_ic_callback, NULL, NULL));
+    TEST_CHECK(!xcb_xim_create_ic(client_im, create_ic_callback, NULL,
+                                  XCB_XIM_XNInputStyle, &input_style,
+                                  "unknownAttribute", &fg, NULL));
+    xcb_xim_nested_list bad_nested = xcb_xim_create_nested_list(
+        client_im, "unknownNestedAttribute", &fg, NULL);
+    TEST_CHECK(!bad_nested.data && bad_nested.length == 0);
+    TEST_CHECK(!xcb_xim_create_ic(
+        client_im, create_ic_callback, NULL, XCB_XIM_XNInputStyle, &input_style,
+        XCB_XIM_XNPreeditAttributes, &bad_nested, NULL));
+
     // 3 * 8 = 24 bytes (exact glibc 64-bit chunk usable size), plus an
     // unsupported-type XNFontSet attribute (size 0) that previously wrote 4
     // bytes past the end of the 24-byte heap buffer.

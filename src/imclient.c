@@ -1220,15 +1220,91 @@ size_t _xcb_xim_check_valist(xcb_xim_t *im, va_list var) {
     size_t count = 0;
 
     for (attr = va_arg(var, char *); attr; attr = va_arg(var, char *)) {
-        (void)va_arg(var, void **);
+        void *p = va_arg(var, void *);
+        if (!p) {
+            return 0;
+        }
 
         xcb_xim_icattr_table_t *icattr = _xcb_xim_find_icattr(im, attr);
         if (!icattr) {
             return 0;
         }
+        if (icattr->attr.type_of_the_value == XimType_NEST) {
+            xcb_xim_nested_list *nested = p;
+            if (!nested->data || nested->length == 0) {
+                return 0;
+            }
+        } else if (_xcb_im_ic_attr_size(icattr->attr.type_of_the_value) == 0) {
+            return 0;
+        }
         ++count;
     }
     return count;
+}
+
+static bool _xcb_xim_pack_ic_attrs(xcb_xim_t *im, size_t nItems,
+                                   xcb_im_xicattribute_fr_t **out_items,
+                                   va_list var) {
+    xcb_im_xicattribute_fr_t *items =
+        calloc(nItems, sizeof(xcb_im_xicattribute_fr_t));
+    if (!items) {
+        return false;
+    }
+
+    bool has_client_window = false;
+    xcb_window_t client_window = XCB_NONE;
+    bool has_focus_window = false;
+    xcb_window_t focus_window = XCB_NONE;
+
+    for (size_t i = 0; i < nItems; i++) {
+        char *attr = va_arg(var, char *);
+        void *p = va_arg(var, void *);
+        if (strcmp(attr, XCB_XIM_XNClientWindow) == 0) {
+            has_client_window = true;
+            client_window = *(xcb_window_t *)p;
+        } else if (strcmp(attr, XCB_XIM_XNFocusWindow) == 0) {
+            has_focus_window = true;
+            focus_window = *(xcb_window_t *)p;
+        }
+
+        xcb_xim_icattr_table_t *icattr = _xcb_xim_find_icattr(im, attr);
+        items[i].attribute_ID = icattr->attr.attribute_ID;
+        if (icattr->attr.type_of_the_value == XimType_NEST) {
+            xcb_xim_nested_list *nested = p;
+            items[i].value_length = nested->length;
+            items[i].value = malloc(nested->length);
+            if (!items[i].value) {
+                for (size_t j = 0; j < i; j++) {
+                    free(items[j].value);
+                }
+                free(items);
+                return false;
+            }
+            memcpy(items[i].value, nested->data, nested->length);
+        } else {
+            items[i].value_length =
+                _xcb_im_ic_attr_size(icattr->attr.type_of_the_value);
+            items[i].value = malloc(items[i].value_length);
+            if (!items[i].value) {
+                for (size_t j = 0; j < i; j++) {
+                    free(items[j].value);
+                }
+                free(items);
+                return false;
+            }
+            _xcb_im_get_ic_value(p, icattr->attr.type_of_the_value,
+                                 items[i].value, false);
+        }
+    }
+
+    if (has_client_window) {
+        im->client_window = client_window;
+    }
+    if (has_focus_window) {
+        im->focus_window = focus_window;
+    }
+    *out_items = items;
+    return true;
 }
 
 xcb_xim_nested_list xcb_xim_create_nested_list(xcb_xim_t *im, ...) {
@@ -1320,56 +1396,31 @@ bool xcb_xim_create_ic(xcb_xim_t *im, xcb_xim_create_ic_callback callback,
         return false;
     }
 
+    va_list var;
+    va_start(var, user_data);
+    size_t attr_size = _xcb_xim_check_valist(im, var);
+    va_end(var);
+    if (!attr_size) {
+        return false;
+    }
+
     xcb_xim_request_queue_t *queue =
         _xcb_xim_new_request(im, XCB_XIM_CREATE_IC, 0, callback, user_data);
     if (!queue) {
         return false;
     }
 
-    va_list var;
     va_start(var, user_data);
-    queue->frame.create_ic.input_method_ID = im->connect_id;
-    queue->frame.create_ic.ic_attributes.size = _xcb_xim_check_valist(im, var);
-    queue->frame.create_ic.ic_attributes.items =
-        calloc(queue->frame.create_ic.ic_attributes.size,
-               sizeof(xcb_im_xicattribute_fr_t));
+    bool ok = _xcb_xim_pack_ic_attrs(
+        im, attr_size, &queue->frame.create_ic.ic_attributes.items, var);
     va_end(var);
-
-    if (!queue->frame.create_ic.ic_attributes.items) {
+    if (!ok) {
         free(queue);
         return false;
     }
 
-    xcb_im_xicattribute_fr_t *items =
-        queue->frame.create_ic.ic_attributes.items;
-    uint32_t nItems = queue->frame.create_ic.ic_attributes.size;
-
-    va_start(var, user_data);
-    for (uint32_t i = 0; i < nItems; i++) {
-        char *attr = va_arg(var, char *);
-        void *p = va_arg(var, void *);
-        if (strcmp(attr, XCB_XIM_XNClientWindow) == 0) {
-            im->client_window = *(xcb_window_t *)p;
-        } else if (strcmp(attr, XCB_XIM_XNFocusWindow) == 0) {
-            im->focus_window = *(xcb_window_t *)p;
-        }
-
-        xcb_xim_icattr_table_t *icattr = _xcb_xim_find_icattr(im, attr);
-        items[i].attribute_ID = icattr->attr.attribute_ID;
-        if (icattr->attr.type_of_the_value == XimType_NEST) {
-            xcb_xim_nested_list *nested = p;
-            items[i].value_length = nested->length;
-            items[i].value = malloc(nested->length);
-            memcpy(items[i].value, nested->data, nested->length);
-        } else {
-            items[i].value_length =
-                _xcb_im_ic_attr_size(icattr->attr.type_of_the_value);
-            items[i].value = malloc(items[i].value_length);
-            _xcb_im_get_ic_value(p, icattr->attr.type_of_the_value,
-                                 items[i].value, false);
-        }
-    }
-    va_end(var);
+    queue->frame.create_ic.input_method_ID = im->connect_id;
+    queue->frame.create_ic.ic_attributes.size = attr_size;
 
     list_append(&queue->list, &im->queue);
 
@@ -1431,6 +1482,10 @@ bool xcb_xim_get_im_values(xcb_xim_t *im,
     queue->frame.get_im_values.im_attribute_id.size = count;
     queue->frame.get_im_values.im_attribute_id.items =
         calloc(count, sizeof(uint16_t));
+    if (!queue->frame.get_im_values.im_attribute_id.items) {
+        free(queue);
+        return false;
+    }
     va_start(var, user_data);
     count = 0;
     for (char *attr = va_arg(var, char *); attr; attr = va_arg(var, char *)) {
@@ -1482,6 +1537,10 @@ bool xcb_xim_get_ic_values(xcb_xim_t *im, xcb_xic_t ic,
     queue->frame.get_ic_values.ic_attribute.size = count;
     queue->frame.get_ic_values.ic_attribute.items =
         calloc(count, sizeof(uint16_t));
+    if (!queue->frame.get_ic_values.ic_attribute.items) {
+        free(queue);
+        return false;
+    }
     va_start(var, user_data);
     count = 0;
     for (char *attr = va_arg(var, char *); attr; attr = va_arg(var, char *)) {
@@ -1541,48 +1600,18 @@ bool xcb_xim_set_ic_values(xcb_xim_t *im, xcb_xic_t ic,
         return false;
     }
 
-    queue->frame.set_ic_values.input_method_ID = im->connect_id;
-    queue->frame.set_ic_values.input_context_ID = ic;
-    queue->frame.set_ic_values.ic_attribute.size = attr_size;
-    queue->frame.set_ic_values.ic_attribute.items =
-        calloc(queue->frame.set_ic_values.ic_attribute.size,
-               sizeof(xcb_im_xicattribute_fr_t));
-
-    if (!queue->frame.set_ic_values.ic_attribute.items) {
+    va_start(var, user_data);
+    bool ok = _xcb_xim_pack_ic_attrs(
+        im, attr_size, &queue->frame.set_ic_values.ic_attribute.items, var);
+    va_end(var);
+    if (!ok) {
         free(queue);
         return false;
     }
 
-    xcb_im_xicattribute_fr_t *items =
-        queue->frame.set_ic_values.ic_attribute.items;
-    uint32_t nItems = queue->frame.set_ic_values.ic_attribute.size;
-
-    va_start(var, user_data);
-    for (uint32_t i = 0; i < nItems; i++) {
-        char *attr = va_arg(var, char *);
-        void *p = va_arg(var, void *);
-        if (strcmp(attr, XCB_XIM_XNClientWindow) == 0) {
-            im->client_window = *(xcb_window_t *)p;
-        } else if (strcmp(attr, XCB_XIM_XNFocusWindow) == 0) {
-            im->focus_window = *(xcb_window_t *)p;
-        }
-
-        xcb_xim_icattr_table_t *icattr = _xcb_xim_find_icattr(im, attr);
-        items[i].attribute_ID = icattr->attr.attribute_ID;
-        if (icattr->attr.type_of_the_value == XimType_NEST) {
-            xcb_xim_nested_list *nested = p;
-            items[i].value_length = nested->length;
-            items[i].value = malloc(nested->length);
-            memcpy(items[i].value, nested->data, nested->length);
-        } else {
-            items[i].value_length =
-                _xcb_im_ic_attr_size(icattr->attr.type_of_the_value);
-            items[i].value = malloc(items[i].value_length);
-            _xcb_im_get_ic_value(p, icattr->attr.type_of_the_value,
-                                 items[i].value, false);
-        }
-    }
-    va_end(var);
+    queue->frame.set_ic_values.input_method_ID = im->connect_id;
+    queue->frame.set_ic_values.input_context_ID = ic;
+    queue->frame.set_ic_values.ic_attribute.size = attr_size;
 
     list_append(&queue->list, &im->queue);
 
