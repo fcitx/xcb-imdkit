@@ -34,7 +34,7 @@ uint8_t *_xcb_write_xim_message_header(uint8_t *message, uint8_t major_opcode,
 // length is the body without header size in byte
 bool _xcb_send_xim_message(xcb_connection_t *conn, xcb_atom_t protocol_atom,
                            xcb_window_t window, uint8_t *data, size_t length,
-                           const char *name, size_t len);
+                           uint32_t *sequence, const uint16_t *connect_id);
 
 void _xcb_send_xim_error_message(xcb_connection_t *conn,
                                  xcb_atom_t protocol_atom, xcb_window_t window,

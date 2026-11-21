@@ -9,7 +9,9 @@
 #include "common.h"
 #include "parser.h"
 #include "ximproto.h"
+#include "ximproto_p.h"
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <xcb/xcb.h>
@@ -76,7 +78,7 @@ uint8_t *_xcb_write_xim_message_header(uint8_t *message, uint8_t major_opcode,
 // length is the body without header size in byte
 bool _xcb_send_xim_message(xcb_connection_t *conn, xcb_atom_t protocol_atom,
                            xcb_window_t window, uint8_t *data, size_t length,
-                           const char *name, size_t len) {
+                           uint32_t *sequence, const uint16_t *connect_id) {
     if (!data) {
         return false;
     }
@@ -93,10 +95,24 @@ bool _xcb_send_xim_message(xcb_connection_t *conn, xcb_atom_t protocol_atom,
     event.type = protocol_atom;
 
     if (length > XCB_XIM_CM_DATA_SIZE) {
+        if (!sequence) {
+            return false;
+        }
+        char atom_name[64];
+        int len;
+        if (connect_id) {
+            len = snprintf(atom_name, sizeof(atom_name), "_server%u_%u",
+                           *connect_id, *sequence);
+        } else {
+            len =
+                snprintf(atom_name, sizeof(atom_name), "_client%u", *sequence);
+        }
+        *sequence = (*sequence + 1) % XCB_XIM_ATOM_ROTATION_SIZE;
+
         xcb_atom_t atom;
 
         xcb_intern_atom_cookie_t atom_cookie =
-            xcb_intern_atom(conn, false, len, name);
+            xcb_intern_atom(conn, false, len, atom_name);
         xcb_intern_atom_reply_t *atom_reply =
             xcb_intern_atom_reply(conn, atom_cookie, NULL);
         if (!atom_reply) {
@@ -163,7 +179,7 @@ void _xcb_send_xim_error_message(xcb_connection_t *conn,
     uint8_t *content =
         _xcb_write_xim_message_header(message, XCB_XIM_ERROR, 0, 12, swap);
     xcb_im_error_fr_write(&frame, content, swap);
-    _xcb_send_xim_message(conn, protocol_atom, window, message, 12, NULL, 0);
+    _xcb_send_xim_message(conn, protocol_atom, window, message, 12, NULL, NULL);
 }
 
 // Valid zero-payload messages (e.g. XIM_DISCONNECT, XIM_DISCONNECT_REPLY) have

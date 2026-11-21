@@ -41,11 +41,9 @@ static bool _xcb_xim_check_next_server(xcb_xim_t *im) {
 void _xcb_xim_close(xcb_xim_t *im);
 
 bool _xcb_xim_send_message(xcb_xim_t *im, uint8_t *data, size_t length) {
-    char atomName[64];
-    int len = sprintf(atomName, "_client%u", im->sequence++);
-    im->sequence = (im->sequence + 1) % XCB_XIM_ATOM_ROTATION_SIZE;
     return _xcb_send_xim_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL],
-                                 im->accept_win, data, length, atomName, len);
+                                 im->accept_win, data, length, &im->sequence,
+                                 NULL);
 }
 
 bool _xcb_xim_check_server_name(xcb_xim_t *im, char *name, int namelen) {

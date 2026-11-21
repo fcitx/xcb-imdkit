@@ -1214,13 +1214,9 @@ void xcb_im_status_draw_bitmap_callback(xcb_im_t *im,
 // length is the body without header size in byte
 bool _xcb_im_send_message(xcb_im_t *im, xcb_im_client_t *client, uint8_t *data,
                           size_t length) {
-    char atomName[64];
-    int len =
-        sprintf(atomName, "_server%u_%u", client->connect_id, im->sequence++);
-    im->sequence = (im->sequence + 1) % XCB_XIM_ATOM_ROTATION_SIZE;
     return _xcb_send_xim_message(im->conn, im->atoms[XIM_ATOM_XIM_PROTOCOL],
-                                 client->client_win, data, length, atomName,
-                                 len);
+                                 client->client_win, data, length,
+                                 &im->sequence, &client->connect_id);
 }
 
 void _xcb_im_send_error_message(xcb_im_t *im, xcb_im_client_t *client) {
