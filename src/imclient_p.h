@@ -85,6 +85,7 @@ typedef struct _xcb_xim_extensionx_t {
 
 typedef struct _xcb_xim_ic_t {
     xcb_xic_t id;
+    bool has_client_window;
     xcb_window_t client_window;
     xcb_window_t focus_window;
     UT_hash_handle hh;
