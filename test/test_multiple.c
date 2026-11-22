@@ -35,6 +35,11 @@ typedef struct {
     bool completed;
 } client_t;
 
+typedef union {
+    xcb_client_message_event_t cm;
+    xcb_generic_event_t generic;
+} synthetic_client_message_t;
+
 static atomic_uint server_forwarded_events;
 
 static void server_callback(xcb_im_t *im, xcb_im_client_t *client,
@@ -130,15 +135,14 @@ static int client_thread(void *data) {
                         "_XIM_PROTOCOL"),
         NULL);
     TEST_CHECK(proto_reply);
-    xcb_client_message_event_t bogus_proto = {
-        .response_type = XCB_CLIENT_MESSAGE,
-        .format = 8,
-        .window = client->window,
-        .type = proto_reply->atom,
-    };
+    synthetic_client_message_t bogus_proto;
+    memset(&bogus_proto, 0, sizeof(bogus_proto));
+    bogus_proto.cm.response_type = XCB_CLIENT_MESSAGE;
+    bogus_proto.cm.format = 8;
+    bogus_proto.cm.window = client->window;
+    bogus_proto.cm.type = proto_reply->atom;
     free(proto_reply);
-    TEST_CHECK(
-        !xcb_xim_filter_event(client->im, (xcb_generic_event_t *)&bogus_proto));
+    TEST_CHECK(!xcb_xim_filter_event(client->im, &bogus_proto.generic));
 
     xcb_xim_close(client->im);
     xcb_xim_destroy(client->im);
@@ -186,14 +190,13 @@ static void run_shared_connection_clients(void) {
     }
 
     // ClientMessages addressed to an unrelated window must not be consumed.
-    xcb_client_message_event_t bogus_xconn = {
-        .response_type = XCB_CLIENT_MESSAGE,
-        .format = 32,
-        .window = shared[0].window,
-        .type = xconn_atom,
-    };
-    TEST_CHECK(!xcb_xim_filter_event(shared[0].im,
-                                     (xcb_generic_event_t *)&bogus_xconn));
+    synthetic_client_message_t bogus_xconn;
+    memset(&bogus_xconn, 0, sizeof(bogus_xconn));
+    bogus_xconn.cm.response_type = XCB_CLIENT_MESSAGE;
+    bogus_xconn.cm.format = 32;
+    bogus_xconn.cm.window = shared[0].window;
+    bogus_xconn.cm.type = xconn_atom;
+    TEST_CHECK(!xcb_xim_filter_event(shared[0].im, &bogus_xconn.generic));
 
     xcb_generic_event_t *event;
     while (!(shared[0].completed && shared[1].completed) &&
@@ -204,14 +207,13 @@ static void run_shared_connection_clients(void) {
         free(event);
     }
 
-    xcb_client_message_event_t bogus_proto = {
-        .response_type = XCB_CLIENT_MESSAGE,
-        .format = 8,
-        .window = shared[0].window,
-        .type = proto_atom,
-    };
-    TEST_CHECK(!xcb_xim_filter_event(shared[0].im,
-                                     (xcb_generic_event_t *)&bogus_proto));
+    synthetic_client_message_t bogus_proto;
+    memset(&bogus_proto, 0, sizeof(bogus_proto));
+    bogus_proto.cm.response_type = XCB_CLIENT_MESSAGE;
+    bogus_proto.cm.format = 8;
+    bogus_proto.cm.window = shared[0].window;
+    bogus_proto.cm.type = proto_atom;
+    TEST_CHECK(!xcb_xim_filter_event(shared[0].im, &bogus_proto.generic));
 
     for (unsigned int i = 0; i < CLIENT_COUNT; i++) {
         TEST_CHECK(shared[i].completed);
