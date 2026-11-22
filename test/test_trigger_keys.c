@@ -70,7 +70,6 @@ static void destroy_ic2_callback(xcb_xim_t *im, xcb_xic_t ic, void *user_data) {
     ic2_destroyed = true;
     TEST_CHECK(!xcb_xim_trigger_notify(im, 0x9999, 0, false));
     TEST_CHECK(!xcb_xim_trigger_notify(im, created_ic2, 0, false));
-    TEST_CHECK(xcb_xim_trigger_notify(im, created_ic, 0, true));
 }
 
 static void bogus_set_ic_callback(xcb_xim_t *im, xcb_xic_t ic,
@@ -112,6 +111,9 @@ static void set_event_mask_callback(xcb_xim_t *im, xcb_xic_t ic,
         TEST_CHECK(!xcb_xim_forward_event(im, created_ic2, &dummy_key));
         TEST_CHECK(!xcb_xim_reset_ic(im, created_ic2, NULL, NULL));
         TEST_CHECK(!xcb_xim_ext_move(im, created_ic2, 0, 0));
+        // Pipelined right behind SET_IC_VALUES + DESTROY_IC (before replies
+        // arrive): must wait in im->queue and read focus_win2's event mask.
+        TEST_CHECK(xcb_xim_trigger_notify(im, created_ic, 0, true));
     } else if (set_event_mask_count == 3) {
         TEST_CHECK(ic2_destroyed);
         opened = true;

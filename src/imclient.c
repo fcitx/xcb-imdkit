@@ -844,21 +844,23 @@ static inline xcb_xim_ic_t *_xcb_xim_find_ic(xcb_xim_t *im, xcb_xic_t ic) {
 
 bool xcb_xim_trigger_notify(xcb_xim_t *im, xcb_xic_t ic, uint32_t idx,
                             bool off) {
-    xcb_xim_ic_t *ic_entry = _xcb_xim_find_ic(im, ic);
-    if (!ic_entry) {
+    if (!_xcb_xim_find_ic(im, ic)) {
         return false;
     }
-    xcb_window_t win = ic_entry->focus_window ? ic_entry->focus_window
-                                              : ic_entry->client_window;
-    xcb_im_trigger_notify_fr_t frame;
-    frame.input_method_ID = im->connect_id;
-    frame.input_context_ID = ic;
-    frame.flag = off ? 1 : 0;
-    frame.index_of_keys_list = idx;
-    frame.client_select_event_mask = _xcb_get_event_mask(im->conn, win);
-    bool fail;
-    _xcb_xim_send_frame(im, frame, fail);
-    return !fail;
+
+    xcb_xim_request_queue_t *queue = calloc(1, sizeof(xcb_xim_request_queue_t));
+    if (!queue) {
+        return false;
+    }
+    queue->major_code = XCB_XIM_TRIGGER_NOTIFY;
+    queue->frame.trigger_notify.input_method_ID = im->connect_id;
+    queue->frame.trigger_notify.input_context_ID = ic;
+    queue->frame.trigger_notify.flag = off ? 1 : 0;
+    queue->frame.trigger_notify.index_of_keys_list = idx;
+
+    list_append(&queue->list, &im->queue);
+    _xcb_xim_process_queue(im);
+    return true;
 }
 
 xcb_xim_trigger_key_type_t xcb_xim_check_trigger_key(xcb_xim_t *im,
@@ -1041,6 +1043,7 @@ void _xcb_xim_request_free(xcb_xim_request_queue_t *request) {
     case XCB_XIM_DESTROY_IC:
     case XCB_XIM_FORWARD_EVENT:
     case XCB_XIM_RESET_IC:
+    case XCB_XIM_TRIGGER_NOTIFY:
         break;
     }
     free(request);
@@ -1072,6 +1075,19 @@ bool _xcb_xim_send_request_frame(xcb_xim_t *im,
     case XCB_XIM_RESET_IC:
         _xcb_xim_send_frame(im, request->frame.reset_ic, fail);
         break;
+    case XCB_XIM_TRIGGER_NOTIFY: {
+        xcb_xim_ic_t *ic_entry = _xcb_xim_find_ic(
+            im, request->frame.trigger_notify.input_context_ID);
+        if (!ic_entry) {
+            break;
+        }
+        xcb_window_t win = ic_entry->focus_window ? ic_entry->focus_window
+                                                  : ic_entry->client_window;
+        request->frame.trigger_notify.client_select_event_mask =
+            _xcb_get_event_mask(im->conn, win);
+        _xcb_xim_send_frame(im, request->frame.trigger_notify, fail);
+        break;
+    }
     default:
         break;
     }
@@ -1221,7 +1237,8 @@ void _xcb_xim_process_queue(xcb_xim_t *im) {
             list_container_of((im->queue).next, xcb_xim_request_queue_t, list);
         list_remove(&request->list);
         if (_xcb_xim_send_request_frame(im, request)) {
-            if (request->major_code != XCB_XIM_FORWARD_EVENT) {
+            if (request->major_code != XCB_XIM_FORWARD_EVENT &&
+                request->major_code != XCB_XIM_TRIGGER_NOTIFY) {
                 im->current = request;
             } else {
                 _xcb_xim_request_free(request);
