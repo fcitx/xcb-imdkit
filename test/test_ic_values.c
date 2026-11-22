@@ -22,6 +22,7 @@ static xcb_connection_t *client_connection;
 static xcb_screen_t *client_screen;
 static xcb_xim_t *client_im;
 static xcb_window_t client_window;
+static atomic_bool client_win_set_on_server;
 static atomic_bool ext_move_notified;
 static bool completed;
 
@@ -29,8 +30,12 @@ static void server_callback(xcb_im_t *im, xcb_im_client_t *client,
                             xcb_im_input_context_t *ic,
                             const xcb_im_packet_header_fr_t *hdr, void *frame,
                             void *arg, void *user_data) {
-    if (hdr->major_opcode == XCB_XIM_EXTENSION &&
-        hdr->minor_opcode == XCB_XIM_EXT_MOVE) {
+    if (hdr->major_opcode == XCB_XIM_SET_IC_VALUES) {
+        if (xcb_im_input_context_get_client_window(ic) == client_window) {
+            atomic_store(&client_win_set_on_server, true);
+        }
+    } else if (hdr->major_opcode == XCB_XIM_EXTENSION &&
+               hdr->minor_opcode == XCB_XIM_EXT_MOVE) {
         TEST_CHECK(xcb_im_input_context_get_preedit_attr_mask(ic) &
                    XCB_XIM_XNSpotLocation_MASK);
         const xcb_im_preedit_attr_t *attr =
@@ -46,17 +51,43 @@ second_get_ic_values_callback(xcb_xim_t *im, xcb_xic_t ic,
                               xcb_im_get_ic_values_reply_fr_t *reply,
                               void *user_data) {
     TEST_CHECK(reply);
+    TEST_CHECK(atomic_load(&client_win_set_on_server));
     TEST_CHECK(atomic_load(&ext_move_notified));
     completed = true;
+}
+
+static void second_set_ic_values_callback(xcb_xim_t *im, xcb_xic_t ic,
+                                          void *user_data) {
+    // Once XNClientWindow has been set, setting it again must fail, whereas
+    // XNFocusWindow remains dynamically modifiable.
+    TEST_CHECK(!xcb_xim_set_ic_values(client_im, ic, NULL, NULL,
+                                      XCB_XIM_XNClientWindow, &client_window,
+                                      NULL));
+    TEST_CHECK(xcb_xim_set_ic_values(client_im, ic, NULL, NULL,
+                                     XCB_XIM_XNFocusWindow, &client_window,
+                                     NULL));
+    TEST_CHECK(xcb_xim_ext_move(client_im, ic, 123, 456));
+    TEST_CHECK(xcb_xim_get_ic_values(client_im, ic,
+                                     second_get_ic_values_callback, NULL,
+                                     XCB_XIM_XNFilterEvents, NULL));
 }
 
 static void second_create_ic_callback(xcb_xim_t *im, xcb_xic_t ic,
                                       void *user_data) {
     TEST_CHECK(ic);
-    TEST_CHECK(xcb_xim_ext_move(client_im, ic, 123, 456));
-    TEST_CHECK(xcb_xim_get_ic_values(client_im, ic,
-                                     second_get_ic_values_callback, NULL,
-                                     XCB_XIM_XNFilterEvents, NULL));
+    // Duplicate XNClientWindow in a single set_ic_values call must fail.
+    TEST_CHECK(!xcb_xim_set_ic_values(
+        client_im, ic, NULL, NULL, XCB_XIM_XNClientWindow, &client_window,
+        XCB_XIM_XNClientWindow, &client_window, NULL));
+    // First XNClientWindow on an IC created without one must succeed.
+    TEST_CHECK(xcb_xim_set_ic_values(
+        client_im, ic, second_set_ic_values_callback, NULL,
+        XCB_XIM_XNClientWindow, &client_window, NULL));
+    // Queuing a second XNClientWindow while the first is still in-flight must
+    // also fail immediately.
+    TEST_CHECK(!xcb_xim_set_ic_values(client_im, ic, NULL, NULL,
+                                      XCB_XIM_XNClientWindow, &client_window,
+                                      NULL));
 }
 
 static void get_ic_values_callback(xcb_xim_t *im, xcb_xic_t ic,
@@ -69,12 +100,10 @@ static void get_ic_values_callback(xcb_xim_t *im, xcb_xic_t ic,
     TEST_CHECK(reply->ic_attribute.items[0].value_length == 4);
     TEST_CHECK(reply->ic_attribute.items[1].value_length == 16);
 
-    // Create a second IC without initial XNSpotLocation and update spot via
-    // XIM_EXT_MOVE.
+    // Create a second IC WITHOUT initial XNClientWindow or XNSpotLocation.
     uint32_t input_style = XCB_IM_PreeditNothing | XCB_IM_StatusNothing;
     TEST_CHECK(xcb_xim_create_ic(client_im, second_create_ic_callback, NULL,
-                                 XCB_XIM_XNInputStyle, &input_style,
-                                 XCB_XIM_XNClientWindow, &client_window, NULL));
+                                 XCB_XIM_XNInputStyle, &input_style, NULL));
 }
 
 static void create_ic_callback(xcb_xim_t *im, xcb_xic_t ic, void *user_data) {
@@ -82,6 +111,11 @@ static void create_ic_callback(xcb_xim_t *im, xcb_xic_t ic, void *user_data) {
     TEST_CHECK(!xcb_xim_set_ic_values(client_im, ic, NULL, NULL, NULL));
     TEST_CHECK(!xcb_xim_set_ic_values(client_im, ic, NULL, NULL,
                                       "unknownAttribute", &ic, NULL));
+    // IC #1 already set XNClientWindow during xcb_xim_create_ic; setting it a
+    // second time via xcb_xim_set_ic_values must fail.
+    TEST_CHECK(!xcb_xim_set_ic_values(client_im, ic, NULL, NULL,
+                                      XCB_XIM_XNClientWindow, &client_window,
+                                      NULL));
 
     // Request more than ARRAY_SIZE(Default_ICattr) (17) readable IC attributes
     // (including duplicate nested lists and duplicate nested sub-attributes)
@@ -113,6 +147,11 @@ static void open_callback(xcb_xim_t *im, void *user_data) {
     TEST_CHECK(!xcb_xim_create_ic(client_im, create_ic_callback, NULL,
                                   XCB_XIM_XNInputStyle, &input_style,
                                   "unknownAttribute", &fg, NULL));
+    // Duplicate XNClientWindow in xcb_xim_create_ic must also fail.
+    TEST_CHECK(!xcb_xim_create_ic(
+        client_im, create_ic_callback, NULL, XCB_XIM_XNInputStyle, &input_style,
+        XCB_XIM_XNClientWindow, &client_window, XCB_XIM_XNClientWindow,
+        &client_window, NULL));
     xcb_xim_nested_list bad_nested = xcb_xim_create_nested_list(
         client_im, "unknownNestedAttribute", &fg, NULL);
     TEST_CHECK(!bad_nested.data && bad_nested.length == 0);

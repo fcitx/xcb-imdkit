@@ -1256,11 +1256,13 @@ void _xcb_xim_complete_current(xcb_xim_t *im, uint8_t major_code,
                         HASH_ADD(hh, im->ics, id, sizeof(xcb_xic_t), ic_entry);
                     }
                 } else {
+                    ic_entry->has_client_window = false;
                     ic_entry->client_window = XCB_NONE;
                     ic_entry->focus_window = XCB_NONE;
                 }
                 if (ic_entry) {
                     if (request->window_update.has_client_window) {
+                        ic_entry->has_client_window = true;
                         ic_entry->client_window =
                             request->window_update.client_window;
                     }
@@ -1277,6 +1279,7 @@ void _xcb_xim_complete_current(xcb_xim_t *im, uint8_t major_code,
                 im, request->frame.set_ic_values.input_context_ID);
             if (ic_entry) {
                 if (request->window_update.has_client_window) {
+                    ic_entry->has_client_window = true;
                     ic_entry->client_window =
                         request->window_update.client_window;
                 }
@@ -1311,7 +1314,28 @@ static inline xcb_xim_imattr_table_t *_xcb_xim_find_imattr(xcb_xim_t *im,
     return imattr;
 }
 
-size_t _xcb_xim_check_valist(xcb_xim_t *im, va_list var) {
+static bool _xcb_xim_ic_has_client_window(const xcb_xim_t *im,
+                                          const xcb_xim_ic_t *ic_entry) {
+    if (ic_entry->has_client_window) {
+        return true;
+    }
+    if (im->current && im->current->major_code == XCB_XIM_SET_IC_VALUES &&
+        im->current->frame.set_ic_values.input_context_ID == ic_entry->id &&
+        im->current->window_update.has_client_window) {
+        return true;
+    }
+    list_entry_foreach(item, xcb_xim_request_queue_t, &im->queue, list) {
+        if (item->major_code == XCB_XIM_SET_IC_VALUES &&
+            item->frame.set_ic_values.input_context_ID == ic_entry->id &&
+            item->window_update.has_client_window) {
+            return true;
+        }
+    }
+    return false;
+}
+
+size_t _xcb_xim_check_valist(xcb_xim_t *im, bool has_client_window,
+                             va_list var) {
     char *attr;
 
     size_t count = 0;
@@ -1320,6 +1344,13 @@ size_t _xcb_xim_check_valist(xcb_xim_t *im, va_list var) {
         void *p = va_arg(var, void *);
         if (!p) {
             return 0;
+        }
+
+        if (strcmp(attr, XCB_XIM_XNClientWindow) == 0) {
+            if (has_client_window) {
+                return 0;
+            }
+            has_client_window = true;
         }
 
         xcb_xim_icattr_table_t *icattr = _xcb_xim_find_icattr(im, attr);
@@ -1488,7 +1519,7 @@ bool xcb_xim_create_ic(xcb_xim_t *im, xcb_xim_create_ic_callback callback,
 
     va_list var;
     va_start(var, user_data);
-    size_t attr_size = _xcb_xim_check_valist(im, var);
+    size_t attr_size = _xcb_xim_check_valist(im, false, var);
     va_end(var);
     if (!attr_size) {
         return false;
@@ -1680,13 +1711,15 @@ bool xcb_xim_ext_move(xcb_xim_t *im, xcb_xic_t ic, int16_t x, int16_t y) {
 bool xcb_xim_set_ic_values(xcb_xim_t *im, xcb_xic_t ic,
                            xcb_xim_set_ic_values_callback callback,
                            void *user_data, ...) {
-    if (!_xcb_xim_find_ic(im, ic)) {
+    xcb_xim_ic_t *ic_entry = _xcb_xim_find_ic(im, ic);
+    if (!ic_entry) {
         return false;
     }
 
     va_list var;
     va_start(var, user_data);
-    size_t attr_size = _xcb_xim_check_valist(im, var);
+    size_t attr_size = _xcb_xim_check_valist(
+        im, _xcb_xim_ic_has_client_window(im, ic_entry), var);
     va_end(var);
     if (!attr_size) {
         return false;
