@@ -1,3 +1,27 @@
 @PACKAGE_INIT@
 
+# XCBImdkit::XCBImdkit links publicly to XCB::XCB. Because upstream libxcb does
+# not ship a CMake package config file, XCB::XCB can be provided either via
+# Extra CMake Modules (ECM):
+#   find_package(ECM REQUIRED NO_MODULE)
+#   list(APPEND CMAKE_MODULE_PATH "${ECM_MODULE_PATH}")
+#   find_package(XCB REQUIRED COMPONENTS XCB)
+# or via CMake's built-in FindPkgConfig without ECM:
+#   find_package(PkgConfig REQUIRED)
+#   pkg_check_modules(XCB REQUIRED IMPORTED_TARGET xcb)
+#   add_library(XCB::XCB ALIAS PkgConfig::XCB)
+if(NOT TARGET XCB::XCB)
+    find_package(XCB QUIET COMPONENTS XCB)
+endif()
+
+if(NOT TARGET XCB::XCB AND NOT XCBImdkit_FIND_QUIETLY)
+    message(WARNING
+        "XCBImdkit requires the XCB::XCB target, which is not yet defined. "
+        "Please provide XCB::XCB via Extra CMake Modules "
+        "(find_package(XCB REQUIRED COMPONENTS XCB)) or via FindPkgConfig "
+        "(pkg_check_modules(XCB REQUIRED IMPORTED_TARGET xcb) followed by "
+        "add_library(XCB::XCB ALIAS PkgConfig::XCB))."
+    )
+endif()
+
 include("${CMAKE_CURRENT_LIST_DIR}/XCBImdkitLibraryTargets.cmake")
