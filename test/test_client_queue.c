@@ -12,6 +12,7 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <xcb/xcb.h>
@@ -23,9 +24,9 @@ static xcb_screen_t *client_screen;
 static xcb_xim_t *client_im;
 static xcb_window_t client_window;
 static xcb_xic_t client_ic;
+static xcb_xic_t second_ic;
 static unsigned int set_ic_values_replies;
 static unsigned int forwarded_events;
-static bool bogus_reset_replied;
 static bool reset_replied;
 static bool completed;
 
@@ -79,26 +80,32 @@ static void set_ic_values_callback(xcb_xim_t *im, xcb_xic_t ic,
 static void bogus_reset_ic_callback(xcb_xim_t *im, xcb_xic_t ic,
                                     xcb_im_reset_ic_reply_fr_t *reply,
                                     void *user_data) {
-    TEST_CHECK(ic == 0x9999);
-    TEST_CHECK(reply == NULL);
-    TEST_CHECK(!bogus_reset_replied);
-    bogus_reset_replied = true;
+    TEST_CHECK(false);
 }
 
 static void reset_ic_callback(xcb_xim_t *im, xcb_xic_t ic,
                               xcb_im_reset_ic_reply_fr_t *reply,
                               void *user_data) {
-    TEST_CHECK(bogus_reset_replied);
     TEST_CHECK(ic == client_ic);
     TEST_CHECK(reply != NULL);
     TEST_CHECK(!reset_replied);
     reset_replied = true;
 }
 
+static void second_create_ic_callback(xcb_xim_t *im, xcb_xic_t ic,
+                                      void *user_data) {
+    TEST_CHECK(ic);
+    second_ic = ic;
+    completed = true;
+}
+
 static void destroy_ic_callback(xcb_xim_t *im, xcb_xic_t ic, void *user_data) {
     TEST_CHECK(ic == client_ic);
     TEST_CHECK(reset_replied);
-    completed = true;
+    uint32_t style = XCB_IM_PreeditNothing | XCB_IM_StatusNothing;
+    TEST_CHECK(xcb_xim_create_ic(client_im, second_create_ic_callback, NULL,
+                                 XCB_XIM_XNInputStyle, &style,
+                                 XCB_XIM_XNClientWindow, &client_window, NULL));
 }
 
 static void forward_event(xcb_xim_t *im, xcb_xic_t ic,
@@ -110,14 +117,15 @@ static void forward_event(xcb_xim_t *im, xcb_xic_t ic,
     forwarded_events++;
 
     if (forwarded_events == 2) {
-        // Queue a bogus RESET_IC (must elicit XIM_ERROR instead of wedging the
-        // client queue) followed by valid RESET_IC and DESTROY_IC.
-        TEST_CHECK(
-            xcb_xim_reset_ic(client_im, 0x9999, bogus_reset_ic_callback, NULL));
+        // Unknown IC is rejected upfront on the client.
+        TEST_CHECK(!xcb_xim_reset_ic(client_im, 0x9999, bogus_reset_ic_callback,
+                                     NULL));
         TEST_CHECK(
             xcb_xim_reset_ic(client_im, client_ic, reset_ic_callback, NULL));
         TEST_CHECK(xcb_xim_destroy_ic(client_im, client_ic, destroy_ic_callback,
                                       NULL));
+        TEST_CHECK(!xcb_xim_reset_ic(client_im, client_ic,
+                                     bogus_reset_ic_callback, NULL));
     }
 }
 
@@ -231,16 +239,21 @@ static void run_client(test_xim_server_t *server) {
     TEST_CHECK(forwarded_events == 2);
     TEST_CHECK(reset_replied);
 
-    // 1. Pre-populate _client7 on accept_win with format=32 so the next >20B
-    // property append (format=8) fails xcb_change_property_checked (BadMatch)
-    // and _xcb_send_xim_message must return false immediately.
+    // 1. Pre-populate _client0.._client9 on accept_win with format=32 so the
+    // next >20B property append (format=8) fails xcb_change_property_checked
+    // (BadMatch) and _xcb_send_xim_message must return false immediately.
     xcb_window_t accept_win = find_accept_window(
         client_connection, client_screen->root, server->window);
     TEST_CHECK(accept_win != XCB_NONE);
-    xcb_atom_t client7 = get_atom(client_connection, "_client7");
     uint32_t bad_prop = 0;
-    xcb_change_property(client_connection, XCB_PROP_MODE_REPLACE, accept_win,
-                        client7, XCB_ATOM_STRING, 32, 1, &bad_prop);
+    for (unsigned int i = 0; i < 10; i++) {
+        char name[32];
+        snprintf(name, sizeof(name), "_client%u", i);
+        xcb_atom_t prop_atom = get_atom(client_connection, name);
+        xcb_change_property(client_connection, XCB_PROP_MODE_REPLACE,
+                            accept_win, prop_atom, XCB_ATOM_STRING, 32, 1,
+                            &bad_prop);
+    }
     xcb_aux_sync(client_connection);
 
     bool create_failed_sync = false;
@@ -252,12 +265,12 @@ static void run_client(test_xim_server_t *server) {
     TEST_CHECK(create_failed_sync);
 
     // 2. Destroy the server (destroying accept_win) before client filters
-    // DestroyNotify: inline xcb_send_event_checked fails with BadWindow and
-    // _xcb_send_xim_message must return false.
+    // DestroyNotify: inline xcb_send_event_checked fails with BadWindow on a
+    // still-live IC (second_ic) and _xcb_send_xim_message must return false.
     test_xim_server_destroy(server);
-    TEST_CHECK(!xcb_xim_set_ic_focus(client_im, 1));
+    TEST_CHECK(!xcb_xim_set_ic_focus(client_im, second_ic));
     bool reset_failed_sync = false;
-    TEST_CHECK(xcb_xim_reset_ic(client_im, 1, fail_reset_ic_callback,
+    TEST_CHECK(xcb_xim_reset_ic(client_im, second_ic, fail_reset_ic_callback,
                                 &reset_failed_sync));
     TEST_CHECK(reset_failed_sync);
 

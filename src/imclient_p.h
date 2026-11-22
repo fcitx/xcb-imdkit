@@ -83,10 +83,25 @@ typedef struct _xcb_xim_extensionx_t {
     uint16_t minor_code;
 } xcb_xim_extension_t;
 
+typedef struct _xcb_xim_ic_t {
+    xcb_xic_t id;
+    xcb_window_t client_window;
+    xcb_window_t focus_window;
+    UT_hash_handle hh;
+} xcb_xim_ic_t;
+
+typedef struct _xcb_xim_ic_window_update_t {
+    bool has_client_window;
+    bool has_focus_window;
+    xcb_window_t client_window;
+    xcb_window_t focus_window;
+} xcb_xim_ic_window_update_t;
+
 typedef struct _xcb_xim_request_queue_t {
     uint8_t major_code;
     uint8_t minor_code;
     void *user_data;
+    xcb_xim_ic_window_update_t window_update;
     union {
         xcb_im_create_ic_fr_t create_ic;
         xcb_im_destroy_ic_fr_t destroy_ic;
@@ -166,9 +181,8 @@ struct _xcb_xim_t {
     bool recheck;
     bool yield_recheck;
 
-    // some ic values
-    xcb_window_t client_window;
-    xcb_window_t focus_window;
+    // per-IC tracked values
+    xcb_xim_ic_t *ics;
 
     void (*logger)(const char *, ...);
 
@@ -244,5 +258,6 @@ bool _xcb_xim_sync(xcb_xim_t *im, xcb_xic_t ic);
  */
 void _xcb_xim_complete_current(xcb_xim_t *im, uint8_t major_code,
                                void *reply_frame);
+bool _xcb_xim_match_error(const xcb_xim_t *im, const xcb_im_error_fr_t *error);
 
 #endif // _XCB_IMDKIT_IMCLIENT_P_H_
