@@ -922,13 +922,15 @@ void _xcb_im_handle_trigger_notify(xcb_im_t *im, xcb_im_client_t *client,
 
     do {
         if (client->connect_id != frame.input_method_ID) {
+            _xcb_im_send_error_message(im, client);
             break;
         }
 
         xcb_im_input_context_t *ic = NULL;
         HASH_FIND(hh, client->input_contexts, &frame.input_context_ID,
                   sizeof(uint16_t), ic);
-        if (!ic) {
+        if (!ic || (frame.flag != 0 && frame.flag != 1)) {
+            _xcb_im_send_ic_error_message(im, client, frame.input_context_ID);
             break;
         }
 
@@ -943,7 +945,7 @@ void _xcb_im_handle_trigger_notify(xcb_im_t *im, xcb_im_client_t *client,
          * XIM_TRIGGER_NOTIFY(flag == OFF).
          */
         if (frame.flag == 0) {
-            _xcb_im_send_frame(im, client, reply_frame, false);
+            _xcb_im_send_frame(im, client, reply_frame, true);
             xcb_im_preedit_start(im, ic);
         }
 
@@ -953,7 +955,7 @@ void _xcb_im_handle_trigger_notify(xcb_im_t *im, xcb_im_client_t *client,
 
         if (frame.flag == 1) {
             xcb_im_preedit_end(im, ic);
-            _xcb_im_send_frame(im, client, reply_frame, false);
+            _xcb_im_send_frame(im, client, reply_frame, true);
         }
 
     } while (0);
