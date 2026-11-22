@@ -10,6 +10,7 @@
 #include "test.h"
 #include "test_xim_server.h"
 #include "ximproto.h"
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -19,7 +20,7 @@
 
 static bool opened;
 static bool disconnected;
-static int trigger_notify_count;
+static atomic_int trigger_notify_count;
 static int set_event_mask_count;
 static bool ic2_destroyed;
 static xcb_window_t client_win;
@@ -43,25 +44,25 @@ static void server_callback(xcb_im_t *im, xcb_im_client_t *client,
                             void *arg, void *user_data) {
     if (hdr->major_opcode == XCB_XIM_TRIGGER_NOTIFY) {
         xcb_im_trigger_notify_fr_t *tn = frame;
-        if (trigger_notify_count == 0) {
+        int count = atomic_fetch_add(&trigger_notify_count, 1);
+        if (count == 0) {
             // ic1 uses focus_win1 (not overwritten by ic2).
             TEST_CHECK(tn->input_context_ID == created_ic);
             TEST_CHECK(tn->flag == 0);
             TEST_CHECK(tn->client_select_event_mask == mask_focus1);
-        } else if (trigger_notify_count == 1) {
+        } else if (count == 1) {
             // ic2 has no XNFocusWindow so must fall back to client_win2 (not
             // stale focus_win1 from ic1).
             TEST_CHECK(tn->input_context_ID == created_ic2);
             TEST_CHECK(tn->flag == 0);
             TEST_CHECK(tn->client_select_event_mask == mask_client2);
-        } else if (trigger_notify_count == 2) {
+        } else if (count == 2) {
             // ic1 updated to focus_win2; failed SET_IC_VALUES on bogus IC and
             // destroying ic2 must not clobber ic1's focus_win2.
             TEST_CHECK(tn->input_context_ID == created_ic);
             TEST_CHECK(tn->flag == 1);
             TEST_CHECK(tn->client_select_event_mask == mask_focus2);
         }
-        trigger_notify_count++;
     }
 }
 
@@ -249,7 +250,7 @@ int main() {
         free(event);
     }
     TEST_CHECK(opened);
-    TEST_CHECK(trigger_notify_count == 3);
+    TEST_CHECK(atomic_load(&trigger_notify_count) == 3);
 
     test_xim_server_destroy(server);
 
