@@ -10,7 +10,7 @@ target_link_libraries(test_encoding xcb-imdkit)
 add_test(NAME test_encoding COMMAND test_encoding)
 
 add_executable(test_parser test_parser.c ../src/parser.c)
-target_include_directories(test_parser PRIVATE ../src "${CMAKE_BINARY_DIR}/src")
+target_include_directories(test_parser PRIVATE ../src "${PROJECT_BINARY_DIR}/src")
 target_link_libraries(test_parser XCB::XCB)
 add_test(NAME test_parser COMMAND test_parser)
 
