@@ -111,6 +111,7 @@ typedef struct _xcb_xim_request_queue_t {
         xcb_im_set_ic_values_fr_t set_ic_values;
         uint8_t forward_event[8 + sizeof(xcb_key_press_event_t)];
         xcb_im_reset_ic_fr_t reset_ic;
+        xcb_im_trigger_notify_fr_t trigger_notify;
     } frame;
 
     union {
@@ -241,6 +242,7 @@ struct _xcb_xim_t {
 
 bool _xcb_xim_send_message(xcb_xim_t *im, uint8_t *data, size_t length);
 void _xcb_xim_request_free(xcb_xim_request_queue_t *request);
+void _xcb_xim_process_queue(xcb_xim_t *im);
 bool _xcb_xim_sync(xcb_xim_t *im, xcb_xic_t ic);
 
 /**
