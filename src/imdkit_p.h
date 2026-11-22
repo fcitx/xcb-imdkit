@@ -15,12 +15,6 @@
 #include "ximproto_p.h"
 
 /*
- * values for the flag of XIM_ERROR
- */
-#define XIM_IMID_VALID 0x0001
-#define XIM_ICID_VALID 0x0002
-
-/*
  * XIM Error Code
  */
 #define XIM_BadAlloc 1

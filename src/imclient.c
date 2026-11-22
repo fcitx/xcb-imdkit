@@ -684,12 +684,12 @@ void _xcb_xim_handle_message(xcb_xim_t *im,
         _xcb_xim_handle_destroy_ic_reply(im, hdr, data);
         break;
     case XCB_XIM_RESET_IC_REPLY:
-        DebugLog("-- XIM_DESTROY_IC_REPLY\n");
+        DebugLog("-- XIM_RESET_IC_REPLY\n");
         _xcb_xim_handle_reset_ic_reply(im, hdr, data);
         break;
     case XCB_XIM_ERROR:
         DebugLog("-- XIM_ERROR\n");
-        _xcb_xim_handle_error(im, data);
+        _xcb_xim_handle_error(im, hdr, data);
         break;
     }
 }
@@ -833,15 +833,29 @@ bool xcb_xim_filter_event(xcb_xim_t *im, xcb_generic_event_t *event) {
     return result;
 }
 
+static inline xcb_xim_ic_t *_xcb_xim_find_ic(xcb_xim_t *im, xcb_xic_t ic) {
+    if (im->open_state != XIM_OPEN_DONE) {
+        return NULL;
+    }
+    xcb_xim_ic_t *ic_entry = NULL;
+    HASH_FIND(hh, im->ics, &ic, sizeof(xcb_xic_t), ic_entry);
+    return ic_entry;
+}
+
 bool xcb_xim_trigger_notify(xcb_xim_t *im, xcb_xic_t ic, uint32_t idx,
                             bool off) {
+    xcb_xim_ic_t *ic_entry = _xcb_xim_find_ic(im, ic);
+    if (!ic_entry) {
+        return false;
+    }
+    xcb_window_t win = ic_entry->focus_window ? ic_entry->focus_window
+                                              : ic_entry->client_window;
     xcb_im_trigger_notify_fr_t frame;
     frame.input_method_ID = im->connect_id;
     frame.input_context_ID = ic;
     frame.flag = off ? 1 : 0;
     frame.index_of_keys_list = idx;
-    frame.client_select_event_mask = _xcb_get_event_mask(
-        im->conn, im->focus_window ? im->focus_window : im->client_window);
+    frame.client_select_event_mask = _xcb_get_event_mask(im->conn, win);
     bool fail;
     _xcb_xim_send_frame(im, frame, fail);
     return !fail;
@@ -910,8 +924,11 @@ void xcb_xim_destroy(xcb_xim_t *im) {
 }
 
 void _xcb_xim_close(xcb_xim_t *im) {
-    im->client_window = XCB_NONE;
-    im->focus_window = XCB_NONE;
+    while (im->ics) {
+        xcb_xim_ic_t *ic_entry = im->ics;
+        HASH_DEL(im->ics, ic_entry);
+        free(ic_entry);
+    }
 
     if (im->open_state == XIM_OPEN_DONE) {
         _xcb_xim_send_close(im);
@@ -1125,6 +1142,38 @@ static bool _xcb_xim_match_current(const xcb_xim_t *im, uint8_t major_code,
     }
 }
 
+bool _xcb_xim_match_error(const xcb_xim_t *im, const xcb_im_error_fr_t *error) {
+    if (!im->current) {
+        return false;
+    }
+    if (!error) {
+        return true;
+    }
+    if ((error->flag & XIM_IMID_VALID) &&
+        error->input_method_ID != im->connect_id) {
+        return false;
+    }
+    if (error->flag & XIM_ICID_VALID) {
+        switch (im->current->major_code) {
+        case XCB_XIM_DESTROY_IC:
+            return im->current->frame.destroy_ic.input_context_ID ==
+                   error->input_context_ID;
+        case XCB_XIM_GET_IC_VALUES:
+            return im->current->frame.get_ic_values.input_context_ID ==
+                   error->input_context_ID;
+        case XCB_XIM_SET_IC_VALUES:
+            return im->current->frame.set_ic_values.input_context_ID ==
+                   error->input_context_ID;
+        case XCB_XIM_RESET_IC:
+            return im->current->frame.reset_ic.input_context_ID ==
+                   error->input_context_ID;
+        default:
+            return false;
+        }
+    }
+    return true;
+}
+
 static void _xcb_xim_notify_request_callback(xcb_xim_t *im,
                                              xcb_xim_request_queue_t *request,
                                              void *reply_frame) {
@@ -1193,6 +1242,56 @@ void _xcb_xim_complete_current(xcb_xim_t *im, uint8_t major_code,
     xcb_xim_request_queue_t *request = im->current;
     im->current = NULL;
 
+    if (reply_frame) {
+        switch (request->major_code) {
+        case XCB_XIM_CREATE_IC: {
+            const xcb_im_create_ic_reply_fr_t *reply = reply_frame;
+            if (reply->input_context_ID != 0) {
+                xcb_xim_ic_t *ic_entry =
+                    _xcb_xim_find_ic(im, reply->input_context_ID);
+                if (!ic_entry) {
+                    ic_entry = calloc(1, sizeof(xcb_xim_ic_t));
+                    if (ic_entry) {
+                        ic_entry->id = reply->input_context_ID;
+                        HASH_ADD(hh, im->ics, id, sizeof(xcb_xic_t), ic_entry);
+                    }
+                } else {
+                    ic_entry->client_window = XCB_NONE;
+                    ic_entry->focus_window = XCB_NONE;
+                }
+                if (ic_entry) {
+                    if (request->window_update.has_client_window) {
+                        ic_entry->client_window =
+                            request->window_update.client_window;
+                    }
+                    if (request->window_update.has_focus_window) {
+                        ic_entry->focus_window =
+                            request->window_update.focus_window;
+                    }
+                }
+            }
+            break;
+        }
+        case XCB_XIM_SET_IC_VALUES: {
+            xcb_xim_ic_t *ic_entry = _xcb_xim_find_ic(
+                im, request->frame.set_ic_values.input_context_ID);
+            if (ic_entry) {
+                if (request->window_update.has_client_window) {
+                    ic_entry->client_window =
+                        request->window_update.client_window;
+                }
+                if (request->window_update.has_focus_window) {
+                    ic_entry->focus_window =
+                        request->window_update.focus_window;
+                }
+            }
+            break;
+        }
+        default:
+            break;
+        }
+    }
+
     _xcb_xim_notify_request_callback(im, request, reply_frame);
     _xcb_xim_request_free(request);
     _xcb_xim_process_queue(im);
@@ -1242,6 +1341,7 @@ size_t _xcb_xim_check_valist(xcb_xim_t *im, va_list var) {
 
 static bool _xcb_xim_pack_ic_attrs(xcb_xim_t *im, size_t nItems,
                                    xcb_im_xicattribute_fr_t **out_items,
+                                   xcb_xim_ic_window_update_t *window_update,
                                    va_list var) {
     xcb_im_xicattribute_fr_t *items =
         calloc(nItems, sizeof(xcb_im_xicattribute_fr_t));
@@ -1249,20 +1349,17 @@ static bool _xcb_xim_pack_ic_attrs(xcb_xim_t *im, size_t nItems,
         return false;
     }
 
-    bool has_client_window = false;
-    xcb_window_t client_window = XCB_NONE;
-    bool has_focus_window = false;
-    xcb_window_t focus_window = XCB_NONE;
+    xcb_xim_ic_window_update_t update = {0};
 
     for (size_t i = 0; i < nItems; i++) {
         char *attr = va_arg(var, char *);
         void *p = va_arg(var, void *);
         if (strcmp(attr, XCB_XIM_XNClientWindow) == 0) {
-            has_client_window = true;
-            client_window = *(xcb_window_t *)p;
+            update.has_client_window = true;
+            update.client_window = *(xcb_window_t *)p;
         } else if (strcmp(attr, XCB_XIM_XNFocusWindow) == 0) {
-            has_focus_window = true;
-            focus_window = *(xcb_window_t *)p;
+            update.has_focus_window = true;
+            update.focus_window = *(xcb_window_t *)p;
         }
 
         xcb_xim_icattr_table_t *icattr = _xcb_xim_find_icattr(im, attr);
@@ -1295,12 +1392,7 @@ static bool _xcb_xim_pack_ic_attrs(xcb_xim_t *im, size_t nItems,
         }
     }
 
-    if (has_client_window) {
-        im->client_window = client_window;
-    }
-    if (has_focus_window) {
-        im->focus_window = focus_window;
-    }
+    *window_update = update;
     *out_items = items;
     return true;
 }
@@ -1410,7 +1502,8 @@ bool xcb_xim_create_ic(xcb_xim_t *im, xcb_xim_create_ic_callback callback,
 
     va_start(var, user_data);
     bool ok = _xcb_xim_pack_ic_attrs(
-        im, attr_size, &queue->frame.create_ic.ic_attributes.items, var);
+        im, attr_size, &queue->frame.create_ic.ic_attributes.items,
+        &queue->window_update, var);
     va_end(var);
     if (!ok) {
         free(queue);
@@ -1429,7 +1522,8 @@ bool xcb_xim_create_ic(xcb_xim_t *im, xcb_xim_create_ic_callback callback,
 
 bool xcb_xim_destroy_ic(xcb_xim_t *im, xcb_xic_t ic,
                         xcb_xim_destroy_ic_callback callback, void *user_data) {
-    if (im->open_state != XIM_OPEN_DONE) {
+    xcb_xim_ic_t *ic_entry = _xcb_xim_find_ic(im, ic);
+    if (!ic_entry) {
         return false;
     }
 
@@ -1438,6 +1532,9 @@ bool xcb_xim_destroy_ic(xcb_xim_t *im, xcb_xic_t ic,
     if (!queue) {
         return false;
     }
+
+    HASH_DEL(im->ics, ic_entry);
+    free(ic_entry);
 
     queue->frame.destroy_ic.input_method_ID = im->connect_id;
     queue->frame.destroy_ic.input_context_ID = ic;
@@ -1506,7 +1603,7 @@ bool xcb_xim_get_im_values(xcb_xim_t *im,
 bool xcb_xim_get_ic_values(xcb_xim_t *im, xcb_xic_t ic,
                            xcb_xim_get_ic_values_callback callback,
                            void *user_data, ...) {
-    if (im->open_state != XIM_OPEN_DONE) {
+    if (!_xcb_xim_find_ic(im, ic)) {
         return false;
     }
     va_list var;
@@ -1560,6 +1657,9 @@ bool xcb_xim_get_ic_values(xcb_xim_t *im, xcb_xic_t ic,
 
 // not actually enabled by Xlib
 bool xcb_xim_ext_move(xcb_xim_t *im, xcb_xic_t ic, int16_t x, int16_t y) {
+    if (!_xcb_xim_find_ic(im, ic)) {
+        return false;
+    }
     xcb_im_ext_move_fr_t frame;
     frame.input_method_ID = im->connect_id;
     frame.input_context_ID = ic;
@@ -1580,7 +1680,7 @@ bool xcb_xim_ext_move(xcb_xim_t *im, xcb_xic_t ic, int16_t x, int16_t y) {
 bool xcb_xim_set_ic_values(xcb_xim_t *im, xcb_xic_t ic,
                            xcb_xim_set_ic_values_callback callback,
                            void *user_data, ...) {
-    if (im->open_state != XIM_OPEN_DONE) {
+    if (!_xcb_xim_find_ic(im, ic)) {
         return false;
     }
 
@@ -1600,7 +1700,8 @@ bool xcb_xim_set_ic_values(xcb_xim_t *im, xcb_xic_t ic,
 
     va_start(var, user_data);
     bool ok = _xcb_xim_pack_ic_attrs(
-        im, attr_size, &queue->frame.set_ic_values.ic_attribute.items, var);
+        im, attr_size, &queue->frame.set_ic_values.ic_attribute.items,
+        &queue->window_update, var);
     va_end(var);
     if (!ok) {
         free(queue);
@@ -1619,6 +1720,9 @@ bool xcb_xim_set_ic_values(xcb_xim_t *im, xcb_xic_t ic,
 }
 
 bool xcb_xim_set_ic_focus(xcb_xim_t *im, xcb_xic_t ic) {
+    if (!_xcb_xim_find_ic(im, ic)) {
+        return false;
+    }
     xcb_im_set_ic_focus_fr_t frame;
     frame.input_method_ID = im->connect_id;
     frame.input_context_ID = ic;
@@ -1629,6 +1733,9 @@ bool xcb_xim_set_ic_focus(xcb_xim_t *im, xcb_xic_t ic) {
 }
 
 bool xcb_xim_unset_ic_focus(xcb_xim_t *im, xcb_xic_t ic) {
+    if (!_xcb_xim_find_ic(im, ic)) {
+        return false;
+    }
     xcb_im_unset_ic_focus_fr_t frame;
     frame.input_method_ID = im->connect_id;
     frame.input_context_ID = ic;
@@ -1646,7 +1753,7 @@ bool xcb_xim_forward_event(xcb_xim_t *im, xcb_xic_t ic,
 
 bool xcb_xim_forward_event_full(xcb_xim_t *im, xcb_xic_t ic, uint16_t sequence,
                                 xcb_key_press_event_t *event) {
-    if (im->open_state != XIM_OPEN_DONE) {
+    if (!_xcb_xim_find_ic(im, ic)) {
         return false;
     }
 
@@ -1677,7 +1784,7 @@ bool xcb_xim_forward_event_full(xcb_xim_t *im, xcb_xic_t ic, uint16_t sequence,
 
 bool xcb_xim_reset_ic(xcb_xim_t *im, xcb_xic_t ic,
                       xcb_xim_reset_ic_callback callback, void *user_data) {
-    if (im->open_state != XIM_OPEN_DONE) {
+    if (!_xcb_xim_find_ic(im, ic)) {
         return false;
     }
 

@@ -26,6 +26,12 @@
 #define XIM_MESSAGE_BYTES(hdr) ((hdr)->length * 4u)
 
 /*
+ * values for the flag of XIM_ERROR
+ */
+#define XIM_IMID_VALID 0x0001
+#define XIM_ICID_VALID 0x0002
+
+/*
  * categories in XIM_SERVERS
  */
 #define XIM_SERVER_CATEGORY "@server="

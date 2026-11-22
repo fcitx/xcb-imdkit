@@ -726,13 +726,33 @@ void _xcb_xim_handle_sync(xcb_xim_t *im, const xcb_im_packet_header_fr_t *hdr,
     xcb_im_sync_fr_free(&frame);
 }
 
-void _xcb_xim_handle_error(xcb_xim_t *im, uint8_t *data) {
+void _xcb_xim_handle_error(xcb_xim_t *im, const xcb_im_packet_header_fr_t *hdr,
+                           uint8_t *data) {
+    xcb_im_error_fr_t frame;
+    const xcb_im_error_fr_t *error_ptr = NULL;
+    if (XIM_MESSAGE_BYTES(hdr) > 0) {
+        bool fail;
+        _xcb_xim_read_frame(frame, data, XIM_MESSAGE_BYTES(hdr), fail);
+        if (fail) {
+            return;
+        }
+        error_ptr = &frame;
+    }
+
     if (im->open_state == XIM_OPEN_DONE) {
-        _xcb_xim_complete_current(im, 0, NULL);
-    } else {
-        if (im->open_state != XIM_OPEN_INVALID) {
+        if (_xcb_xim_match_error(im, error_ptr)) {
+            _xcb_xim_complete_current(im, 0, NULL);
+        }
+    } else if (im->open_state != XIM_OPEN_INVALID) {
+        if (!error_ptr || !(error_ptr->flag & XIM_IMID_VALID) ||
+            im->open_state == XIM_OPEN_WAIT_OPEN_REPLY ||
+            error_ptr->input_method_ID == im->connect_id) {
             im->open_state = XIM_OPEN_INVALID;
             im->yield_recheck = true;
         }
+    }
+
+    if (error_ptr) {
+        xcb_im_error_fr_free(&frame);
     }
 }
