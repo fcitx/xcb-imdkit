@@ -11,14 +11,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-static inline uint16_t swap16(uint16_t n, bool swap) {
-    return swap ? (uint16_t)(((n << 8) & 0xFF00u) | ((n >> 8) & 0x00FFu)) : n;
+static inline uint16_t _xcb_im_cond_bswap16(uint16_t n, bool swap) {
+    return swap ? _xcb_im_bswap16(n) : n;
 }
 
-static inline uint32_t swap32(uint32_t n, bool swap) {
-    return swap ? (((n << 24) & 0xFF000000u) | ((n << 8) & 0x00FF0000u) |
-                   ((n >> 8) & 0x0000FF00u) | ((n >> 24) & 0x000000FFu))
-                : n;
+static inline uint32_t _xcb_im_cond_bswap32(uint32_t n, bool swap) {
+    return swap ? _xcb_im_bswap32(n) : n;
 }
 
 void uint8_t_read(uint8_t *p, uint8_t **data, size_t *len, bool swap) {
@@ -47,13 +45,13 @@ void uint16_t_read(uint16_t *p, uint8_t **data, size_t *len, bool swap) {
 
     uint16_t val;
     memcpy(&val, *data, sizeof(val));
-    *p = swap16(val, swap);
+    *p = _xcb_im_cond_bswap16(val, swap);
     *data += 2;
     *len -= 2;
 }
 
 uint8_t *uint16_t_write(uint16_t *p, uint8_t *data, bool swap) {
-    uint16_t val = swap16(*p, swap);
+    uint16_t val = _xcb_im_cond_bswap16(*p, swap);
     memcpy(data, &val, sizeof(val));
     data += 2;
     return data;
@@ -67,13 +65,13 @@ void uint32_t_read(uint32_t *p, uint8_t **data, size_t *len, bool swap) {
 
     uint32_t val;
     memcpy(&val, *data, sizeof(val));
-    *p = swap32(val, swap);
+    *p = _xcb_im_cond_bswap32(val, swap);
     *data += 4;
     *len -= 4;
 }
 
 uint8_t *uint32_t_write(uint32_t *p, uint8_t *data, bool swap) {
-    uint32_t val = swap32(*p, swap);
+    uint32_t val = _xcb_im_cond_bswap32(*p, swap);
     memcpy(data, &val, sizeof(val));
     data += 4;
     return data;

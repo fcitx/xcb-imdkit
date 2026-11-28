@@ -11,6 +11,7 @@
 #include "imdkit.h"
 #include "list.h"
 #include "message.h"
+#include "parser.h"
 #include "uthash.h"
 #include "ximproto_p.h"
 
@@ -287,13 +288,6 @@ void _xcb_im_process_forward_event(xcb_im_t *im, xcb_im_input_context_t *ic,
 void _xcb_im_process_queue(xcb_im_t *im, xcb_im_input_context_t *ic);
 static inline bool _xcb_im_has_trigger_key(xcb_im_t *im) {
     return im->onKeys.nKeys || im->offKeys.nKeys;
-}
-static inline uint16_t _xcb_im_bswap16(uint16_t x) {
-    return (uint16_t)((x << 8) | (x >> 8));
-}
-static inline uint32_t _xcb_im_bswap32(uint32_t x) {
-    return ((x << 24) & 0xFF000000u) | ((x << 8) & 0x00FF0000u) |
-           ((x >> 8) & 0x0000FF00u) | ((x >> 24) & 0x000000FFu);
 }
 // libX11 (_XimProtoEventToWire / _XimProtoWireToEvent with sw=False) sends and
 // expects the 32-byte xEvent in XIM_FORWARD_EVENT in the client's byte order.
